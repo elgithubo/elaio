@@ -9,7 +9,7 @@ abstract class Neuron {
   protected var _value: Float = 1.0f
   protected val _id: Int = NeuronCounter.getNext()
 
-  //var connectionsOut: Array[Connection] = Array[Connection]()
+  var connectionsOut: Array[Connection] = Array[Connection]()
   var connectionsIn: Array[Connection] = Array[Connection]()
 
   def value: Float = _value
@@ -27,7 +27,7 @@ abstract class Neuron {
 
     var inValue: Float = 0
     if( connectionsIn.length == 0 ) {
-      NetTrace.WriteMessage( "empty in for ID " + id )
+      //NetTrace.WriteMessage( "empty in for ID " + id )
     }
     for (connectionIn <- connectionsIn) {
       inValue = inValue + connectionIn.collect
@@ -40,9 +40,9 @@ abstract class Neuron {
     if (input > 0) input else 0
   }
 
-  // def addOutConnection(outConnection: Connection): Unit = {
-  //   connectionsOut = connectionsOut :+ outConnection
-  // }
+   def addOutConnection(outConnection: Connection): Unit = {
+     connectionsOut = connectionsOut :+ outConnection
+   }
 
   def addInConnection(inConnection: Connection): Unit = {
     connectionsIn = connectionsIn :+ inConnection
