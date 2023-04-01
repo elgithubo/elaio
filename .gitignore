@@ -1,0 +1,10 @@
+**/target
+.idea
+.scalafmt.conf
+rapki.iml
+.bloop/*
+.bsp/*
+.metals/*
+.vscode/*
+log/*
+project/*
