@@ -6,7 +6,7 @@ import de.elaio.neuralnet.trace.NetTrace
 abstract class Neuron {
 
   val layer: BigInt = 0
-  protected var _value: Float = 1.0f
+  protected var _value: Float = id
   protected val _id: Int = NeuronCounter.getNext()
 
   var connectionsOut: Array[Connection] = Array[Connection]()
@@ -26,18 +26,17 @@ abstract class Neuron {
   def collectInConnections(): Float = {
 
     var inValue: Float = 0
-    if( connectionsIn.length == 0 ) {
-      //NetTrace.WriteMessage( "empty in for ID " + id )
-    }
+
     for (connectionIn <- connectionsIn) {
       inValue = inValue + connectionIn.collect
     }
-    _value = inValue //TODO consider old value
+    NetTrace.WriteMessage( "collected: " + inValue )
+    _value = inValue
     _value
   }  
 
   def activationFunction(input: Float): Float = { // ReLu activation function as example
-    if (input > 0) input else 0
+    if (input > 0) input else 1
   }
 
    def addOutConnection(outConnection: Connection): Unit = {

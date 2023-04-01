@@ -1,5 +1,6 @@
 package de.elaio.neuralnet.connections
 
+import scala.math._
 import de.elaio.neuralnet.units.Neuron
 import de.elaio.neuralnet.processing.NeuronCollectionCache
 
@@ -12,7 +13,8 @@ trait Connection {
   def collect: Float = {
     val cachedNeuron = NeuronCollectionCache.get(neuronSource.id)
     if (cachedNeuron != null) {
-      cachedNeuron.value
+      val root = sqrt(cachedNeuron.value.floatValue)
+      root.toFloat
     } else {
       val neuronValue = neuronSource.collectInConnections() * weight
       NeuronCollectionCache.add(neuronSource)

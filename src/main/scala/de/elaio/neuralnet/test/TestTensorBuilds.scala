@@ -24,13 +24,11 @@ object TestTensorBuilds {
     )
     container.init()
     NetTrace.WriteMessage("part tensored container - trigger")
-    // for (dummy <- 0 to 5) {
     container.inputNodes.foreach( _.init(1.0f))
     for( outputNode <- container.outputNodes ) {
       val outValue = outputNode.collectInConnections()
       NetTrace.WriteMessage("outValue: " + outValue ) 
     }
-    // }
     NetTrace.WriteMessage("end of test run")
   }
 }
