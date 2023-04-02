@@ -11,7 +11,6 @@ class TensoredContainer(
     inOutWidth: Int,
     dataCreator: DataCreator,
     recurse: Boolean,
-    outWidth: Int = 0
 ) {
 
   class BuildData {}
@@ -29,7 +28,6 @@ class TensoredContainer(
         inOutWidth,
         dataCreator,
         recurse,
-        outWidth
       )
     _inputNodes = result(0)
     _outputNodes = result(1)
@@ -41,7 +39,6 @@ class TensoredContainer(
       buildInOutWidth: Int,
       dataCreator: DataCreator,
       buildRecurse: Boolean,
-      buildOutWidth: Int
   ): Array[Array[Neuron]] = {
     if (buildRecurse)
       buildNodesRecurse(
@@ -50,7 +47,6 @@ class TensoredContainer(
         null,
         dataCreator,
         true,
-        buildOutWidth
       )
     else
       buildNodesFlat(
@@ -59,7 +55,6 @@ class TensoredContainer(
         null,
         dataCreator,
         true,
-        buildOutWidth
       )
   }
 
@@ -69,7 +64,6 @@ class TensoredContainer(
       neuron: Neuron,
       dataCreator: DataCreator,
       inputBackpropagationCreationPossible: Boolean,
-      buildOutWidth: Int
   ): Array[Array[Neuron]] = {
     var neuronsInOutReturn = Array.ofDim[Neuron](2, 0)
     var neuronsLastLayer = Array.ofDim[Neuron](0)
@@ -81,9 +75,9 @@ class TensoredContainer(
 
         var loopCount: Int = 0
         if (
-          buildOutWidth != 0 && inputBackpropagationCreationPossible && buildDimOuter - nextNeuronOuterIndex.abs == 0 && nextNeuronOuterIndex < 0
+          inputBackpropagationCreationPossible && buildDimOuter - nextNeuronOuterIndex.abs == 0 && nextNeuronOuterIndex < 0
         ) {
-          loopCount = buildOutWidth
+          loopCount = 1
         } else {
           loopCount =
             buildInOutWidth * (buildDimOuter - nextNeuronOuterIndex.abs + 1)
@@ -131,27 +125,19 @@ class TensoredContainer(
       neurons: Array[Neuron],
       dataCreator: DataCreator,
       inputBackpropagationCreationPossible: Boolean,
-      buildOutWidth: Int
   ): Array[Array[Neuron]] = {
     var neuronsReturn = Array.ofDim[Neuron](3, 0)
     var neuronsLastLayer = Array.ofDim[Neuron](0)
 
     if (inputBackpropagationCreationPossible) {
-      for (i <- 1 to buildInOutWidth) {
-        neuronsReturn(0) =
-          neuronsReturn(0) :+ dataCreator.create(NeuronType.Input)
-      }
-      if (buildOutWidth == 0) {
+        for (i <- 1 to buildInOutWidth) {
+          neuronsReturn(0) =
+            neuronsReturn(0) :+ dataCreator.create(NeuronType.Input)
+        }
         for (i <- 1 to buildInOutWidth) {
           neuronsReturn(1) =
             neuronsReturn(1) :+ dataCreator.create(NeuronType.Backpropagation)
         }
-      } else {
-        for (i <- 1 to buildOutWidth) {
-          neuronsReturn(1) =
-            neuronsReturn(1) :+ dataCreator.create(NeuronType.Backpropagation)
-        }
-      }
     }
 
     var bottomNeuronsLastRecur: Array[Neuron] = Array.ofDim[Neuron](0)
@@ -193,7 +179,6 @@ class TensoredContainer(
               newNeuronsHere,
               dataCreator,
               false,
-              buildOutWidth
             )
             neuronsReturn(2) = neuronsLowerDim(2)
 
@@ -215,7 +200,6 @@ class TensoredContainer(
               newNeuronsHere,
               dataCreator,
               false,
-              buildOutWidth
             )
             neuronsReturn(2) = neuronsLowerDim(2)
 

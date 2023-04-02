@@ -20,7 +20,6 @@ object TestTensorBuilds {
       5,
       neuronDataCreatorTensored,
       true,
-      5
     )
     container.init()
     NetTrace.WriteMessage("part tensored container - trigger")
