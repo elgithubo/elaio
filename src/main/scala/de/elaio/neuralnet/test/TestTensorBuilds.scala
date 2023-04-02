@@ -25,24 +25,26 @@ object TestTensorBuilds {
     container.init()
     NetTrace.WriteMessage("part tensored container - trigger")
 
-    var inputValue : Double = 1.0d
+    var inputValue : Double = 1.1d
     feedbackIn(container, inputValue)
 
     NetTrace.WriteMessage("end of test run")
   }
 
-  def feedbackIn(container: TensoredContainer, inputValue: Double): Double = {
-      var outValue : Double = 0.0d
+  def feedbackIn(container: TensoredContainer, inputValue: Double): Array[Double] = {
+      var outValues: Array[Double] = Array.ofDim[Double](0)
       container.inputNodes.foreach( _.init(inputValue))
       for( outputNode <- container.outputNodes ) {
-        outValue = outputNode.collectInConnections()
+        var outValue : Double = outputNode.collectInConnections()
         if( outValue < 0.9d || outValue > 1.1d ) {
           NetTrace.WriteMessage("sub trigger: " + outValue)
           NeuronCollectionCache.clear()
-          outValue = feedbackIn(container, outValue)
+          outValues +: feedbackIn(container, outValue)
         }
       }
-      NetTrace.WriteMessage("outValue: " + outValue ) 
-      outValue
+      //for( outValue <- OutValues ) {
+        //NetTrace.WriteMessage("outValue: " + outValue ) 
+      //}
+      outValues
   } 
 }

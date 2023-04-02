@@ -4,17 +4,17 @@ import scala.collection.mutable.HashMap
 import de.elaio.neuralnet.units.Neuron
 
 object NeuronCollectionCache {
-  private var cache: HashMap[Int, Neuron] = HashMap.empty[Int, Neuron]
+  private var cache: HashMap[Double, Neuron] = HashMap.empty[Double, Neuron]
 
   def clear() = {
-    cache = HashMap.empty[Int, Neuron]
+    cache = HashMap.empty[Double, Neuron]
   }
 
   def add(neuron: Neuron) = {
     cache ++= List(neuron.id -> neuron)
   }
 
-  def get(id: Int): Neuron = {
+  def get(id: Double): Neuron = {
     if (cache.contains(id)) {
       cache(id)
     } else { null }

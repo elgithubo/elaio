@@ -13,12 +13,11 @@ trait Connection {
   def collect: Double = {
     val cachedNeuron = NeuronCollectionCache.get(neuronSource.id)
     if (cachedNeuron != null) {
-      val root = sqrt(cachedNeuron.value)
-      root
+      sqrt(cachedNeuron.value)
     } else {
       val neuronValue = neuronSource.collectInConnections() * weight
       NeuronCollectionCache.add(neuronSource)
-      neuronValue
+      sqrt(neuronValue)
     }
   }
 
