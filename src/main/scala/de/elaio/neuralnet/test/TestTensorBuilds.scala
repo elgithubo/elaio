@@ -37,6 +37,7 @@ object TestTensorBuilds {
       for( outputNode <- container.outputNodes ) {
         outValue = outputNode.collectInConnections()
         if( outValue < 0.9d || outValue > 193.0d ) {
+          NetTrace.WriteMessage("sub trigger: " + outValue)
           outValue = feedbackIn(container, outValue)
         }
       }
