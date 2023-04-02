@@ -9,7 +9,7 @@ abstract class Neuron {
   protected var _value: Double = id.toDouble
   protected val _id: Int = NeuronCounter.getNext()
 
-  var connectionsOut: Array[Connection] = Array[Connection]()
+  //var connectionsOut: Array[Connection] = Array[Connection]()
   var connectionsIn: Array[Connection] = Array[Connection]()
 
   def value: Double = _value
@@ -39,9 +39,9 @@ abstract class Neuron {
     if (input > 0) input else 1
   }
 
-   def addOutConnection(outConnection: Connection): Unit = {
-     connectionsOut = connectionsOut :+ outConnection
-   }
+  //def addOutConnection(outConnection: Connection): Unit = {
+  //  connectionsOut = connectionsOut :+ outConnection
+  //}
 
   def addInConnection(inConnection: Connection): Unit = {
     connectionsIn = connectionsIn :+ inConnection

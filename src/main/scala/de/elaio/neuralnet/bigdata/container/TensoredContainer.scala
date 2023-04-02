@@ -68,7 +68,7 @@ class TensoredContainer(
       buildInOutWidth: Int,
       neuron: Neuron,
       dataCreator: DataCreator,
-      inputOutputCreationPossible: Boolean,
+      inputBackpropagationCreationPossible: Boolean,
       buildOutWidth: Int
   ): Array[Array[Neuron]] = {
     var neuronsInOutReturn = Array.ofDim[Neuron](2, 0)
@@ -81,7 +81,7 @@ class TensoredContainer(
 
         var loopCount: Int = 0
         if (
-          buildOutWidth != 0 && inputOutputCreationPossible && buildDimOuter - nextNeuronOuterIndex.abs == 0 && nextNeuronOuterIndex < 0
+          buildOutWidth != 0 && inputBackpropagationCreationPossible && buildDimOuter - nextNeuronOuterIndex.abs == 0 && nextNeuronOuterIndex < 0
         ) {
           loopCount = buildOutWidth
         } else {
@@ -91,18 +91,18 @@ class TensoredContainer(
         for (index <- 1 to loopCount) {
           val newNeuronSameRank = dataCreator.create(
             if (
-              inputOutputCreationPossible && buildDimOuter - nextNeuronOuterIndex.abs == 0 && nextNeuronOuterIndex > 0
+              inputBackpropagationCreationPossible && buildDimOuter - nextNeuronOuterIndex.abs == 0 && nextNeuronOuterIndex > 0
             )
               NeuronType.Input
             else if (
-              inputOutputCreationPossible && buildDimOuter - nextNeuronOuterIndex.abs == 0 && nextNeuronOuterIndex < 0
+              inputBackpropagationCreationPossible && buildDimOuter - nextNeuronOuterIndex.abs == 0 && nextNeuronOuterIndex < 0
             )
-              NeuronType.Output
+              NeuronType.Backpropagation
             else
               NeuronType.Hidden
           )
 
-          if (inputOutputCreationPossible) {
+          if (inputBackpropagationCreationPossible) {
             if (nextNeuronOuterIndex == buildDimOuter) {
               neuronsInOutReturn(0) = neuronsInOutReturn(0) :+ newNeuronSameRank
             } else if (nextNeuronOuterIndex == -buildDimOuter) {
@@ -130,13 +130,13 @@ class TensoredContainer(
       buildInOutWidth: Int,
       neurons: Array[Neuron],
       dataCreator: DataCreator,
-      inputOutputCreationPossible: Boolean,
+      inputBackpropagationCreationPossible: Boolean,
       buildOutWidth: Int
   ): Array[Array[Neuron]] = {
     var neuronsReturn = Array.ofDim[Neuron](3, 0)
     var neuronsLastLayer = Array.ofDim[Neuron](0)
 
-    if (inputOutputCreationPossible) {
+    if (inputBackpropagationCreationPossible) {
       for (i <- 1 to buildInOutWidth) {
         neuronsReturn(0) =
           neuronsReturn(0) :+ dataCreator.create(NeuronType.Input)
@@ -144,12 +144,12 @@ class TensoredContainer(
       if (buildOutWidth == 0) {
         for (i <- 1 to buildInOutWidth) {
           neuronsReturn(1) =
-            neuronsReturn(1) :+ dataCreator.create(NeuronType.Output)
+            neuronsReturn(1) :+ dataCreator.create(NeuronType.Backpropagation)
         }
       } else {
         for (i <- 1 to buildOutWidth) {
           neuronsReturn(1) =
-            neuronsReturn(1) :+ dataCreator.create(NeuronType.Output)
+            neuronsReturn(1) :+ dataCreator.create(NeuronType.Backpropagation)
         }
       }
     }
@@ -169,7 +169,7 @@ class TensoredContainer(
         for (i <- 1 to buildInOutWidth) {
           var newNeuronSameRank = dataCreator.create(NeuronType.Hidden)
           newNeuronsSameRank = newNeuronsSameRank :+ newNeuronSameRank
-          if (inputOutputCreationPossible) {
+          if (inputBackpropagationCreationPossible) {
             newNeuronsTop = newNeuronsTop :+ newNeuronSameRank
           }
           newNeuronsHere = newNeuronsHere :+ newNeuronSameRank
@@ -249,7 +249,7 @@ class TensoredContainer(
             bottomNeuronsLastRecur = bottomNeuronsThisRecur
           }
         }
-        if (inputOutputCreationPossible) {
+        if (inputBackpropagationCreationPossible) {
           if (topLoopCount % 2 == 0) {
             topNeuronsLastToConnect = newNeuronsTop
           } else if (topNeuronsLastToConnect != null) {
@@ -264,7 +264,7 @@ class TensoredContainer(
       }
     }
 
-    if (!inputOutputCreationPossible) {
+    if (!inputBackpropagationCreationPossible) {
       neuronsReturn(0) = newNeuronsSameRank
     }
     neuronsReturn

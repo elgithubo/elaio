@@ -9,5 +9,5 @@ trait DataCreator {
 
   protected def createInput( ): Neuron
   protected def createHidden( ): Neuron
-  protected def createOutput( ): Neuron
+  protected def createBackpropagation( ): Neuron
 }
