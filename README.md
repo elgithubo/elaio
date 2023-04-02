@@ -6,7 +6,7 @@ Status: work in progress
 
 Requires
 ========
-scala and sbt
+scala
 
 Introduction
 ============
