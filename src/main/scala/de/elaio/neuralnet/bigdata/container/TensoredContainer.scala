@@ -277,7 +277,7 @@ class TensoredContainer(
     val connection = new Connection {
       override val neuronSource: Neuron = connectionNeuronSource
       override val neuronTarget: Neuron = connectionNeuronTarget
-      override val weight: Float = 1.0f // TODO Create dynamically
+      override val weight: Double = 1.0d // TODO Create dynamically
     }
     //NetTrace.WriteMessage("connecting: " + connectionNeuronSource.id + " + " +  connectionNeuronTarget.id )
     connection.getNeuronTarget.addInConnection(connection)

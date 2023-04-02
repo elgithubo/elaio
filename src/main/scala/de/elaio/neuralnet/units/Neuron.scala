@@ -6,26 +6,26 @@ import de.elaio.neuralnet.trace.NetTrace
 abstract class Neuron {
 
   val layer: BigInt = 0
-  protected var _value: Float = id
+  protected var _value: Double = id.toDouble
   protected val _id: Int = NeuronCounter.getNext()
 
   var connectionsOut: Array[Connection] = Array[Connection]()
   var connectionsIn: Array[Connection] = Array[Connection]()
 
-  def value: Float = _value
+  def value: Double = _value
   def id: Int = _id
 
-  def value_(value: Float): Unit = {
+  def value_(value: Double): Unit = {
     _value = value
   }
 
-  def init(value: Float): Unit = {
+  def init(value: Double): Unit = {
     value_(value)
   }
 
-  def collectInConnections(): Float = {
+  def collectInConnections(): Double = {
 
-    var inValue: Float = 0
+    var inValue: Double = 0
 
     for (connectionIn <- connectionsIn) {
       inValue = inValue + connectionIn.collect
@@ -35,7 +35,7 @@ abstract class Neuron {
     _value
   }  
 
-  def activationFunction(input: Float): Float = { // ReLu activation function as example
+  def activationFunction(input: Double): Double = { // ReLu activation function as example
     if (input > 0) input else 1
   }
 

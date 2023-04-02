@@ -24,11 +24,23 @@ object TestTensorBuilds {
     )
     container.init()
     NetTrace.WriteMessage("part tensored container - trigger")
-    container.inputNodes.foreach( _.init(1.0f))
-    for( outputNode <- container.outputNodes ) {
-      val outValue = outputNode.collectInConnections()
-      NetTrace.WriteMessage("outValue: " + outValue ) 
-    }
+
+    var inputValue : Double = 1.0d
+    feedbackIn(container, inputValue)
+
     NetTrace.WriteMessage("end of test run")
   }
+
+  def feedbackIn(container: TensoredContainer, inputValue: Double): Double = {
+      var outValue : Double = 0.0d
+      container.inputNodes.foreach( _.init(inputValue))
+      for( outputNode <- container.outputNodes ) {
+        outValue = outputNode.collectInConnections()
+        if( outValue < 0.9d || outValue > 193.0d ) {
+          outValue = feedbackIn(container, outValue)
+        }
+      }
+      NetTrace.WriteMessage("outValue: " + outValue ) 
+      outValue
+  } 
 }

@@ -6,15 +6,15 @@ import de.elaio.neuralnet.processing.NeuronCollectionCache
 
 trait Connection {
 
-  val weight: Float
+  val weight: Double
   val neuronSource: Neuron
   val neuronTarget: Neuron
 
-  def collect: Float = {
+  def collect: Double = {
     val cachedNeuron = NeuronCollectionCache.get(neuronSource.id)
     if (cachedNeuron != null) {
-      val root = sqrt(cachedNeuron.value.floatValue)
-      root.toFloat
+      val root = sqrt(cachedNeuron.value)
+      root
     } else {
       val neuronValue = neuronSource.collectInConnections() * weight
       NeuronCollectionCache.add(neuronSource)
