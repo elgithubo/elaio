@@ -99,8 +99,6 @@ class TensoredContainer(
           if (inputBackpropagationCreationPossible) {
             if (nextNeuronOuterIndex == buildDimOuter) {
               neuronsInOutReturn(0) = neuronsInOutReturn(0) :+ newNeuronSameRank
-            } else if (nextNeuronOuterIndex == -buildDimOuter) {
-              neuronsInOutReturn(1) = neuronsInOutReturn(1) :+ newNeuronSameRank
             }
           }
 

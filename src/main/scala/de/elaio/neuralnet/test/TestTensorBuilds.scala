@@ -3,6 +3,7 @@ package de.elaio.neuralnet.test
 import de.elaio.neuralnet.bigdata.container.TensoredContainer
 import de.elaio.neuralnet.trace.NetTrace
 import de.elaio.neuralnet.units.NeuronDataCreator
+import de.elaio.neuralnet.processing.NeuronCollectionCache
 
 object TestTensorBuilds {
   def run(): Unit = {
@@ -35,8 +36,9 @@ object TestTensorBuilds {
       container.inputNodes.foreach( _.init(inputValue))
       for( outputNode <- container.outputNodes ) {
         outValue = outputNode.collectInConnections()
-        if( outValue < 0.9d || outValue > 193.0d ) {
+        if( outValue < 0.9d || outValue > 1.1d ) {
           NetTrace.WriteMessage("sub trigger: " + outValue)
+          NeuronCollectionCache.clear()
           outValue = feedbackIn(container, outValue)
         }
       }
