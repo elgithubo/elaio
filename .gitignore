@@ -1,4 +1,5 @@
 **/target
+**/*.class
 .idea
 .scalafmt.conf
 rapki.iml
