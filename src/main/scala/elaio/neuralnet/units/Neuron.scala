@@ -5,7 +5,6 @@ import elaio.neuralnet.trace.NetTrace
 
 abstract class Neuron {
 
-  //val layer: BigInt = 0
   protected var _value: Double = id.toDouble
   protected var _target: Double = 1d
   protected var _tolerance: Double = 0.5d
@@ -24,7 +23,6 @@ abstract class Neuron {
 
   def init(value: Double, target: Double, tolerance: Double): Unit = {
     value_(value)
-    NetTrace.WriteMessage( "init: " + target + " - " + tolerance )
     _target = target
     _tolerance = tolerance
   }
@@ -37,7 +35,6 @@ abstract class Neuron {
     var inValue: Double = 0
       
     if(_value > _target - _tolerance && _value < _target + _tolerance ) {
-      //NetTrace.WriteMessage( "found value: " + _value + " min: " + (_target - _tolerance) + "max: " + ( _target + _tolerance ) )
       return _value
     }
 
@@ -51,7 +48,6 @@ abstract class Neuron {
       inValue = inValue + subnodeValue
     }
     
-    //NetTrace.WriteMessage( "collected: " + inValue + " min: " + (_target - _tolerance) + "max: " + ( _target + _tolerance ) )
     _value = inValue
     _value
   }  

@@ -261,7 +261,6 @@ class TensoredContainer(
       override val neuronTarget: Neuron = connectionNeuronTarget
       override val weight: Double = 1.0d // TODO Create dynamically
     }
-    //NetTrace.WriteMessage("connecting: " + connectionNeuronSource.id + " + " +  connectionNeuronTarget.id )
     connection.getNeuronTarget.addInConnection(connection)
 
   }
