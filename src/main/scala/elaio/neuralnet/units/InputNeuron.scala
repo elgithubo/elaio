@@ -11,4 +11,12 @@ class InputNeuron extends Neuron {
   override def collectInConnections(): Double = {
     _value
   }    
+
+  override def init(value: Double, target: Double, tolerance: Double): Unit = {
+    //NetTrace.WriteMessage( "init: " + target + " - " + tolerance )
+    _initValue = value
+    super.init(value, target, tolerance)
+  }
+
 }
+

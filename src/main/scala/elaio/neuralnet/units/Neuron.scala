@@ -9,6 +9,7 @@ abstract class Neuron {
   protected var _value: Double = id.toDouble
   protected var _target: Double = 1d
   protected var _tolerance: Double = 0.5d
+  protected var _initValue: Double = -1
   protected val _id: Double = NeuronCounter.getNext()
 
   var connectionsOut: Array[Connection] = Array[Connection]()
@@ -23,30 +24,31 @@ abstract class Neuron {
 
   def init(value: Double, target: Double, tolerance: Double): Unit = {
     value_(value)
-    //NetTrace.WriteMessage( "init: " + target + " - " + tolerance )
+    NetTrace.WriteMessage( "init: " + target + " - " + tolerance )
     _target = target
     _tolerance = tolerance
+  }
+
+  def initValue: Double =  {
+    _initValue
   }
 
   def collectInConnections(): Double = {
     var inValue: Double = 0
       
     if(_value > _target - _tolerance && _value < _target + _tolerance ) {
-      NetTrace.WriteMessage( "found value: " + _value + " min: " + (_target - _tolerance) + "max: " + ( _target + _tolerance ) )
+      //NetTrace.WriteMessage( "found value: " + _value + " min: " + (_target - _tolerance) + "max: " + ( _target + _tolerance ) )
       return _value
     }
 
     for (connectionIn <- connectionsIn) {
       var subnodeValue = connectionIn.collect
-      if(subnodeValue != 1.0d && subnodeValue > _target - _tolerance && subnodeValue < _target + _tolerance ) { //TODO remove hardcoded one
-        //NetTrace.WriteMessage( "found subnode: " + subnodeValue + " min: " + (_target - _tolerance) + "max: " + ( _target + _tolerance ) )
+      if(subnodeValue != _target && subnodeValue > _target - _tolerance && subnodeValue < _target + _tolerance ) {
+        NetTrace.WriteMessage( "found subnode: " + subnodeValue + " min: " + (_target - _tolerance) + "max: " + ( _target + _tolerance ) )
         _value = subnodeValue
         return _value
       }
       inValue = inValue + subnodeValue
-    }
-    if(inValue > _target - _tolerance && inValue < _target + _tolerance ) {
-      //NetTrace.WriteMessage( "found collected: " + inValue + " min: " + (_target - _tolerance) + "max: " + ( _target + _tolerance ) )
     }
     
     //NetTrace.WriteMessage( "collected: " + inValue + " min: " + (_target - _tolerance) + "max: " + ( _target + _tolerance ) )

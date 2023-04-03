@@ -12,7 +12,7 @@ object TestTensorBuilds {
 
     NetTrace.WriteMessage("start of test run")
 
-    NetTrace.WriteMessage("part tensored container - build")
+    //NetTrace.WriteMessage("part tensored container - build")
 
     val neuronDataCreatorTensored = new NeuronDataCreator
 
@@ -23,9 +23,9 @@ object TestTensorBuilds {
       true,
     )
     container.init()
-    NetTrace.WriteMessage("part tensored container - trigger")
+    //NetTrace.WriteMessage("part tensored container - trigger")
 
-    val outValues: Array[Double] = feedbackIn(container, 1d, 1d, 1d)
+    val outValues: Array[Double] = feedbackIn(container, Array(1d, 3d, 5d, 2d, 4d), 0.5d, true)
     for( outValue <- outValues ) {
       NetTrace.WriteMessage("outValue: " + outValue ) 
     }
@@ -33,31 +33,54 @@ object TestTensorBuilds {
     NetTrace.WriteMessage("end of test run")
   }
 
-  def feedbackIn(container: TensoredContainer, inputValue: Double, target: Double, tolerance: Double): Array[Double] = {
+  def feedbackIn(container: TensoredContainer, inputValue: Array[Double], tolerance: Double, init: Boolean): Array[Double] = {
       var outValues: Array[Double] = Array.ofDim[Double](0)
       var outValuesCollected: Array[Double] = Array.ofDim[Double](0)
       var outValue: Double = 0
-      var hit: Boolean = true
+      var inDepth = false
+      var index: Integer = 0
 
-      container.inputNodes.foreach( _.init(inputValue, target, tolerance))
+      if(inputValue.length == 1) inDepth = true 
 
+      if( init == true ) {
+        NetTrace.WriteMessage("init level begin")
+        for( inputNode <- container.inputNodes) {
+          NetTrace.WriteMessage("initValue: " + inputValue(index) + "- init: " + init)
+          inputNode.init(inputValue(index), inputValue(index), tolerance)
+          index = index + 1
+        }
+        NetTrace.WriteMessage("init level end")
+      }
+
+      index = -1
       for( outputNode <- container.outputNodes ) {
+        index = index + 1
+        NetTrace.WriteMessage("out index: " + (index + 1))
         var outValue : Double = outputNode.collectInConnections()
-        if( hit == true && ( outValue < target - tolerance || outValue > target + tolerance ) ) {
-          hit = false
-        } else {
-          outValuesCollected = outValuesCollected :+ outValue
+        NetTrace.WriteMessage("out test index: " + index + " -> " + outValue)
+        NetTrace.WriteMessage("out test value: " + inputValue(index).toString)
+        if( outValue > inputValue(index) - tolerance && outValue < inputValue(index) + tolerance ) {
+          if( inDepth == true ) {
+            outValues = outValues :+ outValue
+            NetTrace.WriteMessage("return 1 " + outValue)
+            return outValues
+            NetTrace.WriteMessage("hidden")
+          }
+        }
+        NetTrace.WriteMessage("step 1 ")
+        val inValueNew: Array[Double] = Array(outValue)
+        var doExit: Boolean = false
+        NetTrace.WriteMessage("feedback 1")
+        for( feedback <- feedbackIn(container, inValueNew, tolerance, false) ) {
+          NetTrace.WriteMessage("feedback 2")
+            if( feedback > inputValue(index) - tolerance && feedback < inputValue(index) + tolerance ) {
+            NetTrace.WriteMessage("feedback 3")
+            outValues = outValues :+ feedback
+            NetTrace.WriteMessage("out added " + outValue + " - index: " + index + " - target " + inputValue(index))
+          }
         }
       }
-      
-      if( hit == true ) {
-        return outValuesCollected
-      }
-
-      for( outputNode <- container.outputNodes ) {
-        var outValue : Double = outputNode.collectInConnections()
-        for( feedback <- feedbackIn(container, outValue, target, tolerance) ) outValues = outValues :+ feedback
-      }
+      NetTrace.WriteMessage("return 3 ")
       outValues
   } 
 }
