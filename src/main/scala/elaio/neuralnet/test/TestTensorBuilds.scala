@@ -23,29 +23,40 @@ object TestTensorBuilds {
       true,
     )
     container.init()
-    //NetTrace.WriteMessage("part tensored container - trigger")
+    NetTrace.WriteMessage("part tensored container - trigger")
 
     val outValues: Array[Double] = feedbackIn(container, 1d, 1d, 1d)
     for( outValue <- outValues ) {
-      //NetTrace.WriteMessage("outValue: " + outValue ) 
+      NetTrace.WriteMessage("outValue: " + outValue ) 
     }
 
-    //NetTrace.WriteMessage("end of test run")
-    //NetTrace.stop()
+    NetTrace.WriteMessage("end of test run")
   }
 
   def feedbackIn(container: TensoredContainer, inputValue: Double, target: Double, tolerance: Double): Array[Double] = {
-      //NetTrace.WriteMessage("inputValue: " + inputValue + " - tolerance: " + tolerance)
       var outValues: Array[Double] = Array.ofDim[Double](0)
-      container.inputNodes.foreach( _.init(inputValue))
+      var outValuesCollected: Array[Double] = Array.ofDim[Double](0)
+      var outValue: Double = 0
+      var hit: Boolean = true
+
+      container.inputNodes.foreach( _.init(inputValue, target, tolerance))
+
       for( outputNode <- container.outputNodes ) {
         var outValue : Double = outputNode.collectInConnections()
-        if( outValue < target - tolerance || outValue > target + tolerance ) {
-          for( feedback <- feedbackIn(container, outValue, target, tolerance) ) outValues = outValues :+ feedback
+        if( hit == true && ( outValue < target - tolerance || outValue > target + tolerance ) ) {
+          hit = false
         } else {
-          //NetTrace.WriteMessage("correct output: " + outValue + " - min: " + (target - tolerance) + " - max: " + (target + tolerance))
-          outValues = outValues :+ outValue 
+          outValuesCollected = outValuesCollected :+ outValue
         }
+      }
+      
+      if( hit == true ) {
+        return outValuesCollected
+      }
+
+      for( outputNode <- container.outputNodes ) {
+        var outValue : Double = outputNode.collectInConnections()
+        for( feedback <- feedbackIn(container, outValue, target, tolerance) ) outValues = outValues :+ feedback
       }
       outValues
   } 

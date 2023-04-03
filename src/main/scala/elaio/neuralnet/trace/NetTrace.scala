@@ -18,6 +18,6 @@ object NetTrace {
         prefix = prefix + "."
         n += 1
       }
-      //println(prefix + s"$message")a
+      println(prefix + s"$message")
     }
 }
