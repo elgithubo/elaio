@@ -5,7 +5,7 @@ import elaio.neuralnet.trace.NetTrace
 import elaio.neuralnet.units.NeuronDataCreator
 import elaio.neuralnet.processing.NeuronCollectionCache
 
-object TestTensorBuilds {
+object TensorBuilder {
   def run(): Unit = {
     // Enable the following line to write detailed trace messages to stdout
     NetTrace.started_(true)

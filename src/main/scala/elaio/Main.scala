@@ -14,9 +14,9 @@ package elaio{
 // It is meant to call test methods and easily enable
 // IDE debugging.
 //import elaio.neuralnet.test.TestTensorBuilds
-import elaio.neuralnet.test.TestTensorBuilds
+import elaio.neuralnet.test.TensorBuilder
 object Main {
   def main(args: Array[String]): Unit = {
-      TestTensorBuilds.run()
+      TensorBuilder.run()
   }
 }
