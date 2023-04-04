@@ -1,9 +1,6 @@
 package elaio.neuralnet.units
 
 import elaio.neuralnet.bigdata.container.DataCreator
-import elaio.neuralnet.units.InputNeuron
-import elaio.neuralnet.units.HiddenNeuron
-import elaio.neuralnet.units.BackpropagationNeuron
 
 class NeuronDataCreator extends DataCreator {
 

@@ -4,5 +4,3 @@ TODO find suitable open source database which fits to BSD license
      postgresql seems bsd compatible
 TODO develop concept for word database persistence (maybe outside network)
      database can be referred by tool user and probably AI (=KI) in performing mode
-TODO LATER when first implementation is working a authorization implementation might 
-     be necessary (e.g. admin / end user)

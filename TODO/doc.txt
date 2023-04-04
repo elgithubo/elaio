@@ -1,2 +1,0 @@
-TODO write inline documentation where needed to understand what code does
-TODO LATER end user documentation when first implementation is usable

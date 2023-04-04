@@ -1,2 +1,0 @@
-TODO log directory should be gitignored now
-     check if git structure and build [still] work

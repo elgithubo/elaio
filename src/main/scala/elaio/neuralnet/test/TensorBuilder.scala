@@ -43,26 +43,32 @@ object TensorBuilder {
 
       if( init == true ) {
         for( inputNode <- container.inputNodes) {
-          inputNode.init(inputValue(index), inputValue(index), tolerance)
-          index = index + 1
+            inputNode.init(inputValue(index), inputValue(index), tolerance)
         }
       }
 
       index = -1
+      var doExit: Boolean = false
       for( outputNode <- container.outputNodes ) {
-        index = index + 1
-        var outValue : Double = outputNode.collectInConnections()
-        if( outValue > inputValue(index) - tolerance && outValue < inputValue(index) + tolerance ) {
-          if( inDepth == true ) {
-            outValues = outValues :+ outValue
-            return outValues
+        var lastOutValue: Double = 0
+        if( !doExit ) {
+          index = index + 1
+          var outValue : Double = outputNode.collectInConnections()
+          if(outValue == lastOutValue) doExit = true
+          lastOutValue = outValue
+          if( outValue > inputValue(index) - tolerance && outValue < inputValue(index) + tolerance ) {
+            if( inDepth == true ) {
+              outValues = outValues :+ outValue
+              doExit = true
+            }
           }
-        }
-        val inValueNew: Array[Double] = Array(outValue)
-        var doExit: Boolean = false
-        for( feedback <- feedbackIn(container, inValueNew, tolerance, false) ) {
-            if( feedback > inputValue(index) - tolerance && feedback < inputValue(index) + tolerance ) {
-            outValues = outValues :+ feedback
+          if( !doExit ) {
+            val inValueNew: Array[Double] = Array(outValue)
+            for( feedback <- feedbackIn(container, inValueNew, tolerance, false) ) {
+                if( feedback > inputValue(index) - tolerance && feedback < inputValue(index) + tolerance ) {
+                outValues = outValues :+ feedback
+              }
+            }
           }
         }
       }

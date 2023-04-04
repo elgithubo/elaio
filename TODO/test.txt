@@ -1,3 +1,0 @@
-TODO test method to utilize TensorRead always reading to last same/next element
-     test has to issue exception unexpected elem occurs after expected last
-     or tries to access element after last element

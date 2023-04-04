@@ -1,6 +1,5 @@
 package elaio.neuralnet.bigdata.container
 
-import scala.compiletime.ops.boolean
 import elaio.neuralnet.connections.Connection
 import elaio.neuralnet.trace.NetTrace
 import elaio.neuralnet.units.Neuron
