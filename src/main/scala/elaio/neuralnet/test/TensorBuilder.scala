@@ -32,7 +32,7 @@ object TensorBuilder {
     NetTrace.WriteMessage("end of test run")
   }
 
-  def feedbackIn(container: TensoredContainer, inputValues: Array[Double], tolerance: Double, init: Boolean, target: Double = -1d): Array[Double] = {
+  def feedbackIn(container: TensoredContainer, inputValues: Array[Double], tolerance: Double, init: Boolean): Array[Double] = {
     var outValues: Array[Double] = Array.ofDim[Double](0)
     var outValuesCollected: Array[Double] = Array.ofDim[Double](0)
     var outValue: Double = 0d
@@ -44,30 +44,29 @@ object TensorBuilder {
     var doContinue: Boolean = false           
     for(inputValue <- inputValues) {
       var currentTarget: Double = -1d
-      if(target != -1d) currentTarget = target
       index = index + 1
       doContinue = false   
       if( doContinue == false) {
         if(init == true) {
           for( inputNode <- container.inputNodes) {
               var initValue: Double = inputNode.target - inputNode.value + inputValue
-              inputNode.init(initValue, target, tolerance)
+              inputNode.init(initValue, inputValue, tolerance)
           }
         }          
         for(backpropagationNode <- container.backpropagationNodes) {
-          outValue = backpropagationNode.collectInConnections(target)
-          NetTrace.WriteMessage( "received outvalue 1: " + outValue + " searched: " +  target)
-          if( outValue > target - tolerance && outValue < target + tolerance ) {
+          outValue = backpropagationNode.collectInConnections(inputValue)
+          NetTrace.WriteMessage( "received outvalue 1: " + outValue + " - searched: " +  inputValue)
+          if( outValue > inputValue - tolerance && outValue < inputValue + tolerance ) {
             outValues = outValues :+ outValue
-            NetTrace.WriteMessage( "found outvalue 1: " + outValue + " searched: " +  target)
+            NetTrace.WriteMessage( "found outvalue 1: " + outValue + " searched: " +  inputValue)
             doContinue = true
           }
           if(doContinue == false) {
             val inValueNew: Array[Double] = Array(outValue)
-            for(feedback <- feedbackIn(container, inValueNew, tolerance, false, target)) {
-                if( feedback > target - tolerance && feedback < target + tolerance ) {
+            for(feedback <- feedbackIn(container, inValueNew, tolerance, false)) {
+                if( feedback > inputValue - tolerance && feedback < inputValue + tolerance ) {
                 outValues = outValues :+ feedback
-                NetTrace.WriteMessage( "found outvalue 2: " + outValue + " searched: " +  target)
+                NetTrace.WriteMessage( "found outvalue 2: " + outValue + " - searched: " +  inputValue)
                 doContinue = true
               }
             }
