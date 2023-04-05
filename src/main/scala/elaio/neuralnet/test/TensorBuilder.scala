@@ -32,7 +32,7 @@ object TensorBuilder {
     NetTrace.WriteMessage("end of test run")
   }
 
-  def feedbackIn(container: TensoredContainer, inputValues: Array[Double], tolerance: Double, init: Boolean): Array[Double] = {
+  def feedbackIn(container: TensoredContainer, inputValues: Array[Double], tolerance: Double, init: Boolean, target: Double = -1d): Array[Double] = {
     var outValues: Array[Double] = Array.ofDim[Double](0)
     var outValuesCollected: Array[Double] = Array.ofDim[Double](0)
     var outValue: Double = 0d
@@ -41,31 +41,34 @@ object TensorBuilder {
 
     if(inputValues.length == 1) inDepth = true 
           
-    var doExit: Boolean = false           
+    var doContinue: Boolean = false           
     for(inputValue <- inputValues) {
+      var currentTarget: Double = -1d
+      if(target != -1d) currentTarget = target
       index = index + 1
-      doExit = false   
-      if(
-        init == true) {
-        for( inputNode <- container.inputNodes) {
-            var initValue: Double = inputNode.target - inputNode.value + inputValues(index)
-            inputNode.init(initValue, inputValues(index), tolerance)
-        }
-      }      
-      var pullWeight = inputValues(index)      
-      for(backpropagationNode <- container.backpropagationNodes) {
-        if( !doExit ) {
-          outValue = backpropagationNode.collectInConnections(pullWeight)
-          if( outValue > inputValues(index) - tolerance && outValue < inputValues(index) + tolerance ) {
-            outValues = outValues :+ outValue
-            doExit = true
+      doContinue = false   
+      if( doContinue == false) {
+        if(init == true) {
+          for( inputNode <- container.inputNodes) {
+              var initValue: Double = inputNode.target - inputNode.value + inputValue
+              inputNode.init(initValue, target, tolerance)
           }
-          if(doExit == false) {
+        }          
+        for(backpropagationNode <- container.backpropagationNodes) {
+          outValue = backpropagationNode.collectInConnections(target)
+          NetTrace.WriteMessage( "received outvalue 1: " + outValue + " searched: " +  target)
+          if( outValue > target - tolerance && outValue < target + tolerance ) {
+            outValues = outValues :+ outValue
+            NetTrace.WriteMessage( "found outvalue 1: " + outValue + " searched: " +  target)
+            doContinue = true
+          }
+          if(doContinue == false) {
             val inValueNew: Array[Double] = Array(outValue)
-            for(feedback <- feedbackIn(container, inValueNew, tolerance, false)) {
-                if( feedback > inputValues(index) - tolerance && feedback < inputValues(index) + tolerance ) {
+            for(feedback <- feedbackIn(container, inValueNew, tolerance, false, target)) {
+                if( feedback > target - tolerance && feedback < target + tolerance ) {
                 outValues = outValues :+ feedback
-                doExit = true
+                NetTrace.WriteMessage( "found outvalue 2: " + outValue + " searched: " +  target)
+                doContinue = true
               }
             }
           }

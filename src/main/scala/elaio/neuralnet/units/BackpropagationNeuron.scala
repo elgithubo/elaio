@@ -4,5 +4,5 @@ import elaio.neuralnet.trace.NetTrace
 
 
 class BackpropagationNeuron() extends Neuron {
-  collectInConnections(1d)
+  collectInConnections(0d)
 }

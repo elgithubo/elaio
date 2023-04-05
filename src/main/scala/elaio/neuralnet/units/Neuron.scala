@@ -5,7 +5,7 @@ import elaio.neuralnet.trace.NetTrace
 
 abstract class Neuron {
 
-  protected var _weight: Double = 0d
+  protected var _weight: Double = 1d
   protected var _value: Double = 0d
   protected var _target: Double = 6d
   protected var _tolerance: Double = 0.5d
@@ -47,19 +47,20 @@ abstract class Neuron {
     }
     var doExit: Boolean = false
     for (connectionIn <- connectionsIn) {
-      if(!doExit) {
+      if(doExit == false) {
         var subnodeValue = connectionIn.collect(PullWeight)
-        if(subnodeValue != _target && subnodeValue > _target - _tolerance && subnodeValue < _target + _tolerance ) {
-          NetTrace.WriteMessage( "found subnode: " + subnodeValue + " min: " + (_target - _tolerance) + "max: " + ( _target + _tolerance ) )
-          _value = subnodeValue
-          doExit = true
-        }
-        if(!doExit) {
+        NetTrace.WriteMessage( "collected subnode: " + subnodeValue + " min: " + (_target - _tolerance) + "max: " + ( _target + _tolerance ) )
+        if(doExit == false) {
           inValue = inValue + subnodeValue
+          if(inValue != _target && inValue > _target - _tolerance && inValue < _target + _tolerance ) {
+            NetTrace.WriteMessage( "found subnode: " + inValue + " min: " + (_target - _tolerance) + "max: " + ( _target + _tolerance ) )
+            _value = inValue
+            doExit = true
+          }          
         }
       }
     }
-    if(!doExit) {
+    if(doExit == false) {
       _value = inValue
     }
     _value
