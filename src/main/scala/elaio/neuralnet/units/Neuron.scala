@@ -7,7 +7,7 @@ abstract class Neuron {
 
   protected var _weight: Double = 0d
   protected var _value: Double = 0d
-  protected var _target: Double = 1d
+  protected var _target: Double = 6d
   protected var _tolerance: Double = 0.5d
   protected var _initValue: Double = -1
   protected val _id: Double = NeuronCounter.getNext()
