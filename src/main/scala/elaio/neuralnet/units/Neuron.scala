@@ -39,6 +39,7 @@ abstract class Neuron {
 
   def collectInConnections(PullWeight: Double): Double = {
     var inValue: Double = 0
+    var checkValue: Double = 0
 
     _weight = PullWeight
       
@@ -51,12 +52,13 @@ abstract class Neuron {
         var subnodeValue = connectionIn.collect(PullWeight)
         NetTrace.WriteMessage( "collected subnode: " + subnodeValue + " min: " + (_target - _tolerance) + "max: " + ( _target + _tolerance ) )
         if(doExit == false) {
-          inValue = inValue + subnodeValue
-          if(inValue != _target && inValue > _target - _tolerance && inValue < _target + _tolerance ) {
-            NetTrace.WriteMessage( "found subnode: " + inValue + " min: " + (_target - _tolerance) + "max: " + ( _target + _tolerance ) )
-            _value = inValue
+          checkValue = subnodeValue * subnodeValue
+          if(checkValue != _target && checkValue > _target - _tolerance && checkValue < _target + _tolerance ) {
+            NetTrace.WriteMessage( "found subnode: " + checkValue + " min: " + (_target - _tolerance) + "max: " + ( _target + _tolerance ) )
+            _value = checkValue
             doExit = true
-          }          
+          } 
+          inValue = inValue + subnodeValue                   
         }
       }
     }
