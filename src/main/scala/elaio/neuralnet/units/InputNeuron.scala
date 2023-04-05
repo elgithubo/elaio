@@ -8,7 +8,7 @@ class InputNeuron extends Neuron {
     "  creating input neuron: " + id
   )
 
-  override def collectInConnections(): Double = {
+  override def collectInConnections(pullWeight: Double): Double = {
     _value
   }    
 

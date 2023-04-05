@@ -24,7 +24,7 @@ object TensorBuilder {
     )
     container.init()
 
-    val outValues: Array[Double] = feedbackIn(container, Array(1d, 3d, 5d, 2d, 4d), 0.5d, true)
+    val outValues: Array[Double] = feedbackIn(container, Array(6d, 3d, 5d, 2d, 4d), 0.5d, true)
     for( outValue <- outValues ) {
       NetTrace.WriteMessage("outValue: " + outValue ) 
     }
@@ -32,46 +32,46 @@ object TensorBuilder {
     NetTrace.WriteMessage("end of test run")
   }
 
-  def feedbackIn(container: TensoredContainer, inputValue: Array[Double], tolerance: Double, init: Boolean): Array[Double] = {
-      var outValues: Array[Double] = Array.ofDim[Double](0)
-      var outValuesCollected: Array[Double] = Array.ofDim[Double](0)
-      var outValue: Double = 0
-      var inDepth = false
-      var index: Integer = 0
+  def feedbackIn(container: TensoredContainer, inputValues: Array[Double], tolerance: Double, init: Boolean): Array[Double] = {
+    var outValues: Array[Double] = Array.ofDim[Double](0)
+    var outValuesCollected: Array[Double] = Array.ofDim[Double](0)
+    var outValue: Double = 0d
+    var inDepth = false
+    var index: Integer = -1
 
-      if(inputValue.length == 1) inDepth = true 
-
-      if( init == true ) {
+    if(inputValues.length == 1) inDepth = true 
+          
+    var doExit: Boolean = false           
+    for(inputValue <- inputValues) {
+      index = index + 1
+      doExit = false   
+      if(
+        init == true) {
         for( inputNode <- container.inputNodes) {
-            inputNode.init(inputValue(index), inputValue(index), tolerance)
+            var initValue: Double = inputNode.target - inputNode.value + inputValues(index)
+            inputNode.init(initValue, inputValues(index), tolerance)
         }
-      }
-
-      index = -1
-      var doExit: Boolean = false
-      for( outputNode <- container.outputNodes ) {
-        var lastOutValue: Double = 0
+      }      
+      var pullWeight = inputValues(index)      
+      for(backpropagationNode <- container.backpropagationNodes) {
         if( !doExit ) {
-          index = index + 1
-          var outValue : Double = outputNode.collectInConnections()
-          if(outValue == lastOutValue) doExit = true
-          lastOutValue = outValue
-          if( outValue > inputValue(index) - tolerance && outValue < inputValue(index) + tolerance ) {
-            if( inDepth == true ) {
-              outValues = outValues :+ outValue
-              doExit = true
-            }
+          outValue = backpropagationNode.collectInConnections(pullWeight)
+          if( outValue > inputValues(index) - tolerance && outValue < inputValues(index) + tolerance ) {
+            outValues = outValues :+ outValue
+            doExit = true
           }
-          if( !doExit ) {
+          if(doExit == false) {
             val inValueNew: Array[Double] = Array(outValue)
-            for( feedback <- feedbackIn(container, inValueNew, tolerance, false) ) {
-                if( feedback > inputValue(index) - tolerance && feedback < inputValue(index) + tolerance ) {
+            for(feedback <- feedbackIn(container, inValueNew, tolerance, false)) {
+                if( feedback > inputValues(index) - tolerance && feedback < inputValues(index) + tolerance ) {
                 outValues = outValues :+ feedback
+                doExit = true
               }
             }
           }
         }
       }
-      outValues
+    }
+    outValues
   } 
 }

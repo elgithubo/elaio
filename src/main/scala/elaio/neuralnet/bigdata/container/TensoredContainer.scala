@@ -15,10 +15,10 @@ class TensoredContainer(
   class BuildData {}
 
   var _inputNodes = Array.ofDim[Neuron](0)
-  var _outputNodes = Array.ofDim[Neuron](0)
+  var _backpropagationNodes = Array.ofDim[Neuron](0)
 
   def inputNodes: Array[Neuron] = _inputNodes
-  def outputNodes: Array[Neuron] = _outputNodes
+  def backpropagationNodes: Array[Neuron] = _backpropagationNodes
 
   def init(): Array[Array[Neuron]] = {
     val result =
@@ -29,7 +29,7 @@ class TensoredContainer(
         recurse,
       )
     _inputNodes = result(0)
-    _outputNodes = result(1)
+    _backpropagationNodes = result(1)
     result
   }
 
@@ -258,7 +258,6 @@ class TensoredContainer(
     val connection = new Connection {
       override val neuronSource: Neuron = connectionNeuronSource
       override val neuronTarget: Neuron = connectionNeuronTarget
-      override val weight: Double = 1.0d // TODO Create dynamically
     }
     connection.getNeuronTarget.addInConnection(connection)
 
