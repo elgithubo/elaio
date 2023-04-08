@@ -69,7 +69,7 @@ abstract class Neuron {
   }  
 
   def activationFunction(input: Double): Double = {
-    if (input > 0) input else 1
+    if (input > 0) input else 0
   }
 
   def addOutConnection(outConnection: Connection): Unit = {
