@@ -17,14 +17,14 @@ object TensorBuilder {
     val neuronDataCreatorTensored = new NeuronDataCreator
 
     val container = new TensoredContainer(
-      7,
-      5,
+      3,
+      3,
       neuronDataCreatorTensored,
       true,
     )
     container.init()
 
-    val outValues: Array[Double] = feedbackIn(container, Array(6d, 3d, 5d, 2d, 4d), 0.5d, true)
+    val outValues: Array[Double] = feedbackIn(container, Array(1d, 2d, 3d), 0.5d, true)
     for( outValue <- outValues ) {
       NetTrace.WriteMessage("outValue: " + outValue ) 
     }
@@ -60,16 +60,6 @@ object TensorBuilder {
             outValues = outValues :+ outValue
             NetTrace.WriteMessage( "found outvalue 1: " + outValue + " searched: " +  inputValue)
             doContinue = true
-          }
-          if(doContinue == false) {
-            val inValueNew: Array[Double] = Array(outValue)
-            for(feedback <- feedbackIn(container, inValueNew, tolerance, false)) {
-                if( feedback > inputValue - tolerance && feedback < inputValue + tolerance ) {
-                outValues = outValues :+ feedback
-                NetTrace.WriteMessage( "found outvalue 2: " + outValue + " - searched: " +  inputValue)
-                doContinue = true
-              }
-            }
           }
         }
       }

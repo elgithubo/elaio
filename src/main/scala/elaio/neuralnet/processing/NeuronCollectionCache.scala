@@ -11,9 +11,9 @@ object NeuronCollectionCache {
     cache = HashMap.empty[Double, Neuron]
   }
 
-  def push() = {
-    stack :+ cache
-  }
+  // def push() = {
+  //   stack :+ cache
+  // }
   
   //def pop() = {
     //cache = stack[]
