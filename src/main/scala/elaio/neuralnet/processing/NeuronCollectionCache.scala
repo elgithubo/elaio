@@ -10,15 +10,6 @@ object NeuronCollectionCache {
   def clear() = {
     cache = HashMap.empty[Double, Neuron]
   }
-
-  // def push() = {
-  //   stack :+ cache
-  // }
-  
-  //def pop() = {
-    //cache = stack[]
-    //stack -= cache
-  //}
   
   def add(neuron: Neuron) = {
     cache ++= List(neuron.id -> neuron)
