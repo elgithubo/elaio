@@ -50,11 +50,11 @@ abstract class Neuron {
     for (connectionIn <- connectionsIn) {
       if(doExit == false) {
         var subnodeValue = connectionIn.collect(PullWeight)
-        NetTrace.WriteMessage( "collected subnode: " + subnodeValue + " min: " + (_target - _tolerance) + "max: " + ( _target + _tolerance ) )
+        NetTrace.WriteMessage( "collected subnode: " + subnodeValue + " min: " + (_target - _tolerance) + " - max: " + ( _target + _tolerance ) )
         if(doExit == false) {
           checkValue = subnodeValue * subnodeValue
           if(checkValue != _target && checkValue > _target - _tolerance && checkValue < _target + _tolerance ) {
-            NetTrace.WriteMessage( "found subnode: " + checkValue + " min: " + (_target - _tolerance) + "max: " + ( _target + _tolerance ) )
+            NetTrace.WriteMessage( "found subnode: " + checkValue + " min: " + (_target - _tolerance) + " - max: " + ( _target + _tolerance ) )
             _value = checkValue
             doExit = true
           } 
