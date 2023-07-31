@@ -1,1 +1,2 @@
-database can be referred by tool user and probably AI (=KI) in performing mode
+- fix vector elem pull result drawing for n>1.
+- database can be referred by tool user and probably AI (=KI) in performing mode
