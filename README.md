@@ -14,7 +14,7 @@ elaio is a learning machine based on a neural network
 
 Quick run
 =========
-Install sbt (Scala Build Tool) an execute 'sbt run'
+Install sbt (Scala Build Tool) and execute 'sbt run'
 
 Reference Implementations
 =========================
