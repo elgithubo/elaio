@@ -17,7 +17,7 @@ object TensorBuilder {
     val neuronDataCreatorTensored = new NeuronDataCreator
 
     val container = new TensoredContainer(
-      10,
+      7,
       6,
       neuronDataCreatorTensored,
       true,
@@ -48,10 +48,9 @@ object TensorBuilder {
       doContinue = false   
       if( doContinue == false) {
         if(init == true) {
-          for( inputNode <- container.inputNodes) {
-              var initValue: Double = inputNode.target - inputNode.value + inputValue
-              inputNode.init(initValue, inputValue, tolerance)
-          }
+          var inputNode = container.inputNodes(index)
+          var initValue: Double = inputNode.target - inputNode.value + inputValue
+          inputNode.init(initValue, inputValue, tolerance)
         }          
         for(backpropagationNode <- container.backpropagationNodes) {
           outValue = backpropagationNode.collectInConnections(inputValue)
