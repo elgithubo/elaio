@@ -51,10 +51,10 @@ object TensorBuilder {
     }  
     var doContinue: Boolean = false           
     for(inputValue <- inputValues) {
-      NeuronCollectionCache.clear()
       index = index + 1
       doContinue = false   
       if( doContinue == false) {   
+        NeuronCollectionCache.clear()
         for(backpropagationNode <- container.backpropagationNodes) {
           outValue = backpropagationNode.collectInConnections(inputValue)
           NetTrace.WriteMessage( "received outvalue 1: " + outValue + " - searched: " +  inputValue)
