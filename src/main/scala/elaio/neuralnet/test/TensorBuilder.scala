@@ -41,18 +41,20 @@ object TensorBuilder {
 
     if(inputValues.length == 1) inDepth = true 
           
+    for(inputValue <- inputValues) {
+      index = index + 1
+      if(init == true) {
+        var inputNode = container.inputNodes(index)
+        var initValue: Double = inputNode.target - inputNode.value + inputValue
+        inputNode.init(initValue, inputValue, tolerance)
+      }
+    }  
     var doContinue: Boolean = false           
     for(inputValue <- inputValues) {
       NeuronCollectionCache.clear()
-      var currentTarget: Double = -1d
       index = index + 1
       doContinue = false   
-      if( doContinue == false) {
-        if(init == true) {
-          var inputNode = container.inputNodes(index)
-          var initValue: Double = inputNode.target - inputNode.value + inputValue
-          inputNode.init(initValue, inputValue, tolerance)
-        }          
+      if( doContinue == false) {   
         for(backpropagationNode <- container.backpropagationNodes) {
           outValue = backpropagationNode.collectInConnections(inputValue)
           NetTrace.WriteMessage( "received outvalue 1: " + outValue + " - searched: " +  inputValue)
