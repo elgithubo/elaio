@@ -43,6 +43,7 @@ object TensorBuilder {
           
     var doContinue: Boolean = false           
     for(inputValue <- inputValues) {
+      NeuronCollectionCache.clear()
       var currentTarget: Double = -1d
       index = index + 1
       doContinue = false   
