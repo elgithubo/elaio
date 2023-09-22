@@ -2,12 +2,14 @@ package elaio.neuralnet.units
 
 import elaio.neuralnet.connections.Connection
 import elaio.neuralnet.trace.NetTrace
+import elaio.neuralnet.activation.Activation
+import scala.compiletime.ops.boolean
 
 abstract class Neuron {
 
-  protected var _weight: Double = 1d
+  protected var _weight: Double = 6d
   protected var _value: Double = 0d
-  protected var _target: Double = 6d
+  protected var _target: Double = 100d
   protected var _tolerance: Double = 0.5d
   protected var _initValue: Double = -1
   protected val _id: Double = NeuronCounter.getNext()
@@ -37,19 +39,20 @@ abstract class Neuron {
     _target
   }
 
-  def collectInConnections(PullWeight: Double): Double = {
+  def collectInConnections(pullWeight: Double, backpropagation: Boolean): Double = {
     var inValue: Double = 0
     var checkValue: Double = 0
 
-    _weight = PullWeight
+    _weight = pullWeight
       
     if(_value > _target - _tolerance && _value < _target + _tolerance) {
       return _value
     }
+
     var doExit: Boolean = false
     for (connectionIn <- connectionsIn) {
       if(doExit == false) {
-        var subnodeValue = connectionIn.collect(PullWeight)
+        var subnodeValue = connectionIn.collect(pullWeight, backpropagation)
         NetTrace.WriteMessage( "collected subnode: " + subnodeValue + " min: " + (_target - _tolerance) + " - max: " + ( _target + _tolerance ) )
         if(doExit == false) {
           checkValue = subnodeValue * subnodeValue
@@ -65,11 +68,17 @@ abstract class Neuron {
     if(doExit == false) {
       _value = inValue
     }
+    if( backpropagation == true )
+      _value = Activation.backpropagationFunction(_value)
+    else
+      _value = Activation.activationFunction(_value)
+
+     _weight = 1.7976931348623157E308 - (_value - _target)
     _value
   }  
 
   def activationFunction(input: Double): Double = {
-    if (input > 0) input else 0
+    Activation.activationFunction(input)
   }
 
   def addOutConnection(outConnection: Connection): Unit = {
