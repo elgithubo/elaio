@@ -17,7 +17,7 @@ object TensorBuilder {
     val neuronDataCreatorTensored = new NeuronDataCreator
 
     val container = new TensoredContainer(
-      7,
+      8,
       6,
       neuronDataCreatorTensored,
       true,
