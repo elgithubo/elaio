@@ -7,9 +7,9 @@ import scala.compiletime.ops.boolean
 
 abstract class Neuron {
 
-  protected var _weight: Double = 6d
+  protected var _weight: Double = 1d
   protected var _value: Double = 0d
-  protected var _target: Double = 100d
+  protected var _target: Double = 6d
   protected var _tolerance: Double = 0.5d
   protected var _initValue: Double = -1
   protected val _id: Double = NeuronCounter.getNext()
@@ -20,12 +20,8 @@ abstract class Neuron {
   def value: Double = _value
   def id: Double = _id
 
-  def value_(value: Double): Unit = {
-    _value = value
-  }
-
   def init(value: Double, target: Double, tolerance: Double): Unit = {
-    value_(value)
+    _value = value
     _target = target
     _tolerance = tolerance
   }
