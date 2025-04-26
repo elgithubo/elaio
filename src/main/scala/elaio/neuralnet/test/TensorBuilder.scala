@@ -24,7 +24,8 @@ object TensorBuilder {
     )
     container.init()
 
-    val outValues: Array[Double] = feedbackIn(container, Array(6d, 5d, 4d, 3d, 2d, 1d), 0.5d, true)
+    //val outValues: Array[Double] = feedbackIn(container, Array(6d, 5d, 4d, 3d, 2d, 1d), 0.5d, true)
+    val outValues: Array[Double] = feedbackIn(container, Array(6d), 0.5d, true)
     for( outValue <- outValues ) {
       NetTrace.WriteMessage("outValue: " + outValue ) 
     }

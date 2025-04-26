@@ -4,7 +4,7 @@ import elaio.neuralnet.trace.NetTrace
 import elaio.neuralnet.activation.Activation
 import elaio.neuralnet.processing.NeuronCollectionCache
 
-class BackpropagationNeuron() extends Neuron {
+class OutputNeuron() extends Neuron {
   NeuronCollectionCache.clear()
   if(_value > 0)
     collectInConnections(1d, false)
