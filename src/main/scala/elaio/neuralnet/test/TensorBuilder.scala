@@ -54,9 +54,9 @@ object TensorBuilder {
     for(inputValue <- inputValues) {
       index = index + 1
       doContinue = false   
-      if( doContinue == false) {   
-        NeuronCollectionCache.clear()
-        for(backpropagationNode <- container.backpropagationNodes) {
+      NeuronCollectionCache.clear()
+      for(backpropagationNode <- container.backpropagationNodes) {
+        if( doContinue == false) {
           outValue = backpropagationNode.collectInConnections(inputValue, false)
           NetTrace.WriteMessage( "received outvalue 1: " + outValue + " - searched: " +  inputValue)
           if( outValue > inputValue - tolerance && outValue < inputValue + tolerance ) {
