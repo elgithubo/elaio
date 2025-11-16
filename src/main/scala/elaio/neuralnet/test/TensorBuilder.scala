@@ -17,14 +17,15 @@ object TensorBuilder {
     val neuronDataCreatorTensored = new NeuronDataCreator
 
     val container = new TensoredContainer(
-      7,
+      3,
       6,
       neuronDataCreatorTensored,
       true,
     )
     container.init()
 
-    val outValues: Array[Double] = feedbackIn(container, Array(6d, 5d, 4d, 3d, 2d, 1d), 0.5d, true)
+    //val outValues: Array[Double] = feedbackIn(container, Array(6d, 5d, 4d, 3d, 2d, 1d), 0.5d, true)
+    val outValues: Array[Double] = feedbackIn(container, Array(6d, 5d), 0.5d, true)
     for( outValue <- outValues ) {
       NetTrace.WriteMessage("outValue: " + outValue ) 
     }
@@ -53,14 +54,14 @@ object TensorBuilder {
     for(inputValue <- inputValues) {
       index = index + 1
       doContinue = false   
-      if( doContinue == false) {   
-        NeuronCollectionCache.clear()
-        for(backpropagationNode <- container.backpropagationNodes) {
-          outValue = backpropagationNode.collectInConnections(inputValue)
-          NetTrace.WriteMessage( "received outvalue 1: " + outValue + " - searched: " +  inputValue)
+      NeuronCollectionCache.clear()
+      for(backpropagationNode <- container.backpropagationNodes) {
+        if( doContinue == false) {
+          outValue = backpropagationNode.collectInConnections(inputValue, false)
+          NetTrace.WriteMessage( "received outvalue " + index + ": " + outValue + " - searched: " +  inputValue)
           if( outValue > inputValue - tolerance && outValue < inputValue + tolerance ) {
             outValues = outValues :+ outValue
-            NetTrace.WriteMessage( "found outvalue 1: " + outValue + " searched: " +  inputValue)
+            NetTrace.WriteMessage( "found outvalue " + index + ": " + outValue + " searched: " +  inputValue)
             doContinue = true
           }
         }

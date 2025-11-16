@@ -19,6 +19,6 @@ class NeuronDataCreator extends DataCreator {
     new HiddenNeuron
   }
   override def createBackpropagation( ): Neuron = {
-    new BackpropagationNeuron
+    new OutputNeuron
   }
 }
