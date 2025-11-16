@@ -17,8 +17,8 @@ object TensorBuilder {
     val neuronDataCreatorTensored = new NeuronDataCreator
 
     val container = new TensoredContainer(
-      3,
-      6,
+      2,
+      2,
       neuronDataCreatorTensored,
       true,
     )
@@ -50,7 +50,8 @@ object TensorBuilder {
         inputNode.init(initValue, inputValue, tolerance)
       }
     }  
-    var doContinue: Boolean = false           
+    var doContinue: Boolean = false  
+    index = 0;         
     for(inputValue <- inputValues) {
       index = index + 1
       doContinue = false   
