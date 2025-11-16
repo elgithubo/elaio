@@ -5,14 +5,14 @@ import elaio.neuralnet.processing.NeuronCollectionCache
 trait Connection{
   val neuronSource: Neuron
   val neuronTarget: Neuron
-  def collect(pullWeight: Double): Double = {
+  def collect(pullWeight: Double, backpropagation: Boolean): Double = {
     val cachedNeuron = NeuronCollectionCache.get(neuronSource.id)
     if (cachedNeuron != null) {
-      sqrt(cachedNeuron.value)
+      cachedNeuron.value
     } else {
-      val neuronValue = neuronSource.collectInConnections(pullWeight)
+      val neuronValue = neuronSource.collectInConnections(pullWeight, backpropagation)
       NeuronCollectionCache.add(neuronSource)
-      sqrt(neuronValue)
+      neuronValue
     }
   }
   def getNeuronSource: Neuron = neuronSource

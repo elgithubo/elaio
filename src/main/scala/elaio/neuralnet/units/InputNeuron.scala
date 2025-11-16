@@ -3,7 +3,7 @@ package elaio.neuralnet.units
 import elaio.neuralnet.trace.NetTrace
 
 class InputNeuron extends Neuron {
-  override def collectInConnections(pullWeight: Double): Double = {
+  override def collectInConnections(pullWeight: Double, backpropagation: Boolean): Double = {
     _value
   }    
   override def init(value: Double, target: Double, tolerance: Double): Unit = {
