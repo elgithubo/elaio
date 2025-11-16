@@ -12,6 +12,7 @@ class InputNeuron extends Neuron {
       "initializing input neuron - target: " + target
     )
     super.init(value, target, tolerance)
+    NetTrace.WriteMessage( "_target = " + _target )    
   }
 }
 

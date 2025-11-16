@@ -9,9 +9,9 @@ abstract class Neuron {
 
   protected var _weight: Double = 1d
   protected var _value: Double = 0d
-  protected var _target: Double = 6d
+  protected var _target: Double = 8d
   protected var _tolerance: Double = 0.5d
-  protected var _initValue: Double = -1
+  protected var _initValue: Double = -1d
   protected val _id: Double = NeuronCounter.getNext()
 
   var connectionsOut: Array[Connection] = Array[Connection]()
@@ -49,9 +49,10 @@ abstract class Neuron {
     for (connectionIn <- connectionsIn) {
       if(doExit == false) {
         var subnodeValue = connectionIn.collect(pullWeight, backpropagation)
+        NetTrace.WriteMessage( "_target now: " + _target )
         NetTrace.WriteMessage( "collected subnode: " + subnodeValue + " min: " + (_target - _tolerance) + " - max: " + ( _target + _tolerance ) )
         if(doExit == false) {
-          checkValue = subnodeValue * subnodeValue
+          checkValue = subnodeValue //* subnodeValue
           if(checkValue != _target && checkValue > _target - _tolerance && checkValue < _target + _tolerance ) {
             NetTrace.WriteMessage( "found subnode: " + checkValue + " min: " + (_target - _tolerance) + " - max: " + ( _target + _tolerance ) )
             _value = checkValue

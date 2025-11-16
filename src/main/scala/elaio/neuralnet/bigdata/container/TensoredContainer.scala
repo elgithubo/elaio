@@ -25,8 +25,7 @@ class TensoredContainer(
       buildRootNodes(
         dimOuter,
         inOutWidth,
-        dataCreator,
-        recurse,
+        dataCreator
       )
     _inputNodes = result(0)
     _backpropagationNodes = result(1)
@@ -36,84 +35,15 @@ class TensoredContainer(
   private def buildRootNodes(
       buildDimOuter: Int,
       buildInOutWidth: Int,
-      dataCreator: DataCreator,
-      buildRecurse: Boolean,
+      dataCreator: DataCreator
   ): Array[Array[Neuron]] = {
-    if (buildRecurse)
-      buildNodesRecurse(
-        buildDimOuter,
-        buildInOutWidth,
-        null,
-        dataCreator,
-        true,
-      )
-    else
-      buildNodesFlat(
-        buildDimOuter,
-        buildInOutWidth,
-        null,
-        dataCreator,
-        true,
-      )
-  }
-
-  private def buildNodesFlat(
-      buildDimOuter: Int,
-      buildInOutWidth: Int,
-      neuron: Neuron,
-      dataCreator: DataCreator,
-      inputBackpropagationCreationPossible: Boolean,
-  ): Array[Array[Neuron]] = {
-    var neuronsInOutReturn = Array.ofDim[Neuron](2, 0)
-    var neuronsLastLayer = Array.ofDim[Neuron](0)
-
-    for (nextNeuronOuterIndex <- buildDimOuter to -buildDimOuter by -1) {
-      if (nextNeuronOuterIndex != 0) {
-
-        var neuronsCurrentLayer = Array.ofDim[Neuron](0)
-
-        var loopCount: Int = 0
-        if (
-          inputBackpropagationCreationPossible && buildDimOuter - nextNeuronOuterIndex.abs == 0 && nextNeuronOuterIndex < 0
-        ) {
-          loopCount = 1
-        } else {
-          loopCount =
-            buildInOutWidth * (buildDimOuter - nextNeuronOuterIndex.abs + 1)
-        }
-        for (index <- 1 to loopCount) {
-          val newNeuronSameRank = dataCreator.create(
-            if (
-              inputBackpropagationCreationPossible && buildDimOuter - nextNeuronOuterIndex.abs == 0 && nextNeuronOuterIndex > 0
-            )
-              NeuronType.Input
-            else if (
-              inputBackpropagationCreationPossible && buildDimOuter - nextNeuronOuterIndex.abs == 0 && nextNeuronOuterIndex < 0
-            )
-              NeuronType.Backpropagation
-            else
-              NeuronType.Hidden
-          )
-
-          if (inputBackpropagationCreationPossible) {
-            if (nextNeuronOuterIndex == buildDimOuter) {
-              neuronsInOutReturn(0) = neuronsInOutReturn(0) :+ newNeuronSameRank
-            }
-          }
-
-          neuronsCurrentLayer = neuronsCurrentLayer :+ newNeuronSameRank
-        }
-
-        for (neuronLastLayer <- neuronsLastLayer) {
-          for (neuronCurrentLayer <- neuronsCurrentLayer) {
-            connectNeurons(neuronLastLayer, neuronCurrentLayer)
-          }
-        }
-        neuronsLastLayer = neuronsCurrentLayer
-      }
-    }
-
-    neuronsInOutReturn
+    buildNodesRecurse(
+      buildDimOuter,
+      buildInOutWidth,
+      null,
+      dataCreator,
+      true
+    )
   }
 
   private def buildNodesRecurse(

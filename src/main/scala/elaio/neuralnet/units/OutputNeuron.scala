@@ -6,8 +6,12 @@ import elaio.neuralnet.processing.NeuronCollectionCache
 
 class OutputNeuron() extends Neuron {
   NeuronCollectionCache.clear()
-  if(_value > 0)
+  /*if(_value > 0)
     collectInConnections(1d, false)
   else
-    collectInConnections(0d, false)
+    collectInConnections(0d, false)*/
+  /*override def collectInConnections(pullWeight: Double, backpropagation: Boolean): Double = {
+    NeuronCollectionCache.clear()
+    _target - _value
+  }*/
 }
