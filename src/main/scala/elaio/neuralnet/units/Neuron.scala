@@ -7,11 +7,9 @@ import scala.compiletime.ops.boolean
 
 abstract class Neuron {
 
-  protected var _weight: Double = 1d
-  protected var _value: Double = 0d
-  protected var _target: Double = 8d
+  protected var _weight: Double = 0.5d
+  protected var _value: Double = 1d
   protected var _tolerance: Double = 0.5d
-  protected var _initValue: Double = -1d
   protected val _id: Double = NeuronCounter.getNext()
 
   var connectionsOut: Array[Connection] = Array[Connection]()
@@ -20,31 +18,14 @@ abstract class Neuron {
   def value: Double = _value
   def id: Double = _id
 
-  def init(value: Double, target: Double, tolerance: Double): Unit = {
-    _value = value
-    _target = target
+  def init(tolerance: Double): Unit = {
     _tolerance = tolerance
 
     for(connectionOut <- connectionsOut) {
-      NetTrace.WriteMessage("OUT: target in connection (current): " + target)
-      NetTrace.WriteMessage("OUT: target neuron target: " + connectionOut.getNeuronTarget.target) 
-      connectionOut.getNeuronTarget.init(0, target, tolerance)
-    }
-
-    for(connectionIn <- connectionsIn) {
-      NetTrace.WriteMessage("IN: target in connection (current): " + target)
-      NetTrace.WriteMessage("IN: target neuron target: " + connectionIn.getNeuronTarget.target) 
-      connectionIn.getNeuronTarget.init(0, target, tolerance)
+      connectionOut.getNeuronTarget._value = _weight * _value
     }
   }
 
-  def initValue: Double =  {
-    _initValue
-  }
-
-  def target: Double =  {
-    _target
-  }
 
 /*
   def tolerance: Double =  {
@@ -53,41 +34,20 @@ abstract class Neuron {
 */
 
   def collectInConnections(pullWeight: Double, backpropagation: Boolean): Double = {
-    var inValue: Double = 0
-    var checkValue: Double = 0
 
     _weight = pullWeight
-      
-    if(_value > _target - _tolerance && _value < _target + _tolerance) {
-      return _value
+
+    var valueSum = 0d
+    for (connectionIn <- connectionsIn) {
+      valueSum = connectionIn.collect(pullWeight, backpropagation)
     }
 
-    var doExit: Boolean = false
-    for (connectionIn <- connectionsIn) {
-      if(doExit == false) {
-        var subnodeValue = connectionIn.collect(pullWeight, backpropagation)
-        NetTrace.WriteMessage( "_target now: " + _target )
-        NetTrace.WriteMessage( "collected subnode: " + subnodeValue + " min: " + (_target - _tolerance) + " - max: " + ( _target + _tolerance ) )
-        if(doExit == false) {
-          checkValue = subnodeValue //* subnodeValue
-          if(checkValue != _target && checkValue > _target - _tolerance && checkValue < _target + _tolerance ) {
-            NetTrace.WriteMessage( "found subnode: " + checkValue + " min: " + (_target - _tolerance) + " - max: " + ( _target + _tolerance ) )
-            _value = checkValue
-            doExit = true
-          } 
-          inValue = inValue + subnodeValue                   
-        }
-      }
-    }
-    if(doExit == false) {
-      _value = inValue
-    }
-    if( backpropagation == true )
+    if(backpropagation)
       _value = Activation.backpropagationFunction(_value)
     else
       _value = Activation.activationFunction(_value)
 
-     _weight = 1.7976931348623157E308 - (_value - _target)
+    _weight = 1.7976931348623157E308 - (_value * valueSum)
     _value
   }  
 
