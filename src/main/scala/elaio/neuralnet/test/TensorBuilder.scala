@@ -17,7 +17,7 @@ object TensorBuilder {
     val neuronDataCreatorTensored = new NeuronDataCreator
 
     val container = new TensoredContainer(
-      2,
+      1,
       2,
       neuronDataCreatorTensored,
       true,
@@ -33,7 +33,7 @@ object TensorBuilder {
     NetTrace.WriteMessage("end of test run")
   }
 
-  def feedbackIn(container: TensoredContainer, inputValues: Array[Double], tolerance: Double, init: Boolean): Array[Double] = {
+  private def feedbackIn(container: TensoredContainer, inputValues: Array[Double], tolerance: Double, init: Boolean): Array[Double] = {
     var outValues: Array[Double] = Array.ofDim[Double](0)
     var outValuesCollected: Array[Double] = Array.ofDim[Double](0)
     var outValue: Double = 0d
@@ -44,20 +44,20 @@ object TensorBuilder {
           
     for(inputValue <- inputValues) {
       index = index + 1
-      if(init == true) {
-        var inputNode = container.inputNodes(index)
-        var initValue: Double = inputNode.target - inputNode.value + inputValue
+      if(init) {
+        val inputNode = container.inputNodes(index)
+        val initValue: Double = inputNode.target - inputNode.value + inputValue
         inputNode.init(initValue, inputValue, tolerance)
       }
     }  
     var doContinue: Boolean = false  
-    index = 0;         
+    index = 0
     for(inputValue <- inputValues) {
       index = index + 1
       doContinue = false   
       NeuronCollectionCache.clear()
       for(backpropagationNode <- container.backpropagationNodes) {
-        if( doContinue == false) {
+        if(!doContinue) {
           outValue = backpropagationNode.collectInConnections(inputValue, false)
           NetTrace.WriteMessage( "received outvalue " + index + ": " + outValue + " - searched: " +  inputValue)
           if( outValue > inputValue - tolerance && outValue < inputValue + tolerance ) {

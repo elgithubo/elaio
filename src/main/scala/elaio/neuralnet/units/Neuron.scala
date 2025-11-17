@@ -24,16 +24,33 @@ abstract class Neuron {
     _value = value
     _target = target
     _tolerance = tolerance
+
+    for(connectionOut <- connectionsOut) {
+      NetTrace.WriteMessage("OUT: target in connection (current): " + target)
+      NetTrace.WriteMessage("OUT: target neuron target: " + connectionOut.getNeuronTarget.target) 
+      connectionOut.getNeuronTarget.init(0, target, tolerance)
+    }
+
+    for(connectionIn <- connectionsIn) {
+      NetTrace.WriteMessage("IN: target in connection (current): " + target)
+      NetTrace.WriteMessage("IN: target neuron target: " + connectionIn.getNeuronTarget.target) 
+      connectionIn.getNeuronTarget.init(0, target, tolerance)
+    }
   }
 
   def initValue: Double =  {
     _initValue
   }
 
-
   def target: Double =  {
     _target
   }
+
+/*
+  def tolerance: Double =  {
+    _tolerance
+  }  
+*/
 
   def collectInConnections(pullWeight: Double, backpropagation: Boolean): Double = {
     var inValue: Double = 0
