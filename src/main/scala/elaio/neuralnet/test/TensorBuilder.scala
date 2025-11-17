@@ -2,7 +2,7 @@ package elaio.neuralnet.test
 
 import elaio.neuralnet.bigdata.container.TensoredContainer
 import elaio.neuralnet.trace.NetTrace
-import elaio.neuralnet.units.NeuronDataCreator
+import elaio.neuralnet.units.{InputNeuron, NeuronDataCreator, OutputNeuron}
 import elaio.neuralnet.processing.NeuronCollectionCache
 
 object TensorBuilder {
@@ -26,8 +26,8 @@ object TensorBuilder {
 
     //val outValues: Array[Double] = feedbackIn(container, Array(6d, 5d, 4d, 3d, 2d, 1d), 0.5d, true)
     val outValues: Array[Double] = feedbackIn(container, Array(6d, 5d), 0.5d, true)
-    for( outValue <- outValues ) {
-      NetTrace.WriteMessage("outValue: " + outValue ) 
+    for (outValue <- outValues) {
+      NetTrace.WriteMessage("outValue: " + outValue)
     }
 
     NetTrace.WriteMessage("end of test run")
@@ -40,34 +40,35 @@ object TensorBuilder {
     var inDepth = false
     var index: Integer = -1
 
-    if(inputValues.length == 1) inDepth = true 
-          
-    for(inputValue <- inputValues) {
-      index = index + 1
-      if(init) {
+    if (inputValues.length == 1) inDepth = true
+
+    if (init) {
+      for (inputValue <- inputValues) {
+        index = index + 1
         val inputNode = container.inputNodes(index)
-        val initValue: Double = inputNode.target - inputNode.value + inputValue
-        inputNode.init(initValue, inputValue, tolerance)
+        inputNode.asInstanceOf[InputNeuron].initInput(inputValue, tolerance)
+        val outputNode = container.outputNodes(index)
+        outputNode.asInstanceOf[OutputNeuron].initOutput(inputValue, tolerance)
       }
-    }  
-    var doContinue: Boolean = false  
+    }
+    var doContinue: Boolean = false
     index = 0
-    for(inputValue <- inputValues) {
+    for (inputValue <- inputValues) {
       index = index + 1
-      doContinue = false   
+      doContinue = false
       NeuronCollectionCache.clear()
-      for(backpropagationNode <- container.backpropagationNodes) {
-        if(!doContinue) {
-          outValue = backpropagationNode.collectInConnections(inputValue, false)
-          NetTrace.WriteMessage( "received outvalue " + index + ": " + outValue + " - searched: " +  inputValue)
-          if( outValue > inputValue - tolerance && outValue < inputValue + tolerance ) {
+      for (outputNode <- container.outputNodes) {
+        if (!doContinue) {
+          outValue = outputNode.collectInConnections(inputValue, false)
+          NetTrace.WriteMessage("received outvalue " + index + ": " + outValue + " - searched: " + inputValue)
+          if (outValue > inputValue - tolerance && outValue < inputValue + tolerance) {
             outValues = outValues :+ outValue
-            NetTrace.WriteMessage( "found outvalue " + index + ": " + outValue + " searched: " +  inputValue)
+            NetTrace.WriteMessage("found outvalue " + index + ": " + outValue + " searched: " + inputValue)
             doContinue = true
           }
         }
       }
     }
     outValues
-  } 
+  }
 }

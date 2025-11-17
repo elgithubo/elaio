@@ -15,10 +15,10 @@ class TensoredContainer(
   class BuildData {}
 
   var _inputNodes = Array.ofDim[Neuron](0)
-  var _backpropagationNodes = Array.ofDim[Neuron](0)
+  var _outputNodes = Array.ofDim[Neuron](0)
 
   def inputNodes: Array[Neuron] = _inputNodes
-  def backpropagationNodes: Array[Neuron] = _backpropagationNodes
+  def outputNodes: Array[Neuron] = _outputNodes
 
   def init(): Array[Array[Neuron]] = {
     val result =
@@ -28,7 +28,7 @@ class TensoredContainer(
         dataCreator
       )
     _inputNodes = result(0)
-    _backpropagationNodes = result(1)
+    _outputNodes = result(1)
     result
   }
 
@@ -185,8 +185,6 @@ class TensoredContainer(
       connectionNeuronSource: Neuron,
       connectionNeuronTarget: Neuron
   ): Unit = {
-    NetTrace.WriteMessage( "connect target (from source): " +  connectionNeuronSource.target )
-    NetTrace.WriteMessage( "connect target (from target): " +  connectionNeuronTarget.target )
     //connectionNeuronTarget.init(0, connectionNeuronSource.target, connectionNeuronSource.tolerance)
     val connection = new Connection {
       override val neuronSource: Neuron = connectionNeuronSource
