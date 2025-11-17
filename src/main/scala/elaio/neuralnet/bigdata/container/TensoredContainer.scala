@@ -193,6 +193,6 @@ class TensoredContainer(
       override val neuronTarget: Neuron = connectionNeuronTarget
     }
     connection.getNeuronTarget.addInConnection(connection)
-
+    connection.getNeuronSource.addOutConnection(connection)
   }
 }
