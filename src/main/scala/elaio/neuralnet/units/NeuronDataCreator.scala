@@ -7,7 +7,7 @@ class NeuronDataCreator extends DataCreator {
   override def create( neuronType: NeuronType.Value ): Neuron = {
     if (neuronType == NeuronType.Input)
       createInput()
-    else if (neuronType == NeuronType.Backpropagation)
+    else if (neuronType == NeuronType.Output)
       createBackpropagation()
     else
       createHidden()
