@@ -20,4 +20,6 @@ object NeuronCollectionCache {
       cache(id)
     } else { null }
   }
+
+  def size: Int = cache.size
 }

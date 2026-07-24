@@ -69,22 +69,15 @@ class TensoredContainer(
 
     var bottomNeuronsLastRecur: Array[Neuron] = Array.ofDim[Neuron](0)
     var newNeuronsSameRank: Array[Neuron] = Array.ofDim[Neuron](0)
-    var topLoopCount: Int = 0
-    var topNeuronsLastToConnect: Array[Neuron] = Array.ofDim[Neuron](0)
+    var hereNeuronsLastToConnect: Array[Neuron] = Array.ofDim[Neuron](0)
 
     for (nextNeuronOuterIndexOffset <- buildDimOuter to -buildDimOuter by -1) {
       if (nextNeuronOuterIndexOffset != 0) {
-        topLoopCount = topLoopCount + 1
-
-        var newNeuronsTop: Array[Neuron] = Array.ofDim[Neuron](0)
         var newNeuronsHere: Array[Neuron] = Array.ofDim[Neuron](0)
         var bottomNeuronsThisRecur: Array[Neuron] = Array.ofDim[Neuron](0)
         for (i <- 1 to buildInOutWidth) {
           var newNeuronSameRank = dataCreator.create(NeuronType.Hidden)
           newNeuronsSameRank = newNeuronsSameRank :+ newNeuronSameRank
-          if (inputBackpropagationCreationPossible) {
-            newNeuronsTop = newNeuronsTop :+ newNeuronSameRank
-          }
           newNeuronsHere = newNeuronsHere :+ newNeuronSameRank
         }
 
@@ -155,23 +148,17 @@ class TensoredContainer(
                 connectNeurons(bottomNeuronLastRecur, bottomNeuronThisRecur)
               }
             }
-            bottomNeuronsLastRecur = Array.ofDim[Neuron](0)
-          } else {
-            bottomNeuronsLastRecur = bottomNeuronsThisRecur
+          }
+          bottomNeuronsLastRecur = bottomNeuronsThisRecur
+        }
+        if (hereNeuronsLastToConnect.length > 0) {
+          for (hereNeuronLastToConnect <- hereNeuronsLastToConnect) {
+            newNeuronsHere.foreach(
+              connectNeurons(hereNeuronLastToConnect, _)
+            )
           }
         }
-        if (inputBackpropagationCreationPossible) {
-          if (topLoopCount % 2 == 0) {
-            topNeuronsLastToConnect = newNeuronsTop
-          } else if (topNeuronsLastToConnect != null) {
-            for (topNeuronLastToConnect <- topNeuronsLastToConnect) {
-              newNeuronsTop.foreach(
-                connectNeurons(topNeuronLastToConnect, _)
-              )
-            }
-            newNeuronsTop = null
-          }
-        }
+        hereNeuronsLastToConnect = newNeuronsHere
       }
     }
 

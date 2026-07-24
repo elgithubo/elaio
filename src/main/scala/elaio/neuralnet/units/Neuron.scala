@@ -39,15 +39,19 @@ abstract class Neuron {
 
     var valueSum = 0d
     for (connectionIn <- connectionsIn) {
-      valueSum = connectionIn.collect(pullWeight, backpropagation)
+      valueSum = valueSum + connectionIn.collect(pullWeight, backpropagation)
     }
+    if (connectionsIn.nonEmpty)
+      valueSum = valueSum / connectionsIn.length
 
     if(backpropagation)
-      _value = Activation.backpropagationFunction(_value)
+      _value = Activation.backpropagationFunction(valueSum)
     else
-      _value = Activation.activationFunction(_value)
+      _value = Activation.activationFunction(valueSum)
 
     _weight = 1.7976931348623157E308 - (_value * valueSum)
+
+    //NetTrace.WriteMessage("collected Value: " + _value)
     _value
   }  
 

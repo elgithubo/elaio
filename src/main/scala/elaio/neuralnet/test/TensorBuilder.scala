@@ -2,7 +2,7 @@ package elaio.neuralnet.test
 
 import elaio.neuralnet.bigdata.container.TensoredContainer
 import elaio.neuralnet.trace.NetTrace
-import elaio.neuralnet.units.{InputNeuron, NeuronDataCreator, OutputNeuron}
+import elaio.neuralnet.units.{InputNeuron, NeuronCounter, NeuronDataCreator, OutputNeuron}
 import elaio.neuralnet.processing.NeuronCollectionCache
 
 object TensorBuilder {
@@ -17,15 +17,16 @@ object TensorBuilder {
     val neuronDataCreatorTensored = new NeuronDataCreator
 
     val container = new TensoredContainer(
-      1,
-      2,
+      5,
+      4,
       neuronDataCreatorTensored,
       true,
     )
     container.init()
+    NetTrace.WriteMessage("total neurons created: " + NeuronCounter.current)
 
     //val outValues: Array[Double] = feedbackIn(container, Array(6d, 5d, 4d, 3d, 2d, 1d), 0.5d, true)
-    val outValues: Array[Double] = feedbackIn(container, Array(6d, 5d), 0.5d, true)
+    val outValues: Array[Double] = feedbackIn(container, Array(6d, 5d, 4d, 3d), 0.5d, true)
     for (outValue <- outValues) {
       NetTrace.WriteMessage("outValue: " + outValue)
     }
@@ -68,6 +69,7 @@ object TensorBuilder {
           }
         }
       }
+      NetTrace.WriteMessage("distinct neurons visited this pass: " + NeuronCollectionCache.size)
     }
     outValues
   }

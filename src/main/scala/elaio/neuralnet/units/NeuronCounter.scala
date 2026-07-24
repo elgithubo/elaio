@@ -7,4 +7,6 @@ object NeuronCounter {
     counter = counter+1
     counter
   }
+
+  def current: Int = counter
 }

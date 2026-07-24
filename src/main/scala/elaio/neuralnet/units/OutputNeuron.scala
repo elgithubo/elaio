@@ -23,7 +23,7 @@ class OutputNeuron() extends Neuron {
   }
 
   override def collectInConnections(pullWeight: Double, backpropagation: Boolean): Double = {
-    //NeuronCollectionCache.clear()
+    super.collectInConnections(pullWeight, backpropagation)
     _target - _value
   }
 

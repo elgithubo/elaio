@@ -1,4 +1,4 @@
 -J-Xmx32768m
 -J-XX:ReservedCodeCacheSize=2048m
 -J-XX:-UseGCOverheadLimit
--J-XX:+UseG1GC 
+-J-XX:+UseG1GC
