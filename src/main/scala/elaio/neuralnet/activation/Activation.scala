@@ -9,8 +9,9 @@ object Activation {
     //if (input > 0) input else 0
     return( 1 / ( 1 + math.exp( -input / scale ) ) )
   }
+  // derivative of activationFunction w.r.t. its input, including the 1/scale
+  // factor from the chain rule (activationFunction divides by scale internally)
   def backpropagationFunction(input: Double): Double = {
-    //if (input > 0) 1 else 0
-    return( Activation.activationFunction(input) * ( 1 - Activation.activationFunction(input) ) )
-  }  
+    return( Activation.activationFunction(input) * ( 1 - Activation.activationFunction(input) ) / scale )
+  }
 }

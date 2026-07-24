@@ -81,6 +81,7 @@ class TensoredContainer(
           newNeuronsHere = newNeuronsHere :+ newNeuronSameRank
         }
 
+        //TODO this if doubles a lot of coding, should be simplified
         if (
           nextNeuronOuterIndexOffset > 0 && (buildDimOuter - nextNeuronOuterIndexOffset.abs) % 2 == 0 ||
           nextNeuronOuterIndexOffset < 0 && (buildDimOuter - nextNeuronOuterIndexOffset.abs) % 2 == 1

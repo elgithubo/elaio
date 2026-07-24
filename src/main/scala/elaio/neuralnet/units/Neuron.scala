@@ -10,6 +10,8 @@ abstract class Neuron {
   protected var _weight: Double = 0.5d
   protected var _value: Double = 1d
   protected var _tolerance: Double = 0.5d
+  protected var _preActivation: Double = 0d
+  protected var _delta: Double = 0d
   protected val _id: Double = NeuronCounter.getNext()
 
   var connectionsOut: Array[Connection] = Array[Connection]()
@@ -17,6 +19,9 @@ abstract class Neuron {
 
   def value: Double = _value
   def id: Double = _id
+  def preActivation: Double = _preActivation
+  def delta: Double = _delta
+  def delta_(delta: Double): Unit = { _delta = delta }
 
   def init(tolerance: Double): Unit = {
     _tolerance = tolerance
@@ -44,10 +49,12 @@ abstract class Neuron {
     if (connectionsIn.nonEmpty)
       valueSum = valueSum / connectionsIn.length
 
+    _preActivation = valueSum
+
     if(backpropagation)
-      _value = Activation.backpropagationFunction(valueSum)
+      _value = activationDerivative(valueSum)
     else
-      _value = Activation.activationFunction(valueSum)
+      _value = activationFunction(valueSum)
 
     _weight = 1.7976931348623157E308 - (_value * valueSum)
 
@@ -57,6 +64,10 @@ abstract class Neuron {
 
   def activationFunction(input: Double): Double = {
     Activation.activationFunction(input)
+  }
+
+  def activationDerivative(input: Double): Double = {
+    Activation.backpropagationFunction(input)
   }
 
   def addOutConnection(outConnection: Connection): Unit = {

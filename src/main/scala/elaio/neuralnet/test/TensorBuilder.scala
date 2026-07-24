@@ -4,6 +4,7 @@ import elaio.neuralnet.bigdata.container.TensoredContainer
 import elaio.neuralnet.trace.NetTrace
 import elaio.neuralnet.units.{InputNeuron, NeuronCounter, NeuronDataCreator, OutputNeuron}
 import elaio.neuralnet.processing.NeuronCollectionCache
+import elaio.neuralnet.training.Backpropagation
 
 object TensorBuilder {
   def run(): Unit = {
@@ -11,8 +12,6 @@ object TensorBuilder {
     NetTrace.started_(true)
 
     NetTrace.WriteMessage("start of test run")
-
-    NetTrace.WriteMessage("backpropagation only working in pre-alpha mode")
 
     val neuronDataCreatorTensored = new NeuronDataCreator
 
@@ -25,8 +24,12 @@ object TensorBuilder {
     container.init()
     NetTrace.WriteMessage("total neurons created: " + NeuronCounter.current)
 
-    //val outValues: Array[Double] = feedbackIn(container, Array(6d, 5d, 4d, 3d, 2d, 1d), 0.5d, true)
-    val outValues: Array[Double] = feedbackIn(container, Array(6d, 5d, 4d, 3d), 0.5d, true)
+    val inputValues = Array(6d, 5d, 4d, 3d)
+    val tolerance = 0.1d
+    initInputsOutputs(container, inputValues, tolerance)
+    train(container, learningRate = 0.1d, epochs = 200)
+
+    val outValues: Array[Double] = feedbackIn(container, inputValues, tolerance)
     for (outValue <- outValues) {
       NetTrace.WriteMessage("outValue: " + outValue)
     }
@@ -34,26 +37,34 @@ object TensorBuilder {
     NetTrace.WriteMessage("end of test run")
   }
 
-  private def feedbackIn(container: TensoredContainer, inputValues: Array[Double], tolerance: Double, init: Boolean): Array[Double] = {
-    var outValues: Array[Double] = Array.ofDim[Double](0)
-    var outValuesCollected: Array[Double] = Array.ofDim[Double](0)
-    var outValue: Double = 0d
-    var inDepth = false
-    var index: Integer = -1
-
-    if (inputValues.length == 1) inDepth = true
-
-    if (init) {
-      for (inputValue <- inputValues) {
-        index = index + 1
-        val inputNode = container.inputNodes(index)
-        inputNode.asInstanceOf[InputNeuron].initInput(inputValue, tolerance)
-        val outputNode = container.outputNodes(index)
-        outputNode.asInstanceOf[OutputNeuron].initOutput(inputValue, tolerance)
-      }
+  private def initInputsOutputs(container: TensoredContainer, inputValues: Array[Double], tolerance: Double): Unit = {
+    for (index <- inputValues.indices) {
+      container.inputNodes(index).asInstanceOf[InputNeuron].initInput(inputValues(index), tolerance)
+      container.outputNodes(index).asInstanceOf[OutputNeuron].initOutput(inputValues(index), tolerance)
     }
+  }
+
+  private def train(container: TensoredContainer, learningRate: Double, epochs: Int): Unit = {
+    for (epoch <- 1 to epochs) {
+      NeuronCollectionCache.clear()
+      var totalError = 0d
+      for (outputNode <- container.outputNodes) {
+        outputNode.collectInConnections(0d, false)
+        val residual = outputNode.asInstanceOf[OutputNeuron].target - outputNode.value
+        totalError = totalError + residual * residual
+      }
+      Backpropagation.run(container.outputNodes, learningRate)
+      if (epoch == 1 || epoch % 20 == 0 || epoch == epochs)
+        NetTrace.WriteMessage("epoch " + epoch + ": total squared error = " + totalError)
+    }
+  }
+
+  private def feedbackIn(container: TensoredContainer, inputValues: Array[Double], tolerance: Double): Array[Double] = {
+    var outValues: Array[Double] = Array.ofDim[Double](0)
+    var outValue: Double = 0d
+    var index: Integer = 0
+
     var doContinue: Boolean = false
-    index = 0
     for (inputValue <- inputValues) {
       index = index + 1
       doContinue = false

@@ -22,10 +22,11 @@ class OutputNeuron() extends Neuron {
     init(tolerance)
   }
 
-  override def collectInConnections(pullWeight: Double, backpropagation: Boolean): Double = {
-    super.collectInConnections(pullWeight, backpropagation)
-    _target - _value
-  }
+  // linear output: targets are arbitrary-magnitude values, not (0,1)-bounded
+  // probabilities, so squashing the output through a sigmoid caps what this
+  // neuron could ever reconstruct. Hidden layers keep the nonlinearity.
+  override def activationFunction(input: Double): Double = input
+  override def activationDerivative(input: Double): Double = 1d
 
   def target: Double =  {
     _target
