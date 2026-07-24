@@ -4,7 +4,7 @@ import elaio.neuralnet.bigdata.container.TensoredContainer
 import elaio.neuralnet.trace.NetTrace
 import elaio.neuralnet.units.{InputNeuron, NeuronCounter, NeuronDataCreator, OutputNeuron}
 import elaio.neuralnet.processing.NeuronCollectionCache
-import elaio.neuralnet.training.Backpropagation
+import elaio.neuralnet.training.{Backpropagation, WeightInitializer}
 
 object TensorBuilder {
   def run(): Unit = {
@@ -24,11 +24,15 @@ object TensorBuilder {
     container.init()
     NetTrace.WriteMessage("total neurons created: " + NeuronCounter.current)
 
+    // has to happen after init(), when every neuron's fan-in is final
+    val weightCount = WeightInitializer.initialize(container.outputNodes)
+    NetTrace.WriteMessage("connection weights initialized: " + weightCount)
+
     val inputValues = Array(6d, 5d, 4d, 3d, 0.5d, -6d)
     val tolerance = 0.1d
 
     initInputsOutputs(container, inputValues, tolerance)
-    train(container, learningRate = 0.1d, epochs = 200)
+    train(container, learningRate = 0.05, epochs = 25000)
 
     val outValues: Array[Double] = feedbackIn(container, inputValues, tolerance)
     for (outValue <- outValues) {
