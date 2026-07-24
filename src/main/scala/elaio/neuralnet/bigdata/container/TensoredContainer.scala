@@ -90,6 +90,15 @@ class TensoredContainer(
           isReverseNode = false;
         }
 
+        if (!isReverseNode) {
+          if (nextNeuronOuterIndexOffset == buildDimOuter) {
+            for (inNeuron <- neuronsReturn(0)) {
+              newNeuronsHere.foreach(
+                connectNeurons(inNeuron, _)
+              )
+            }
+          }
+        }
         if (buildDimOuter > 1) {
           var neuronsLowerDim = buildNodesRecurse(
             buildDimOuter - 1,
