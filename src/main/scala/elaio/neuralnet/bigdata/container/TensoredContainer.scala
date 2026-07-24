@@ -81,60 +81,40 @@ class TensoredContainer(
           newNeuronsHere = newNeuronsHere :+ newNeuronSameRank
         }
 
-        // the following if looks as if it doubles a lot of coding and should be simplified
-        // but since there are 2 differences it makes no sense to restructure it (it works now)
+        // determine if the node receives reverse wiring
+        var isReverseNode: Boolean = true
         if (
           nextNeuronOuterIndexOffset > 0 && (buildDimOuter - nextNeuronOuterIndexOffset.abs) % 2 == 0 ||
           nextNeuronOuterIndexOffset < 0 && (buildDimOuter - nextNeuronOuterIndexOffset.abs) % 2 == 1
         ) {
-          if (nextNeuronOuterIndexOffset == buildDimOuter) {
-            for (inNeuron <- neuronsReturn(0)) {
-              newNeuronsHere.foreach(
-                connectNeurons(inNeuron, _)
-              )
-            }
-          }
-          if (buildDimOuter > 1) {
-            var neuronsLowerDim = buildNodesRecurse(
-              buildDimOuter - 1,
-              1,
-              newNeuronsHere,
-              dataCreator,
-              false,
-            )
-            neuronsReturn(2) = neuronsLowerDim(2)
+          isReverseNode = false;
+        }
 
-            bottomNeuronsThisRecur = neuronsLowerDim(2)
+        if (buildDimOuter > 1) {
+          var neuronsLowerDim = buildNodesRecurse(
+            buildDimOuter - 1,
+            1,
+            newNeuronsHere,
+            dataCreator,
+            false,
+          )
+          neuronsReturn(2) = neuronsLowerDim(2)
 
-            for (neuronLowerDim <- neuronsLowerDim(0)) {
-              newNeuronsHere.foreach(
-                connectNeurons(_, neuronLowerDim)
-              )
+          bottomNeuronsThisRecur = neuronsLowerDim(2)
+
+          for (neuronLowerDim <- neuronsLowerDim(0)) {
+            for (newNeuronHere <- newNeuronsHere) {
+              if (isReverseNode) {
+                connectNeurons(neuronLowerDim, newNeuronHere)
+              } else {
+                connectNeurons(newNeuronHere, neuronLowerDim)
+              }
             }
-          } else {
-            neuronsReturn(2) = neuronsReturn(2) ++ newNeuronsHere
           }
         } else {
-          if (buildDimOuter > 1) {
-            var neuronsLowerDim = buildNodesRecurse(
-              buildDimOuter - 1,
-              1,
-              newNeuronsHere,
-              dataCreator,
-              false,
-            )
-            neuronsReturn(2) = neuronsLowerDim(2)
-
-            bottomNeuronsThisRecur = neuronsLowerDim(2)
-
-            for (neuronLowerDim <- neuronsLowerDim(0)) {
-              newNeuronsHere.foreach(
-                connectNeurons(neuronLowerDim, _)
-              )
-            }
-          } else {
-            neuronsReturn(2) = neuronsReturn(2) ++ newNeuronsHere
-          }
+          neuronsReturn(2) = neuronsReturn(2) ++ newNeuronsHere
+        }
+        if (isReverseNode) {
           if (nextNeuronOuterIndexOffset == -buildDimOuter) {
             for (outNeuron <- neuronsReturn(1)) {
               newNeuronsHere.foreach(
