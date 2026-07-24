@@ -111,7 +111,7 @@ class TensoredContainer(
               )
             }
           } else {
-            neuronsReturn(2) = neuronsReturn(2) ++ newNeuronsSameRank
+            neuronsReturn(2) = neuronsReturn(2) ++ newNeuronsHere
           }
         } else {
           if (buildDimOuter > 1) {
@@ -132,7 +132,7 @@ class TensoredContainer(
               )
             }
           } else {
-            neuronsReturn(2) = neuronsReturn(2) ++ newNeuronsSameRank
+            neuronsReturn(2) = neuronsReturn(2) ++ newNeuronsHere
           }
           if (nextNeuronOuterIndexOffset == -buildDimOuter) {
             for (outNeuron <- neuronsReturn(1)) {

@@ -17,14 +17,14 @@ object TensorBuilder {
 
     val container = new TensoredContainer(
       5,
-      4,
+      5,
       neuronDataCreatorTensored,
       true,
     )
     container.init()
     NetTrace.WriteMessage("total neurons created: " + NeuronCounter.current)
 
-    val inputValues = Array(6d, 5d, 4d, 3d)
+    val inputValues = Array(6d, 5d, 4d, 3d, 0.5d)
     val tolerance = 0.1d
     initInputsOutputs(container, inputValues, tolerance)
     train(container, learningRate = 0.1d, epochs = 200)
