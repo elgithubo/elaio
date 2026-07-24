@@ -4,6 +4,7 @@ import elaio.neuralnet.units.{Neuron, OutputNeuron}
 import elaio.neuralnet.processing.NeuronCollectionCache
 
 object Backpropagation {
+  // TODO: make the comment clearer, it still is from claude
   // Requires a forward pass (backpropagation=false) to have already run over
   // outputNodes with NeuronCollectionCache populated, so every visited neuron
   // has a fresh value/preActivation. delta here is -dL/dz for L = 0.5*(target-value)^2,

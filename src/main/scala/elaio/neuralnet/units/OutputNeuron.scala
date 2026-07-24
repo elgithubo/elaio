@@ -8,12 +8,6 @@ class OutputNeuron() extends Neuron {
 
   protected var _target: Double = 0d
 
-  //NeuronCollectionCache.clear()
-  /*if(_value > 0)
-    collectInConnections(1d, false)
-  else
-    collectInConnections(0d, false)*/
-
   def initOutput(target: Double, tolerance: Double): Unit = {
     _target = target
     NetTrace.WriteMessage(

@@ -5,7 +5,10 @@ import elaio.neuralnet.processing.NeuronCollectionCache
 trait Connection{
   val neuronSource: Neuron
   val neuronTarget: Neuron
+
+  // initialize weight based on a rendom number for now
   var weight: Double = scala.util.Random.nextDouble() * 2d - 1d
+
   def collect(pullWeight: Double, backpropagation: Boolean): Double = {
     val cachedNeuron = NeuronCollectionCache.get(neuronSource.id)
     val neuronValue =
@@ -18,6 +21,8 @@ trait Connection{
       }
     neuronValue * weight
   }
+
   def getNeuronSource: Neuron = neuronSource
+
   def getNeuronTarget: Neuron = neuronTarget
 }

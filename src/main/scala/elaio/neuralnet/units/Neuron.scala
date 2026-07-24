@@ -31,13 +31,6 @@ abstract class Neuron {
     }
   }
 
-
-/*
-  def tolerance: Double =  {
-    _tolerance
-  }  
-*/
-
   def collectInConnections(pullWeight: Double, backpropagation: Boolean): Double = {
 
     _weight = pullWeight

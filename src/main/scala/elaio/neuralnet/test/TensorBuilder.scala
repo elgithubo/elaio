@@ -17,15 +17,16 @@ object TensorBuilder {
 
     val container = new TensoredContainer(
       5,
-      5,
+      6,
       neuronDataCreatorTensored,
       true,
     )
     container.init()
     NetTrace.WriteMessage("total neurons created: " + NeuronCounter.current)
 
-    val inputValues = Array(6d, 5d, 4d, 3d, 0.5d)
+    val inputValues = Array(6d, 5d, 4d, 3d, 0.5d, -6d)
     val tolerance = 0.1d
+
     initInputsOutputs(container, inputValues, tolerance)
     train(container, learningRate = 0.1d, epochs = 200)
 
@@ -68,7 +69,8 @@ object TensorBuilder {
     for (inputValue <- inputValues) {
       index = index + 1
       doContinue = false
-      NeuronCollectionCache.clear()
+      //the following does not seem to be required
+      //NeuronCollectionCache.clear()
       for (outputNode <- container.outputNodes) {
         if (!doContinue) {
           outValue = outputNode.collectInConnections(inputValue, false)
