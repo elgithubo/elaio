@@ -1,3 +1,4 @@
-- persist weights
-- review Claude assisted commits in detail
 - evaluate fixed seeds instead of random seeds
+- persist weights
+- review Claude assisted commit for training in detail
+- analyze/fix the last few remaining unvisited nodes 
