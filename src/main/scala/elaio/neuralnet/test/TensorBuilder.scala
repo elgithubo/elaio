@@ -32,7 +32,7 @@ object TensorBuilder {
     val tolerance = 0.1d
 
     initInputsOutputs(container, inputValues, tolerance)
-    train(container, learningRate = 0.03, epochs = 1000)
+    train(container, learningRate = 0.03, epochs = 10000)
 
     val outValues: Array[Double] = feedbackIn(container, inputValues, tolerance)
     for (outValue <- outValues) {
@@ -45,7 +45,7 @@ object TensorBuilder {
   private def initInputsOutputs(container: TensoredContainer, inputValues: Array[Double], tolerance: Double): Unit = {
     for (index <- inputValues.indices) {
       container.inputNodes(index).asInstanceOf[InputNeuron].initInput(inputValues(index), tolerance)
-      container.outputNodes(index).asInstanceOf[OutputNeuron].initOutput(inputValues(index), tolerance)
+      container.outputNodes(index).asInstanceOf[OutputNeuron].initOutput(inputValues(index) * 2, tolerance)
     }
   }
 
@@ -79,7 +79,7 @@ object TensorBuilder {
         if (!doContinue) {
           outValue = outputNode.collectInConnections(inputValue, false)
           NetTrace.WriteMessage("received outvalue " + index + ": " + outValue + " - searched: " + inputValue)
-          if (outValue > inputValue - tolerance && outValue < inputValue + tolerance) {
+          if (outValue > inputValue * 2 - tolerance && outValue < inputValue * 2 + tolerance) {
             outValues = outValues :+ outValue
             NetTrace.WriteMessage("found outvalue " + index + ": " + outValue + " searched: " + inputValue)
             doContinue = true
