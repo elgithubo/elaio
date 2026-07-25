@@ -171,7 +171,6 @@ class TensoredContainer(
       connectionNeuronSource: Neuron,
       connectionNeuronTarget: Neuron
   ): Unit = {
-    //connectionNeuronTarget.init(0, connectionNeuronSource.target, connectionNeuronSource.tolerance)
     val connection = new Connection {
       override val neuronSource: Neuron = connectionNeuronSource
       override val neuronTarget: Neuron = connectionNeuronTarget
