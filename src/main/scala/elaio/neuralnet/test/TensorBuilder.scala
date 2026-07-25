@@ -35,7 +35,7 @@ object TensorBuilder {
     val tolerance = 0.1d
 
     initInputsOutputs(container, inputValues, targetValues)
-    train(container, learningRate = 0.03, epochs = 10000)
+    train(container, learningRate = 0.003, epochs = 5000)
 
     val outValues: Array[Double] = feedbackIn(container, tolerance)
     for (outValue <- outValues) {
