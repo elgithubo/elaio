@@ -64,11 +64,13 @@ class TensoredContainer(
     var bottomNeuronsLastRecur: Array[Neuron] = Array.ofDim[Neuron](0)
     var newNeuronsSameRank: Array[Neuron] = Array.ofDim[Neuron](0)
     var hereNeuronsLastToConnect: Array[Neuron] = Array.ofDim[Neuron](0)
+    var childNeuronsLastRecur: Array[Neuron] = Array.ofDim[Neuron](0)
 
     for (nextNeuronOuterIndexOffset <- buildDimOuter to -buildDimOuter by -1) {
       if (nextNeuronOuterIndexOffset != 0) {
         var newNeuronsHere: Array[Neuron] = Array.ofDim[Neuron](0)
         var bottomNeuronsThisRecur: Array[Neuron] = Array.ofDim[Neuron](0)
+        var childNeuronsThisRecur: Array[Neuron] = Array.ofDim[Neuron](0)
         for (i <- 1 to buildInOutWidth) {
           var newNeuronSameRank = dataCreator.create(NeuronType.Hidden)
           newNeuronsSameRank = newNeuronsSameRank :+ newNeuronSameRank
@@ -103,6 +105,7 @@ class TensoredContainer(
           neuronsReturn(2) = neuronsLowerDim(2)
 
           bottomNeuronsThisRecur = neuronsLowerDim(2)
+          childNeuronsThisRecur = neuronsLowerDim(0)
 
           for (neuronLowerDim <- neuronsLowerDim(0)) {
             for (newNeuronHere <- newNeuronsHere) {
@@ -113,6 +116,17 @@ class TensoredContainer(
               }
             }
           }
+
+          // Fix the wiring for dead end neurons
+          if (childNeuronsLastRecur.length > 0) {
+            for (childNeuron <- childNeuronsThisRecur if childNeuron.connectionsIn.isEmpty) {
+              childNeuronsLastRecur.foreach(connectNeurons(_, childNeuron))
+            }
+            for (childNeuron <- childNeuronsLastRecur if childNeuron.connectionsOut.isEmpty) {
+              childNeuronsThisRecur.foreach(connectNeurons(childNeuron, _))
+            }
+          }
+          childNeuronsLastRecur = childNeuronsThisRecur
         } else {
           neuronsReturn(2) = neuronsReturn(2) ++ newNeuronsHere
         }
