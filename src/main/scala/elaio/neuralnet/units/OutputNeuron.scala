@@ -1,19 +1,16 @@
 package elaio.neuralnet.units
 
 import elaio.neuralnet.trace.NetTrace
-import elaio.neuralnet.activation.Activation
-import elaio.neuralnet.processing.NeuronCollectionCache
 
 class OutputNeuron() extends Neuron {
 
   protected var _target: Double = 0d
 
-  def initOutput(target: Double, tolerance: Double): Unit = {
+  def initOutput(target: Double): Unit = {
     _target = target
     NetTrace.WriteMessage(
-      "initializing input neuron - target: " + target
+      "initializing output neuron - target: " + target
     )
-    init(tolerance)
   }
 
   // linear output: targets are arbitrary-magnitude values, not (0,1)-bounded

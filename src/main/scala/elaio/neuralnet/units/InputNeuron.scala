@@ -1,23 +1,14 @@
 package elaio.neuralnet.units
 
-import elaio.neuralnet.trace.NetTrace
-
 class InputNeuron extends Neuron {
 
-  protected var _initValue: Double = -1d
-  
-  override def collectInConnections(pullWeight: Double, backpropagation: Boolean): Double = {
+  // an input neuron holds its value instead of computing one, so it ignores
+  // its (empty) in-connections rather than summing over them
+  override def collectInConnections(): Double = {
     _value
-  }    
-  
-  def initInput(initValue: Double, tolerance: Double): Unit = {
-    _initValue = initValue
-    _value = initValue
-    init(tolerance)
   }
 
-  def initValue: Double = {
-    _initValue
+  def initInput(initValue: Double): Unit = {
+    _value = initValue
   }
 }
-

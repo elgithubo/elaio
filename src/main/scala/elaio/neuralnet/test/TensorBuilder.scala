@@ -19,7 +19,6 @@ object TensorBuilder {
       5,
       6,
       neuronDataCreatorTensored,
-      true,
     )
     container.init()
     NetTrace.WriteMessage("total neurons created: " + NeuronCounter.current)
@@ -35,7 +34,7 @@ object TensorBuilder {
     val targetValues = inputValues.map(_ * 2)
     val tolerance = 0.1d
 
-    initInputsOutputs(container, inputValues, targetValues, tolerance)
+    initInputsOutputs(container, inputValues, targetValues)
     train(container, learningRate = 0.03, epochs = 10000)
 
     val outValues: Array[Double] = feedbackIn(container, tolerance)
@@ -49,16 +48,15 @@ object TensorBuilder {
   private def initInputsOutputs(
       container: TensoredContainer,
       inputValues: Array[Double],
-      targetValues: Array[Double],
-      tolerance: Double
+      targetValues: Array[Double]
   ): Unit = {
     require(
       inputValues.length == targetValues.length,
       "every input needs its own target: " + inputValues.length + " inputs but " + targetValues.length + " targets"
     )
     for (index <- inputValues.indices) {
-      container.inputNodes(index).asInstanceOf[InputNeuron].initInput(inputValues(index), tolerance)
-      container.outputNodes(index).asInstanceOf[OutputNeuron].initOutput(targetValues(index), tolerance)
+      container.inputNodes(index).asInstanceOf[InputNeuron].initInput(inputValues(index))
+      container.outputNodes(index).asInstanceOf[OutputNeuron].initOutput(targetValues(index))
     }
   }
 
@@ -67,7 +65,7 @@ object TensorBuilder {
       NeuronCollectionCache.clear()
       var totalError = 0d
       for (outputNode <- container.outputNodes) {
-        outputNode.collectInConnections(0d, false)
+        outputNode.collectInConnections()
         val residual = outputNode.asInstanceOf[OutputNeuron].target - outputNode.value
         totalError = totalError + residual * residual
       }
@@ -86,7 +84,7 @@ object TensorBuilder {
     NeuronCollectionCache.clear()
     for (outputNode <- container.outputNodes) {
       index = index + 1
-      val outValue = outputNode.collectInConnections(0d, false)
+      val outValue = outputNode.collectInConnections()
       val target = outputNode.asInstanceOf[OutputNeuron].target
       NetTrace.WriteMessage("received outvalue " + index + ": " + outValue + " - searched: " + target)
       if (math.abs(target - outValue) < tolerance) {

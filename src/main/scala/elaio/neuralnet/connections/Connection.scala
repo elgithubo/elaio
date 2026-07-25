@@ -9,13 +9,13 @@ trait Connection{
   // initialize weight based on a rendom number for now
   var weight: Double = scala.util.Random.nextDouble() * 2d - 1d
 
-  def collect(pullWeight: Double, backpropagation: Boolean): Double = {
+  def collect(): Double = {
     val cachedNeuron = NeuronCollectionCache.get(neuronSource.id)
     val neuronValue =
       if (cachedNeuron != null) {
         cachedNeuron.value
       } else {
-        val v = neuronSource.collectInConnections(pullWeight, backpropagation)
+        val v = neuronSource.collectInConnections()
         NeuronCollectionCache.add(neuronSource)
         v
       }

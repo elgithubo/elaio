@@ -9,10 +9,7 @@ class TensoredContainer(
     dimOuter: Int,
     inOutWidth: Int,
     dataCreator: DataCreator,
-    recurse: Boolean,
 ) {
-
-  class BuildData {}
 
   var _inputNodes = Array.ofDim[Neuron](0)
   var _outputNodes = Array.ofDim[Neuron](0)
@@ -40,7 +37,6 @@ class TensoredContainer(
     buildNodesRecurse(
       buildDimOuter,
       buildInOutWidth,
-      null,
       dataCreator,
       true
     )
@@ -49,12 +45,10 @@ class TensoredContainer(
   private def buildNodesRecurse(
       buildDimOuter: Int,
       buildInOutWidth: Int,
-      neurons: Array[Neuron],
       dataCreator: DataCreator,
       inputBackpropagationCreationPossible: Boolean,
   ): Array[Array[Neuron]] = {
     var neuronsReturn = Array.ofDim[Neuron](3, 0)
-    var neuronsLastLayer = Array.ofDim[Neuron](0)
 
     if (inputBackpropagationCreationPossible) {
         for (i <- 1 to buildInOutWidth) {
@@ -103,7 +97,6 @@ class TensoredContainer(
           var neuronsLowerDim = buildNodesRecurse(
             buildDimOuter - 1,
             1,
-            newNeuronsHere,
             dataCreator,
             false,
           )
