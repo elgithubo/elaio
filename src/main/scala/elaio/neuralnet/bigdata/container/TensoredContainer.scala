@@ -117,13 +117,14 @@ class TensoredContainer(
             }
           }
 
-          // Fix the wiring for dead end neurons
+          // add wiring for dead end neurons
           if (childNeuronsLastRecur.length > 0) {
-            for (childNeuron <- childNeuronsThisRecur if childNeuron.connectionsIn.isEmpty) {
-              childNeuronsLastRecur.foreach(connectNeurons(_, childNeuron))
-            }
-            for (childNeuron <- childNeuronsLastRecur if childNeuron.connectionsOut.isEmpty) {
-              childNeuronsThisRecur.foreach(connectNeurons(childNeuron, _))
+            var childNeuronIndex: Int = 0
+            for (childNeuron <- childNeuronsThisRecur) { 
+              if (childNeuron.connectionsIn.isEmpty) {
+                connectNeurons(childNeuronsLastRecur(childNeuronIndex), childNeuron)
+              }
+              childNeuronIndex = childNeuronIndex + 1
             }
           }
           childNeuronsLastRecur = childNeuronsThisRecur
