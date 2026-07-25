@@ -28,13 +28,17 @@ object TensorBuilder {
     val weightCount = WeightInitializer.initialize(container.outputNodes)
     NetTrace.WriteMessage("connection weights initialized: " + weightCount)
 
+    // the task: what the net is asked to turn the inputs into. Stated here and
+    // nowhere else - everything downstream reads the target back off the
+    // OutputNeuron, so changing the task means changing only this line.
     val inputValues = Array(6d, 5d, 4d, 3d, 0.5d, -6d)
+    val targetValues = inputValues.map(_ * 2)
     val tolerance = 0.1d
 
-    initInputsOutputs(container, inputValues, tolerance)
+    initInputsOutputs(container, inputValues, targetValues, tolerance)
     train(container, learningRate = 0.03, epochs = 10000)
 
-    val outValues: Array[Double] = feedbackIn(container, inputValues, tolerance)
+    val outValues: Array[Double] = feedbackIn(container, tolerance)
     for (outValue <- outValues) {
       NetTrace.WriteMessage("outValue: " + outValue)
     }
@@ -42,10 +46,19 @@ object TensorBuilder {
     NetTrace.WriteMessage("end of test run")
   }
 
-  private def initInputsOutputs(container: TensoredContainer, inputValues: Array[Double], tolerance: Double): Unit = {
+  private def initInputsOutputs(
+      container: TensoredContainer,
+      inputValues: Array[Double],
+      targetValues: Array[Double],
+      tolerance: Double
+  ): Unit = {
+    require(
+      inputValues.length == targetValues.length,
+      "every input needs its own target: " + inputValues.length + " inputs but " + targetValues.length + " targets"
+    )
     for (index <- inputValues.indices) {
       container.inputNodes(index).asInstanceOf[InputNeuron].initInput(inputValues(index), tolerance)
-      container.outputNodes(index).asInstanceOf[OutputNeuron].initOutput(inputValues(index) * 2, tolerance)
+      container.outputNodes(index).asInstanceOf[OutputNeuron].initOutput(targetValues(index), tolerance)
     }
   }
 
@@ -64,30 +77,24 @@ object TensorBuilder {
     }
   }
 
-  private def feedbackIn(container: TensoredContainer, inputValues: Array[Double], tolerance: Double): Array[Double] = {
+  // Runs a forwards pass and validates every output against the target it was initialised with.
+  // Returns the values that landed within tolerance.
+  private def feedbackIn(container: TensoredContainer, tolerance: Double): Array[Double] = {
     var outValues: Array[Double] = Array.ofDim[Double](0)
-    var outValue: Double = 0d
     var index: Integer = 0
 
-    var doContinue: Boolean = false
-    for (inputValue <- inputValues) {
+    NeuronCollectionCache.clear()
+    for (outputNode <- container.outputNodes) {
       index = index + 1
-      doContinue = false
-      //the following does not seem to be required
-      //NeuronCollectionCache.clear()
-      for (outputNode <- container.outputNodes) {
-        if (!doContinue) {
-          outValue = outputNode.collectInConnections(inputValue, false)
-          NetTrace.WriteMessage("received outvalue " + index + ": " + outValue + " - searched: " + inputValue)
-          if (outValue > inputValue * 2 - tolerance && outValue < inputValue * 2 + tolerance) {
-            outValues = outValues :+ outValue
-            NetTrace.WriteMessage("found outvalue " + index + ": " + outValue + " searched: " + inputValue)
-            doContinue = true
-          }
-        }
+      val outValue = outputNode.collectInConnections(0d, false)
+      val target = outputNode.asInstanceOf[OutputNeuron].target
+      NetTrace.WriteMessage("received outvalue " + index + ": " + outValue + " - searched: " + target)
+      if (math.abs(target - outValue) < tolerance) {
+        outValues = outValues :+ outValue
+        NetTrace.WriteMessage("found outvalue " + index + ": " + outValue + " searched: " + target)
       }
-      NetTrace.WriteMessage("distinct neurons visited this pass: " + NeuronCollectionCache.size)
     }
+    NetTrace.WriteMessage("distinct neurons visited this pass: " + NeuronCollectionCache.size)
     outValues
   }
 }
