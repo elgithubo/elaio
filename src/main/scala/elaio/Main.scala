@@ -1,4 +1,4 @@
-// v3 compatibility bootstrap
+// scala v3 compatibility bootstrap
 package elaio{
   package neuralnet{
     package bigdata{
