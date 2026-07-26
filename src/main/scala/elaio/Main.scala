@@ -1,7 +1,8 @@
 // scala v3 compatibility bootstrap - needed when compiling by hand with scalac.
-// compile with: scalac `find src -name "*.scala"`
-// Must list every package that actually exists under elaio: check against
-//   grep -h "^package" $(find src -name "*.scala" ! -name Main.scala) | sort -u
+// compile with: 
+//   scalac `find src -name "*.scala"`
+// Must list every package that actually exists under elaio. check against:
+//   grep -h "^package" `find src -name "*.scala" ! -name Main.scala` | sort -u
 package elaio{
   package neuralnet{
     package activation{}
@@ -16,6 +17,7 @@ package elaio{
     package units{}
   }
 }
+
 // This class is an entry point for testing and debugging.
 // It is meant to call test methods and enable in-IDE debugging.
 import elaio.neuralnet.test.TensorBuilder
