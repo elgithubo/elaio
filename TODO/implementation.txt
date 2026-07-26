@@ -1,5 +1,7 @@
 - evaluate fixed seeds instead of random seeds
 - persist weights
 - review Claude assisted commit for training in detail
-- analyze/fix the last few remaining unvisited nodes 
+- analyze/fix the last few remaining unvisited nodes
+- debug duplicate connections
+- debug remaining (few) dead ends
 - multi example learning, 1 train followed by new input with other values
