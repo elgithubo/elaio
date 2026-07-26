@@ -10,7 +10,7 @@
 
 - debug remaining (few) dead ends
 
-- multi example learning, 1 train followed by new input with other values
+- check if there is a more suitable learning rate (with a task harness)
 
 - claude: guard training/test inputs against being multiples of each other (cosine check).
   Without bias terms the net is positively homogeneous, N(c*x) = c*N(x), measured
