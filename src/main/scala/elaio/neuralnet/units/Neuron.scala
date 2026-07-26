@@ -20,8 +20,6 @@ abstract class Neuron {
   def delta_(delta: Double): Unit = { _delta = delta }
 
   // One forward pass: pull from every in-connection, average, activate.
-  // The derivatives needed for learning are not computed here - Backpropagation
-  // walks the same neurons in reverse afterwards and calls activationDerivative.
   def collectInConnections(): Double = {
 
     var valueSum = 0d

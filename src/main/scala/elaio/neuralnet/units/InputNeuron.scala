@@ -2,8 +2,7 @@ package elaio.neuralnet.units
 
 class InputNeuron extends Neuron {
 
-  // an input neuron holds its value instead of computing one, so it ignores
-  // its (empty) in-connections rather than summing over them
+  // holds its value instead of computing one
   override def collectInConnections(): Double = {
     _value
   }

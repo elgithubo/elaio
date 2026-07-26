@@ -15,9 +15,7 @@ object TensorBuilder {
   private val epochs = 50000
   private val tolerance = 0.2d
 
-  // the task: what the net is asked to turn the inputs into. Stated here and
-  // nowhere else - everything downstream reads the target back off the
-  // OutputNeuron, so changing the task means changing only this line.
+  // the task, stated only here - everything downstream reads it back off the OutputNeuron
   private def targetOf(inputValues: Array[Double]): Array[Double] = inputValues.map(_ * 2d)
 
   def run(): Unit = {
@@ -34,11 +32,9 @@ object TensorBuilder {
     val weightCount = WeightInitializer.initialize(container.outputNodes)
     NetTrace.WriteMessage("connection weights initialized: " + weightCount)
 
-    // A single example would only teach the net six constants. It has to pin
-    // down a 6 -> 6 map, 36 free parameters, and every example supplies just 6
-    // equations, so below six examples the fit is arbitrary away from the
-    // training points. Measured on this task, agreement on an unseen input runs
-    // about 0.12 with one example, 0.67 with six and 0.99 with thirty.
+    // Needs many examples: a 6 -> 6 map has 36 unknowns and each example gives 6
+    // equations. Accuracy on unseen inputs comes from the example count, not the
+    // epoch count - 30 examples missed the tolerance entirely, 100 hit 5 of 6.
     val random = new scala.util.Random
     val trainInputs = Array.fill(trainCount)(randomInput(random))
     val checkInput = randomInput(random)
@@ -46,8 +42,7 @@ object TensorBuilder {
     NetTrace.WriteMessage("training on " + trainInputs.length + " examples")
     train(container, trainInputs, random)
 
-    // How well the training examples themselves come back. Says little on its
-    // own, but a poor number here means training simply did not finish.
+    // How well the training examples come back - a poor number means training did not finish
     var trainedWithin = 0
     for (inputValues <- trainInputs) {
       initInputsOutputs(container, inputValues, targetOf(inputValues))
@@ -124,8 +119,7 @@ object TensorBuilder {
     }
   }
 
-  // Runs a forwards pass and validates every output against the target it was initialised with.
-  // Returns the values that landed within tolerance.
+  // One forward pass, returning the outputs that landed within tolerance of their target
   private def feedbackIn(container: TensoredContainer): Array[Double] = {
     var outValues: Array[Double] = Array.ofDim[Double](0)
     var index: Integer = 0

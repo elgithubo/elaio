@@ -4,22 +4,9 @@ import elaio.neuralnet.activation.Activation
 import elaio.neuralnet.units.Neuron
 
 object WeightInitializer {
-  // He-style initialisation, adapted to the fact that Neuron.collectInConnections
-  // averages its incoming values instead of summing them:
-  //     z = (1 / N) * sum_i (w_i * a_i)   =>   Var(z) = Var(w) * E[a^2] / N
-  // With E[a^2] = secondMomentFactor * Var(z_prev), holding the signal variance
-  // steady from one layer to the next needs
-  //     Var(w) = N / secondMomentFactor          (roughly 2N for leaky ReLU)
-  //
-  // Note this is the inverse of textbook He init, where Var(w) = 2/N. Dividing
-  // the sum by N shrinks it faster (1/N) than N random terms accumulate
-  // (sqrt(N)), so here the weights have to GROW with fan-in to compensate,
-  // rather than shrink.
-  //
-  // Has to run after the graph is fully built: a Connection cannot size itself
-  // at construction time, because its target keeps gaining further
-  // in-connections afterwards and the fan-in is not final yet. Walking backward
-  // from the outputs covers exactly the connections a forward pass will use.
+  // He-style init, inverted because collectInConnections averages rather than sums:
+  // Var(w) = N / secondMomentFactor, so weights grow with fan-in instead of shrinking.
+  // Runs after the graph is built, walking back from the outputs once fan-in is final.
   def initialize(outputNodes: Array[Neuron]): Int = {
     val random = new scala.util.Random
     val seen = scala.collection.mutable.Set[Double]()

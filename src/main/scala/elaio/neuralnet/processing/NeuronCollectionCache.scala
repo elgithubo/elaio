@@ -5,10 +5,8 @@ import elaio.neuralnet.units.Neuron
 
 object NeuronCollectionCache {
   private var cache: HashMap[Double, Neuron] = HashMap.empty[Double, Neuron]
-  // order records the order neurons finish computing in during a forward pass.
-  // since a neuron is only added once all of its own sources have already been added,
-  // this order is a valid topological order - reversing it gives a valid order
-  // for a backward (backpropagation) pass with no separate graph walk needed.
+  // A neuron is only added once all its sources are, so order is a topological
+  // order - reversed, it is a valid backpropagation order.
   private var order: ArrayBuffer[Neuron] = ArrayBuffer.empty[Neuron]
 
   def clear() = {

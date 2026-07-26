@@ -4,15 +4,13 @@ class OutputNeuron() extends Neuron {
 
   protected var _target: Double = 0d
 
-  // called once per output per example per epoch - keep it free of tracing,
-  // a single message here is tens of millions of lines over a training run
+  // hot path - called per output per example per epoch, so no tracing here
   def initOutput(target: Double): Unit = {
     _target = target
   }
 
-  // linear output: targets are arbitrary-magnitude values, not (0,1)-bounded
-  // probabilities, so squashing the output through a sigmoid caps what this
-  // neuron could ever reconstruct. Hidden layers keep the nonlinearity.
+  // linear output: skips the hidden layers' leaky ReLU, which would scale
+  // negative targets by leak and positive ones by 1
   override def activationFunction(input: Double): Double = input
   override def activationDerivative(input: Double): Double = 1d
 
