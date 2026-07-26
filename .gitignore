@@ -3,7 +3,6 @@
 **/*.tasty
 .idea
 .scalafmt.conf
-rapki.iml
 .bloop/*
 .bsp/*
 .metals/*

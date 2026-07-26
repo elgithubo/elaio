@@ -1,8 +1,10 @@
-// scala v3 compatibility bootstrap - needed when compiling by hand with scalac.
+// scala v3 compatibility bootstrap - needed when compiling by hand with scalac insteam of sbt.
 // compile with: 
 //   scalac `find src -name "*.scala"`
-// Must list every package that actually exists under elaio. check against:
-//   grep -h "^package" `find src -name "*.scala" ! -name Main.scala` | sort -u
+// and run with:
+//   scala -cp . Main
+// must list every package that actually exists under elaio. check against:
+//   grep -h "^package" `find src -type f -name "*.scala" ! -name Main.scala` | sort -u
 package elaio{
   package neuralnet{
     package activation{}
