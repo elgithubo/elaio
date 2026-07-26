@@ -25,6 +25,7 @@ object TensorBuilder {
     NetTrace.WriteMessage("start of test run")
 
     NetTrace.WriteMessage("build dimension: " + dimOuter )
+    NetTrace.WriteMessage{"in/out width " + width }
 
     val container = new TensoredContainer(dimOuter, width, new NeuronDataCreator)
     container.init()
