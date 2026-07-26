@@ -24,6 +24,8 @@ object TensorBuilder {
 
     NetTrace.WriteMessage("start of test run")
 
+    NetTrace.WriteMessage("build dimension: " + dimOuter )
+
     val container = new TensoredContainer(dimOuter, width, new NeuronDataCreator)
     container.init()
     NetTrace.WriteMessage("total neurons created: " + NeuronCounter.current)
@@ -39,7 +41,7 @@ object TensorBuilder {
     val trainInputs = Array.fill(trainCount)(randomInput(random))
     val checkInput = randomInput(random)
 
-    NetTrace.WriteMessage("training on " + trainInputs.length + " examples")
+    NetTrace.WriteMessage("training on " + trainInputs.length + " examples ovedr " + epochs + " epochs with learning rate " + learningRate)
     train(container, trainInputs, random)
 
     // How well the training examples come back - a poor number means training did not finish
