@@ -1,4 +1,4 @@
-- evaluate fixed seeds instead of random seeds
+- evaluate fixed seeds instead of random seeds / add bias
 
 - persist weights
 
