@@ -1,16 +1,13 @@
 package elaio.neuralnet.units
 
-import elaio.neuralnet.trace.NetTrace
-
 class OutputNeuron() extends Neuron {
 
   protected var _target: Double = 0d
 
+  // called once per output per example per epoch - keep it free of tracing,
+  // a single message here is tens of millions of lines over a training run
   def initOutput(target: Double): Unit = {
     _target = target
-    NetTrace.WriteMessage(
-      "initializing output neuron - target: " + target
-    )
   }
 
   // linear output: targets are arbitrary-magnitude values, not (0,1)-bounded

@@ -1,7 +1,23 @@
 - evaluate fixed seeds instead of random seeds
+
 - persist weights
+
 - review Claude assisted commit for training in detail
+
 - analyze/fix the last few remaining unvisited nodes
+
 - debug duplicate connections
+
 - debug remaining (few) dead ends
+
 - multi example learning, 1 train followed by new input with other values
+
+- claude: guard training/test inputs against being multiples of each other (cosine check).
+  Without bias terms the net is positively homogeneous, N(c*x) = c*N(x), measured
+  as exactly 2.000 for N(2x)/N(x). So a test input that is a multiple of a training
+  input is answered correctly for free and proves nothing - seen in practice: a
+  scaled 3x input passed with error 1.2e-05 while a genuinely fresh input failed
+  with 9.0e+01. Two proportional training inputs are also redundant, the second
+  adds no equations. Reject candidates with |cosine| > 0.99 against the ones
+  already accepted. Only matters for hand picked or systematic inputs; random
+  vectors are almost never near parallel.
