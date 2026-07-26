@@ -1,3 +1,3 @@
 name := "elaio"
-version := "0.1"
-scalaVersion := "3.7.4"
+version := "0.2"
+scalaVersion := "3.8.4"
