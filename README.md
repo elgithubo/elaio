@@ -2,7 +2,8 @@
 
 Status
 ======
-Status: work in progress, net can learn to multiply
+work in progress
+net can learn to multiply
 
 Requires
 ========
@@ -14,7 +15,7 @@ elaio is a learning machine based on a neural network
 
 Quick run
 =========
-Install sbt (Scala Build Tool) and execute 'sbt run'
+install sbt (Scala Build Tool) and execute 'sbt run'
 
 Reference Implementations
 =========================
