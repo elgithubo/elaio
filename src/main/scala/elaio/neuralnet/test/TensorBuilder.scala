@@ -18,6 +18,7 @@ object TensorBuilder {
   // the task, stated only here
   private def targetOf(inputValues: Array[Double]): Array[Double] = inputValues.map(_ * 2d)
 
+  // run the test case
   def run(): Unit = {
     // Enable the following line to write detailed trace messages to stdout
     NetTrace.started_(true)
