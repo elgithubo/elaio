@@ -48,8 +48,9 @@ object TensorBuilder {
     // How well the training examples come back - a poor number means training did not finish
     var trainedWithin = 0
     for (inputValues <- trainInputs) {
-      initInputsOutputs(container, inputValues, targetOf(inputValues))
-      trainedWithin = trainedWithin + countWithinTolerance(container)
+      initInputs(container, inputValues)
+      forwardPass(container)
+      trainedWithin = trainedWithin + countWithinTolerance(container, targetOf(inputValues))
     }
     NetTrace.WriteMessage(
       "trained inputs: " + trainedWithin + " of " + (trainInputs.length * width) + " outputs within tolerance"
@@ -58,8 +59,8 @@ object TensorBuilder {
     // the actual test: an input the net has never been trained on
     NetTrace.WriteMessage("")
     NetTrace.WriteMessage("checking an unseen input: " + checkInput.map(v => f"$v%.3f").mkString(", "))
-    initInputsOutputs(container, checkInput, targetOf(checkInput))
-    val checkOutValues: Array[Double] = feedbackIn(container)
+    initInputs(container, checkInput)
+    val checkOutValues: Array[Double] = feedbackIn(container, targetOf(checkInput))
     NetTrace.WriteMessage(
       "unseen input: " + checkOutValues.length + " of " + width + " outputs within tolerance"
     )
@@ -70,39 +71,42 @@ object TensorBuilder {
   private def randomInput(random: scala.util.Random): Array[Double] =
     Array.fill(width)(random.nextDouble() * 12d - 6d)
 
-  private def initInputsOutputs(
-      container: TensoredContainer,
-      inputValues: Array[Double],
-      targetValues: Array[Double]
-  ): Unit = {
-    require(
-      inputValues.length == targetValues.length,
-      "every input needs its own target: " + inputValues.length + " inputs but " + targetValues.length + " targets"
-    )
-    for (index <- inputValues.indices) {
+  // asks the net a question
+  private def initInputs(container: TensoredContainer, inputValues: Array[Double]): Unit = {
+    require(inputValues.length == width, "expected " + width + " inputs but got " + inputValues.length)
+    for (index <- inputValues.indices)
       container.inputNodes(index).asInstanceOf[InputNeuron].initInput(inputValues(index))
+  }
+
+  // tells the net the wanted answer - only backpropagation reads this, never a forward pass
+  private def initTargets(container: TensoredContainer, targetValues: Array[Double]): Unit = {
+    require(targetValues.length == width, "expected " + width + " targets but got " + targetValues.length)
+    for (index <- targetValues.indices)
       container.outputNodes(index).asInstanceOf[OutputNeuron].initOutput(targetValues(index))
-    }
   }
 
-  // one forward pass, returning the summed squared error over the outputs
-  private def forwardPass(container: TensoredContainer): Double = {
+  // one forward pass over the graph
+  private def forwardPass(container: TensoredContainer): Unit = {
     NeuronCollectionCache.clear()
-    var squaredError = 0d
-    for (outputNode <- container.outputNodes) {
+    for (outputNode <- container.outputNodes)
       outputNode.collectInConnections()
-      val residual = outputNode.asInstanceOf[OutputNeuron].target - outputNode.value
-      squaredError = squaredError + residual * residual
-    }
-    squaredError
   }
 
-  private def countWithinTolerance(container: TensoredContainer): Int = {
-    forwardPass(container)
-    container.outputNodes.count { outputNode =>
-      math.abs(outputNode.asInstanceOf[OutputNeuron].target - outputNode.value) < tolerance
+  // summed squared error of the last forward pass against the targets set on the outputs
+  private def squaredError(container: TensoredContainer): Double = {
+    var total = 0d
+    for (outputNode <- container.outputNodes) {
+      val residual = outputNode.asInstanceOf[OutputNeuron].target - outputNode.value
+      total = total + residual * residual
     }
+    total
   }
+
+  // scores the last forward pass against expected values passed in, not against the outputs' targets
+  private def countWithinTolerance(container: TensoredContainer, expected: Array[Double]): Int =
+    container.outputNodes.indices.count(index =>
+      math.abs(expected(index) - container.outputNodes(index).value) < tolerance
+    )
 
   private def train(
       container: TensoredContainer,
@@ -113,8 +117,10 @@ object TensorBuilder {
       var totalError = 0d
       // shuffled so the updates do not settle into a fixed cycle
       for (inputValues <- random.shuffle(trainInputs.toSeq)) {
-        initInputsOutputs(container, inputValues, targetOf(inputValues))
-        totalError = totalError + forwardPass(container)
+        initInputs(container, inputValues)
+        initTargets(container, targetOf(inputValues))
+        forwardPass(container)
+        totalError = totalError + squaredError(container)
         Backpropagation.run(container.outputNodes, learningRate)
       }
       if (epoch == 1 || epoch % 1000 == 0 || epoch == epochs)
@@ -122,20 +128,17 @@ object TensorBuilder {
     }
   }
 
-  // One forward pass, returning the outputs that landed within tolerance of their target
-  private def feedbackIn(container: TensoredContainer): Array[Double] = {
+  // One forward pass, returning the outputs within tolerance of the expected values
+  private def feedbackIn(container: TensoredContainer, expected: Array[Double]): Array[Double] = {
     var outValues: Array[Double] = Array.ofDim[Double](0)
-    var index: Integer = 0
 
     forwardPass(container)
-    for (outputNode <- container.outputNodes) {
-      index = index + 1
-      val outValue = outputNode.value
-      val target = outputNode.asInstanceOf[OutputNeuron].target
-      NetTrace.WriteMessage("received outvalue " + index + ": " + outValue + " - searched: " + target)
-      if (math.abs(target - outValue) < tolerance) {
+    for (index <- container.outputNodes.indices) {
+      val outValue = container.outputNodes(index).value
+      NetTrace.WriteMessage("received outvalue " + (index + 1) + ": " + outValue + " - searched: " + expected(index))
+      if (math.abs(expected(index) - outValue) < tolerance) {
         outValues = outValues :+ outValue
-        NetTrace.WriteMessage("found outvalue " + index + ": " + outValue + " searched: " + target)
+        NetTrace.WriteMessage("found outvalue " + (index + 1) + ": " + outValue + " searched: " + expected(index))
       }
     }
     NetTrace.WriteMessage("distinct neurons visited this pass: " + NeuronCollectionCache.size)
