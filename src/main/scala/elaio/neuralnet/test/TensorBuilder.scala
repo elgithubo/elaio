@@ -12,10 +12,10 @@ object TensorBuilder {
   private val width = 6
   private val trainCount = 200
   private val learningRate = 0.001d
-  private val epochs = 10000
+  private val epochs = 50000
   private val tolerance = 0.2d
 
-  // the task, stated only here - everything downstream reads it back off the OutputNeuron
+  // the task, stated only here
   private def targetOf(inputValues: Array[Double]): Array[Double] = inputValues.map(_ * 2d)
 
   def run(): Unit = {
@@ -24,8 +24,8 @@ object TensorBuilder {
 
     NetTrace.WriteMessage("start of test run")
 
-    NetTrace.WriteMessage("build dimension: " + dimOuter )
-    NetTrace.WriteMessage{"in/out width " + width }
+    NetTrace.WriteMessage("build dimension: " + dimOuter)
+    NetTrace.WriteMessage("in/out width: " + width)
 
     val container = new TensoredContainer(dimOuter, width, new NeuronDataCreator)
     container.init()
@@ -45,22 +45,11 @@ object TensorBuilder {
     NetTrace.WriteMessage("training on " + trainInputs.length + " examples over " + epochs + " epochs with learning rate " + learningRate)
     train(container, trainInputs, random)
 
-    // How well the training examples come back - a poor number means training did not finish
-    var trainedWithin = 0
-    for (inputValues <- trainInputs) {
-      trainedWithin = trainedWithin + container.outputNodes.indices.count(index =>
-        math.abs(targetOf(inputValues)(index) - container.outputNodes(index).value) < tolerance
-      )
-    }
-    NetTrace.WriteMessage(
-      "trained inputs: " + trainedWithin + " of " + (trainInputs.length * width) + " outputs within tolerance"
-    )
-
     // the actual test: an input the net has never been trained on
     NetTrace.WriteMessage("")
     NetTrace.WriteMessage("checking an unseen input: " + checkInput.map(v => f"$v%.3f").mkString(", "))
     initInputs(container, checkInput)
-    // One forward pass, returning what the net answered. Takes no expected values.
+    // One forward pass with the test values
     forwardPass(container)
     NetTrace.WriteMessage("distinct neurons visited this pass: " + NeuronCollectionCache.size)
     val checkOutValues: Array[Double] = container.outputNodes.map(_.value)
@@ -123,7 +112,7 @@ object TensorBuilder {
     }
   }
 
-  // Scores answers the net already gave, returning those within tolerance
+  // Scores answers the net already gave and reports how many are within tolerance
   private def checkOutputs(outValues: Array[Double], expected: Array[Double]): Unit = {
     require(outValues.length == expected.length, "need one expected value per output")
     var within: Int = 0
@@ -135,7 +124,7 @@ object TensorBuilder {
       }
     }
     NetTrace.WriteMessage(
-      "unseen input: " + within + " of " + width + " outputs within tolerance"
+      "unseen input: " + within + " of " + outValues.length + " outputs within tolerance"
     )
   }
 }
