@@ -2,7 +2,7 @@
 
 Status
 ======
-Status: work in progress
+Status: work in progress, net can learn to multiply
 
 Requires
 ========
