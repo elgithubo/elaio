@@ -123,7 +123,6 @@ class TensoredContainer(
             for (childNeuron <- childNeuronsThisRecur) { 
               if (childNeuron.connectionsIn.isEmpty) {
                 connectNeurons(childNeuronsLastRecur(childNeuronIndex), childNeuron)
-                NetTrace.WriteMessage("fix 1: added dead end connection from " + childNeuron + " to " + childNeuronsThisRecur(childNeuronIndex))
               }
               childNeuronIndex = childNeuronIndex + 1
             }
@@ -133,7 +132,6 @@ class TensoredContainer(
             for (childNeuron <- childNeuronsLastRecur) {
               if (childNeuron.connectionsOut.isEmpty) {
                 connectNeurons(childNeuron, childNeuronsThisRecur(childNeuronIndex))
-                NetTrace.WriteMessage("fix 2: added dead end connection from " + childNeuron + " to " + childNeuronsThisRecur(childNeuronIndex))
               }
               childNeuronIndex = childNeuronIndex + 1
             }
