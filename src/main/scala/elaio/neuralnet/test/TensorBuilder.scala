@@ -20,7 +20,7 @@ object TensorBuilder {
 
   // run the test case
   def run(): Unit = {
-    // Enable the following line to write detailed trace messages to stdout
+    // Enable the following line to write detailed trace messages to stdout, disable it for no output.
     NetTrace.started_(true)
 
     NetTrace.WriteMessage("start of test run")
