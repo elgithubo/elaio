@@ -12,7 +12,7 @@ object TensorBuilder {
   private val width = 6
   private val trainCount = 200
   private val learningRate = 0.001d
-  private val epochs = 50000
+  private val epochs = 10000
   private val tolerance = 0.2d
 
   // the task, stated only here - everything downstream reads it back off the OutputNeuron
@@ -48,9 +48,9 @@ object TensorBuilder {
     // How well the training examples come back - a poor number means training did not finish
     var trainedWithin = 0
     for (inputValues <- trainInputs) {
-      initInputs(container, inputValues)
-      forwardPass(container)
-      trainedWithin = trainedWithin + countWithinTolerance(container, targetOf(inputValues))
+      trainedWithin = trainedWithin + container.outputNodes.indices.count(index =>
+        math.abs(targetOf(inputValues)(index) - container.outputNodes(index).value) < tolerance
+      )
     }
     NetTrace.WriteMessage(
       "trained inputs: " + trainedWithin + " of " + (trainInputs.length * width) + " outputs within tolerance"
@@ -60,11 +60,11 @@ object TensorBuilder {
     NetTrace.WriteMessage("")
     NetTrace.WriteMessage("checking an unseen input: " + checkInput.map(v => f"$v%.3f").mkString(", "))
     initInputs(container, checkInput)
-    val checkOutValues: Array[Double] = feedbackIn(container)
-    val withinTolerance: Array[Double] = checkOutputs(checkOutValues, targetOf(checkInput))
-    NetTrace.WriteMessage(
-      "unseen input: " + withinTolerance.length + " of " + width + " outputs within tolerance"
-    )
+    // One forward pass, returning what the net answered. Takes no expected values.
+    forwardPass(container)
+    NetTrace.WriteMessage("distinct neurons visited this pass: " + NeuronCollectionCache.size)
+    val checkOutValues: Array[Double] = container.outputNodes.map(_.value)
+    checkOutputs(checkOutValues, targetOf(checkInput))
 
     NetTrace.WriteMessage("end of test run")
   }
@@ -89,8 +89,7 @@ object TensorBuilder {
   // one forward pass over the graph
   private def forwardPass(container: TensoredContainer): Unit = {
     NeuronCollectionCache.clear()
-    for (outputNode <- container.outputNodes)
-      outputNode.collectInConnections()
+    for (outputNode <- container.outputNodes) outputNode.collectInConnections()
   }
 
   // summed squared error of the last forward pass against the targets set on the outputs
@@ -103,12 +102,7 @@ object TensorBuilder {
     total
   }
 
-  // scores the last forward pass against expected values passed in, not against the outputs' targets
-  private def countWithinTolerance(container: TensoredContainer, expected: Array[Double]): Int =
-    container.outputNodes.indices.count(index =>
-      math.abs(expected(index) - container.outputNodes(index).value) < tolerance
-    )
-
+  // Execute the actual training, which is a forward pass followed by backpropagation for each example, repeated for the number of epochs.
   private def train(
       container: TensoredContainer,
       trainInputs: Array[Array[Double]],
@@ -129,24 +123,19 @@ object TensorBuilder {
     }
   }
 
-  // One forward pass, returning what the net answered. Takes no expected values.
-  private def feedbackIn(container: TensoredContainer): Array[Double] = {
-    forwardPass(container)
-    NetTrace.WriteMessage("distinct neurons visited this pass: " + NeuronCollectionCache.size)
-    container.outputNodes.map(_.value)
-  }
-
   // Scores answers the net already gave, returning those within tolerance
-  private def checkOutputs(outValues: Array[Double], expected: Array[Double]): Array[Double] = {
+  private def checkOutputs(outValues: Array[Double], expected: Array[Double]): Unit = {
     require(outValues.length == expected.length, "need one expected value per output")
-    var within: Array[Double] = Array.ofDim[Double](0)
+    var within: Int = 0
     for (index <- outValues.indices) {
       NetTrace.WriteMessage("received outvalue " + (index + 1) + ": " + outValues(index) + " - searched: " + expected(index))
       if (math.abs(expected(index) - outValues(index)) < tolerance) {
-        within = within :+ outValues(index)
+        within = within + 1
         NetTrace.WriteMessage("found outvalue " + (index + 1) + ": " + outValues(index) + " searched: " + expected(index))
       }
     }
-    within
+    NetTrace.WriteMessage(
+      "unseen input: " + within + " of " + width + " outputs within tolerance"
+    )
   }
 }
