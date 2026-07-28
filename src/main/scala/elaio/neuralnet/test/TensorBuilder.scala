@@ -10,9 +10,9 @@ object TensorBuilder {
 
   private val dimOuter = 3
   private val width = 6
-  private val trainCount = 200
+  private val trainCount = 250
   private val learningRate = 0.005d
-  private val epochs = 25000
+  private val epochs = 30000
   private val tolerance = 0.25d
 
   // the task to learn, stated only here
