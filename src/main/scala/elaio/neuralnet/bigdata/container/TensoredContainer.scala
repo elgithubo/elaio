@@ -1,7 +1,6 @@
 package elaio.neuralnet.bigdata.container
 
 import elaio.neuralnet.connections.Connection
-import elaio.neuralnet.trace.NetTrace
 import elaio.neuralnet.units.Neuron
 import elaio.neuralnet.units.NeuronType
 
@@ -51,14 +50,10 @@ class TensoredContainer(
     var neuronsReturn = Array.ofDim[Neuron](3, 0)
 
     if (inputBackpropagationCreationPossible) {
-        for (i <- 1 to buildInOutWidth) {
-          neuronsReturn(0) =
-            neuronsReturn(0) :+ dataCreator.create(NeuronType.Input)
-        }
-        for (i <- 1 to buildInOutWidth) {
-          neuronsReturn(1) =
-            neuronsReturn(1) :+ dataCreator.create(NeuronType.Output)
-        }
+        for (i <- 1 to buildInOutWidth)
+          neuronsReturn(0) = neuronsReturn(0) :+ dataCreator.create(NeuronType.Input)
+        for (i <- 1 to buildInOutWidth)
+          neuronsReturn(1) = neuronsReturn(1) :+ dataCreator.create(NeuronType.Output)
     }
 
     var bottomNeuronsLastRecur: Array[Neuron] = Array.ofDim[Neuron](0)
@@ -82,19 +77,13 @@ class TensoredContainer(
         if (
           nextNeuronOuterIndexOffset > 0 && (buildDimOuter - nextNeuronOuterIndexOffset.abs) % 2 == 0 ||
           nextNeuronOuterIndexOffset < 0 && (buildDimOuter - nextNeuronOuterIndexOffset.abs) % 2 == 1
-        ) {
-          isReverseNode = false;
-        }
+        ) isReverseNode = false
 
-        if (!isReverseNode) {
-          if (nextNeuronOuterIndexOffset == buildDimOuter) {
-            for (inNeuron <- neuronsReturn(0)) {
-              newNeuronsHere.foreach(
-                connectNeurons(inNeuron, _)
-              )
-            }
-          }
-        }
+        if (!isReverseNode)
+          if (nextNeuronOuterIndexOffset == buildDimOuter)
+            for (inNeuron <- neuronsReturn(0))
+              newNeuronsHere.foreach( connectNeurons(inNeuron, _) )
+
         if (buildDimOuter > 1) {
           var neuronsLowerDim = buildNodesRecurse(
             buildDimOuter - 1,
@@ -108,32 +97,25 @@ class TensoredContainer(
           if(buildDimOuter > 2) // avoid double connections
             childNeuronsThisRecur = neuronsLowerDim(0)
 
-          for (neuronLowerDim <- neuronsLowerDim(0)) {
-            for (newNeuronHere <- newNeuronsHere) {
-              if (isReverseNode) {
-                connectNeurons(neuronLowerDim, newNeuronHere)
-              } else {
-                connectNeurons(newNeuronHere, neuronLowerDim)
-              }
-            }
-          }
+          for (neuronLowerDim <- neuronsLowerDim(0))
+            for (newNeuronHere <- newNeuronsHere)
+              if (isReverseNode) connectNeurons(neuronLowerDim, newNeuronHere)
+              else connectNeurons(newNeuronHere, neuronLowerDim)
 
           // add wiring for dead end neurons
           if (childNeuronsLastRecur.length > 0) {
             var childNeuronIndex: Int = 0
-            for (childNeuron <- childNeuronsThisRecur) { 
-              if (childNeuron.connectionsIn.isEmpty) {
+            for (childNeuron <- childNeuronsThisRecur) {
+              if (childNeuron.connectionsIn.isEmpty)
                 connectNeurons(childNeuronsLastRecur(childNeuronIndex), childNeuron)
-              }
               childNeuronIndex = childNeuronIndex + 1
             }
           }
           if (childNeuronsThisRecur.length > 0) {
             var childNeuronIndex: Int = 0
             for (childNeuron <- childNeuronsLastRecur) {
-              if (childNeuron.connectionsOut.isEmpty) {
+              if (childNeuron.connectionsOut.isEmpty)
                 connectNeurons(childNeuron, childNeuronsThisRecur(childNeuronIndex))
-              }
               childNeuronIndex = childNeuronIndex + 1
             }
           }
@@ -141,39 +123,28 @@ class TensoredContainer(
         } else {
           neuronsReturn(2) = neuronsReturn(2) ++ newNeuronsHere
         }
-        if (isReverseNode) {
-          if (nextNeuronOuterIndexOffset == -buildDimOuter) {
-            for (outNeuron <- neuronsReturn(1)) {
-              newNeuronsHere.foreach(
-                connectNeurons(_, outNeuron)
-              )
-            }
-          }
-        }
+        if (isReverseNode)
+          if (nextNeuronOuterIndexOffset == -buildDimOuter)
+            for (outNeuron <- neuronsReturn(1))
+              newNeuronsHere.foreach( connectNeurons(_, outNeuron))
+
         if (buildDimOuter > 1) {
-          if (bottomNeuronsLastRecur.length > 0) {
-            for (bottomNeuronLastRecur <- bottomNeuronsLastRecur) {
-              for (bottomNeuronThisRecur <- bottomNeuronsThisRecur) {
+          if (bottomNeuronsLastRecur.length > 0)
+            for (bottomNeuronLastRecur <- bottomNeuronsLastRecur)
+              for (bottomNeuronThisRecur <- bottomNeuronsThisRecur)
                 connectNeurons(bottomNeuronLastRecur, bottomNeuronThisRecur)
-              }
-            }
-          }
           bottomNeuronsLastRecur = bottomNeuronsThisRecur
         }
-        if (hereNeuronsLastToConnect.length > 0) {
-          for (hereNeuronLastToConnect <- hereNeuronsLastToConnect) {
-            newNeuronsHere.foreach(
-              connectNeurons(hereNeuronLastToConnect, _)
-            )
-          }
-        }
+        if (hereNeuronsLastToConnect.length > 0)
+          for (hereNeuronLastToConnect <- hereNeuronsLastToConnect)
+            newNeuronsHere.foreach( connectNeurons(hereNeuronLastToConnect, _))
         hereNeuronsLastToConnect = newNeuronsHere
       }
     }
 
-    if (!inputBackpropagationCreationPossible) {
+    if (!inputBackpropagationCreationPossible)
       neuronsReturn(0) = newNeuronsSameRank
-    }
+
     neuronsReturn
   }
 
@@ -181,11 +152,6 @@ class TensoredContainer(
       connectionNeuronSource: Neuron,
       connectionNeuronTarget: Neuron
   ): Unit = {
-    if (connectionNeuronTarget.connectionsIn.exists(_.getNeuronSource eq connectionNeuronSource))
-      NetTrace.WriteMessage(
-        "connection already exists from " + connectionNeuronSource + " to " + connectionNeuronTarget
-      )
-
     val connection = new Connection {
       override val neuronSource: Neuron = connectionNeuronSource
       override val neuronTarget: Neuron = connectionNeuronTarget

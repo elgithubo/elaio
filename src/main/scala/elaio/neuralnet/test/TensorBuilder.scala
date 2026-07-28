@@ -11,7 +11,7 @@ object TensorBuilder {
   private val dimOuter = 3
   private val width = 6
   private val trainCount = 250
-  private val learningRate = 0.006d
+  private val learningRate = 0.005d
   private val epochs = 30000
   private val tolerance = 0.25d
 
@@ -120,7 +120,7 @@ object TensorBuilder {
       NetTrace.WriteMessage("received outvalue " + (index + 1) + ": " + outValues(index) + " - searched: " + expected(index))
       if (math.abs(expected(index) - outValues(index)) < tolerance) {
         within = within + 1
-        NetTrace.WriteMessage("found outvalue " + (index + 1) + ": " + outValues(index) + " searched: " + expected(index))
+        NetTrace.WriteMessage("found outvalue " + (index + 1) + ": " + outValues(index) + " - searched: " + expected(index), 1)
       }
     }
     NetTrace.WriteMessage(
