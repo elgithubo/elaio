@@ -17,6 +17,6 @@ Quick run
 =========
 install sbt (Scala Build Tool) and execute 'sbt run'
 
-Reference Implementations
+Reference implementations
 =========================
 ...to be done...
