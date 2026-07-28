@@ -1,7 +1,3 @@
-- debug the last (few) remaining unvisited nodes
-
-- debug remaining (few) dead ends (no in or no out)
-
 - add bias
 
 - persist weights

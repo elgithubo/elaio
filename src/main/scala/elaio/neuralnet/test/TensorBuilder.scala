@@ -11,7 +11,7 @@ object TensorBuilder {
   private val dimOuter = 3
   private val width = 6
   private val trainCount = 250
-  private val learningRate = 0.005d
+  private val learningRate = 0.006d
   private val epochs = 30000
   private val tolerance = 0.25d
 
@@ -23,7 +23,7 @@ object TensorBuilder {
     // Enable the following line to write detailed trace messages to stdout, disable it for no output.
     NetTrace.started_(true)
 
-    NetTrace.WriteMessage("start of test run")
+    NetTrace.WriteMessage("start of test run (if processing diverges with NaN, please rerun)")
 
     NetTrace.WriteMessage("build dimension: " + dimOuter)
     NetTrace.WriteMessage("in/out width: " + width)
@@ -108,7 +108,7 @@ object TensorBuilder {
         Backpropagation.run(container.outputNodes, learningRate)
       }
       if (epoch == 1 || epoch % 1000 == 0 || epoch == epochs)
-        NetTrace.WriteMessage("epoch " + epoch + ": total squared error = " + totalError)
+        NetTrace.WriteMessage("epoch " + epoch + ": total squared error = " + totalError, 1)
     }
   }
 
