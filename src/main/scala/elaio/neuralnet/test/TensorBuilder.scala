@@ -8,12 +8,12 @@ import elaio.neuralnet.training.{Backpropagation, WeightInitializer}
 
 object TensorBuilder {
 
-  private val dimOuter = 4
-  private val width = 9
-  private val trainCount = 300
-  private val learningRate = 0.001d
-  private val epochs = 100000
-  private val tolerance = 0.2d
+  private val dimOuter = 3
+  private val width = 6
+  private val trainCount = 200
+  private val learningRate = 0.01d
+  private val epochs = 50000
+  private val tolerance = 0.25d
 
   // the task, stated only here
   private def targetOf(inputValues: Array[Double]): Array[Double] = inputValues.map(_ * 2d)
