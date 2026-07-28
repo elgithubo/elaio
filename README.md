@@ -13,10 +13,10 @@ Introduction
 ============
 elaio is a learning machine based on a neural network
 
-Quick run
+Quick Run
 =========
 install sbt (Scala Build Tool) and execute 'sbt run'
 
-Reference implementations
+Reference Implementations
 =========================
 ...to be done...
