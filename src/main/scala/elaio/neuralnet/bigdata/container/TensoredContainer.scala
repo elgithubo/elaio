@@ -105,7 +105,8 @@ class TensoredContainer(
           neuronsReturn(2) = neuronsLowerDim(2)
 
           bottomNeuronsThisRecur = neuronsLowerDim(2)
-          childNeuronsThisRecur = neuronsLowerDim(0)
+          if(buildDimOuter > 2)
+            childNeuronsThisRecur = neuronsLowerDim(0)
 
           for (neuronLowerDim <- neuronsLowerDim(0)) {
             for (newNeuronHere <- newNeuronsHere) {
@@ -180,6 +181,11 @@ class TensoredContainer(
       connectionNeuronSource: Neuron,
       connectionNeuronTarget: Neuron
   ): Unit = {
+    if (connectionNeuronTarget.connectionsIn.exists(_.getNeuronSource eq connectionNeuronSource))
+      NetTrace.WriteMessage(
+        "connection already exists from " + connectionNeuronSource + " to " + connectionNeuronTarget
+      )
+
     val connection = new Connection {
       override val neuronSource: Neuron = connectionNeuronSource
       override val neuronTarget: Neuron = connectionNeuronTarget

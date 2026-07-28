@@ -2,8 +2,6 @@
 
 - debug remaining (few) dead ends (no in or no out)
 
-- debug (few) duplicate connections
-
 - add bias
 
 - persist weights
