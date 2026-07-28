@@ -105,7 +105,7 @@ class TensoredContainer(
           neuronsReturn(2) = neuronsLowerDim(2)
 
           bottomNeuronsThisRecur = neuronsLowerDim(2)
-          if(buildDimOuter > 2)
+          if(buildDimOuter > 2) // avoid double connections
             childNeuronsThisRecur = neuronsLowerDim(0)
 
           for (neuronLowerDim <- neuronsLowerDim(0)) {
