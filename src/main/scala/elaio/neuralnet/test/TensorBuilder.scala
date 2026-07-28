@@ -24,7 +24,7 @@ object TensorBuilder {
     NetTrace.started_(true)
 
     NetTrace.WriteMessage("start of test run (if processing diverges with NaN, please rerun)")
-
+    NetTrace.WriteMessage("")
     NetTrace.WriteMessage("build dimension: " + dimOuter)
     NetTrace.WriteMessage("in/out width: " + width)
 
@@ -32,7 +32,7 @@ object TensorBuilder {
     container.init()
     NetTrace.WriteMessage("total neurons created: " + NeuronCounter.current)
 
-    // has to happen after init(), when every neuron's fan-in is final
+    // weight initialization has to happen after init(), when every neuron's fan-in is final
     val weightCount = WeightInitializer.initialize(container.outputNodes)
     NetTrace.WriteMessage("connection weights initialized: " + weightCount)
 
@@ -42,6 +42,7 @@ object TensorBuilder {
 
     //execute the training, which is a forward pass followed by backpropagation for each example, repeated for the number of epochs.
     NetTrace.WriteMessage("training on " + trainInputs.length + " examples over " + epochs + " epochs with learning rate " + learningRate)
+    NetTrace.WriteMessage("")
     train(container, trainInputs, random)
 
     // the actual test: an input the net has never been trained on
@@ -51,10 +52,12 @@ object TensorBuilder {
     initInputs(container, checkInput)
     // One forward pass with the test values
     forwardPass(container)
-    NetTrace.WriteMessage("distinct neurons visited this pass: " + NeuronCollectionCache.size)
-    val checkOutValues: Array[Double] = container.outputNodes.map(_.value)
-    checkOutputs(checkOutValues, targetOf(checkInput))
+    NetTrace.WriteMessage("distinct neurons visited this pass: " + (NeuronCollectionCache.size + width))
+    NetTrace.WriteMessage("")
+    val receivedResult: Array[Double] = container.outputNodes.map(_.value)
+    checkOutputs(receivedResult, targetOf(checkInput))
 
+    NetTrace.WriteMessage("")
     NetTrace.WriteMessage("end of test run")
   }
 
