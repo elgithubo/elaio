@@ -11,11 +11,11 @@ object TensorBuilder {
   private val dimOuter = 3
   private val width = 6
   private val trainCount = 200
-  private val learningRate = 0.01d
-  private val epochs = 50000
+  private val learningRate = 0.005d
+  private val epochs = 25000
   private val tolerance = 0.25d
 
-  // the task, stated only here
+  // the task to learn, stated only here
   private def targetOf(inputValues: Array[Double]): Array[Double] = inputValues.map(_ * 2d)
 
   // run the test case
@@ -36,18 +36,17 @@ object TensorBuilder {
     val weightCount = WeightInitializer.initialize(container.outputNodes)
     NetTrace.WriteMessage("connection weights initialized: " + weightCount)
 
-    // Needs many examples: a 6 -> 6 map has 36 unknowns and each example gives 6
-    // equations. Accuracy on unseen inputs comes from the example count, not the
-    // epoch count - 30 examples missed the tolerance entirely, 100 hit 5 of 6.
     val random = new scala.util.Random
+    // generate training data, which is just random inputs and the corresponding calculated outputs
     val trainInputs = Array.fill(trainCount)(randomInput(random))
-    val checkInput = randomInput(random)
 
+    //execute the training, which is a forward pass followed by backpropagation for each example, repeated for the number of epochs.
     NetTrace.WriteMessage("training on " + trainInputs.length + " examples over " + epochs + " epochs with learning rate " + learningRate)
     train(container, trainInputs, random)
 
     // the actual test: an input the net has never been trained on
     NetTrace.WriteMessage("")
+    val checkInput = randomInput(random)
     NetTrace.WriteMessage("checking an unseen input: " + checkInput.map(v => f"$v%.3f").mkString(", "))
     initInputs(container, checkInput)
     // One forward pass with the test values
@@ -60,7 +59,7 @@ object TensorBuilder {
   }
 
   private def randomInput(random: scala.util.Random): Array[Double] =
-    Array.fill(width)(random.nextDouble() * 12d - 6d)
+    Array.fill(width)(random.nextDouble() * 12d - 6d) // random values in the range [-6, 6]
 
   // asks the net a question
   private def initInputs(container: TensoredContainer, inputValues: Array[Double]): Unit = {
