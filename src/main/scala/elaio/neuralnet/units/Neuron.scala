@@ -1,5 +1,6 @@
 package elaio.neuralnet.units
 
+import scala.collection.mutable
 import elaio.neuralnet.connections.Connection
 import elaio.neuralnet.activation.Activation
 
@@ -10,19 +11,21 @@ abstract class Neuron {
   protected var _delta: Double = 0d
   protected val _id: Double = NeuronCounter.getNext()
 
-  protected var _connectionsOut: Array[Connection] = Array[Connection]()
-  protected var _connectionsIn: Array[Connection] = Array[Connection]()
+  // a buffer, not an Array: appending to an Array with :+ copies the whole thing
+  // every time, which makes building a neuron quadratic in its fan-in
+  protected val _connectionsOut: mutable.ArrayBuffer[Connection] = mutable.ArrayBuffer.empty
+  protected val _connectionsIn: mutable.ArrayBuffer[Connection] = mutable.ArrayBuffer.empty
 
   def value: Double = _value
   def id: Double = _id
   def preActivation: Double = _preActivation
   def delta: Double = _delta
   def delta_=(delta: Double): Unit = { _delta = delta }
-  // no setters: addInConnection and addOutConnection are the only way to wire a neuron
-  def connectionsOut: Array[Connection] = _connectionsOut
-  def connectionsIn: Array[Connection] = _connectionsIn
+  // addInConnection and addOutConnection are the only way to wire a neuron
+  def connectionsOut: scala.collection.IndexedSeq[Connection] = _connectionsOut
+  def connectionsIn: scala.collection.IndexedSeq[Connection] = _connectionsIn
 
-  // One forward pass: pull from every in-connection, average, activate.
+  // one forward pass: pull from every in-connection, average, activate.
   def collectInConnections(): Double = {
 
     var valueSum = 0d
@@ -47,11 +50,11 @@ abstract class Neuron {
   }
 
   def addOutConnection(outConnection: Connection): Unit = {
-    _connectionsOut = _connectionsOut :+ outConnection
+    _connectionsOut += outConnection
   }
 
   def addInConnection(inConnection: Connection): Unit = {
-    _connectionsIn = _connectionsIn :+ inConnection
+    _connectionsIn += inConnection
   }
 
 }
