@@ -19,7 +19,6 @@ object GraphTraversal {
     val visited = mutable.Set.empty[Neuron]
     val postOrder = mutable.ArrayBuffer.empty[Neuron]
 
-    // Postorder over incoming edges yields source->sink order; reverse gives sink->source.
     for (start <- outputSet.toVector.sortBy(-_.id))
       if (visited.add(start)) {
         val stack = mutable.Stack[(Neuron, Boolean)]((start, false))
