@@ -16,29 +16,24 @@ object Backpropagation {
     val reachable = reverseOrder.toSet
     val outputSet = outputNodes.toSet
 
-    for (output <- outputNodes) {
-      val outputNeuron = output.asInstanceOf[OutputNeuron]
-      val derivative = outputNeuron.activationDerivative(outputNeuron.preActivation)
-      outputNeuron.delta_((outputNeuron.target - outputNeuron.value) * derivative)
-    }
+    for (output <- outputNodes)
+      output.asInstanceOf[OutputNeuron].delta_(
+        (output.asInstanceOf[OutputNeuron].target - output.value) * output.activationDerivative(output.preActivation)
+      )
 
     for (neuron <- reverseOrder.iterator if !outputSet.contains(neuron)) {
-      val derivative = neuron.activationDerivative(neuron.preActivation)
       val outgoingSum = neuron.connectionsOut.foldLeft(0d) { (sum, connection) =>
         val targetNeuron = connection.getNeuronTarget
         if (reachable.contains(targetNeuron))
           sum + connection.weight * targetNeuron.delta / targetNeuron.connectionsIn.length
         else sum
       }
-      neuron.delta_(outgoingSum * derivative)
+      neuron.delta_(outgoingSum * neuron.activationDerivative(neuron.preActivation))
     }
 
-    for (neuron <- reverseOrder.reverseIterator) {
-      val fanIn = neuron.connectionsIn.length
-      for (connectionIn <- neuron.connectionsIn) {
-        val sourceValue = connectionIn.getNeuronSource.value
-        connectionIn.weight = connectionIn.weight + learningRate * neuron.delta * sourceValue / fanIn
-      }
-    }
+    for (neuron <- reverseOrder.reverseIterator)
+      for (connectionIn <- neuron.connectionsIn)
+        connectionIn.weight = 
+          connectionIn.weight + learningRate * neuron.delta * connectionIn.getNeuronSource.value / neuron.connectionsIn.length
   }
 }
