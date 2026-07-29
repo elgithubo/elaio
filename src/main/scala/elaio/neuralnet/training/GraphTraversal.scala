@@ -22,25 +22,26 @@ object GraphTraversal {
     })
   }
 
+  // correct only for an acyclic graph - recurrent connections would break the order silently
   private def computeReverseTopologicalFromOutputs(outputSet: Set[Neuron]): Vector[Neuron] = {
-    val visited = mutable.Set.empty[Neuron]
-    val postOrder = mutable.ArrayBuffer.empty[Neuron]
+    val neuronsVisited = mutable.Set.empty[Neuron]
+    val neuronsReverseOrder = mutable.ArrayBuffer.empty[Neuron]
+    val stack = mutable.Stack.empty[(Neuron, Boolean)]
 
-    for (start <- outputSet.toVector.sortBy(-_.id)) {
-      val stack = mutable.Stack[(Neuron, Boolean)]((start, false))
-
-      while (stack.nonEmpty) {
-        val (neuron, expanded) = stack.pop()
-        if (expanded) {
-          postOrder += neuron
-        } else if (visited.add(neuron)) {
-          stack.push((neuron, true))
-          for (source <- neuron.connectionsIn.iterator.map(_.neuronSource).toSet.toVector.sortBy(_.id).reverseIterator)
-            stack.push((source, false))
-        }
+    for (start <- outputSet.toVector.sortBy(-_.id))
+      stack.push((start, false))
+    
+    while (stack.nonEmpty) {
+      val (neuron, expanded) = stack.pop()
+      if (expanded) {
+        neuronsReverseOrder += neuron
+      } else if (neuronsVisited.add(neuron)) {
+        stack.push((neuron, true))
+        for (source <- neuron.connectionsIn.iterator.map(_.neuronSource).toSet.toVector.sortBy(-_.id).reverseIterator)
+          stack.push((source, false))
       }
     }
 
-    postOrder.reverse.toVector
+    neuronsReverseOrder.reverse.toVector
   }
 }

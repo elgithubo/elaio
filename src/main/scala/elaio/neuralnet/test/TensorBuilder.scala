@@ -110,7 +110,7 @@ object TensorBuilder {
         totalError = totalError + squaredError(container)
         Backpropagation.run(container.outputNodes, learningRate)
       }
-      if (epoch == 1 || epoch % 1000 == 0 || epoch == epochs)
+      if (epoch == 1 || epoch % 100 == 0 || epoch == epochs)
         NetTrace.WriteMessage("epoch " + epoch + ": total squared error = " + totalError, 1)
     }
   }
