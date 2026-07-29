@@ -50,7 +50,7 @@ object TensorBuilder {
     val checkInput = randomInput(random)
     NetTrace.WriteMessage("checking an unseen input: " + checkInput.map(v => f"$v%.3f").mkString(", "))
     initInputs(container, checkInput)
-    // One forward pass with the test values
+    // one forward pass with the test values
     forwardPass(container)
     NetTrace.WriteMessage("distinct neurons visited this pass: " + (NeuronCollectionCache.size + width))
     NetTrace.WriteMessage("")
@@ -94,7 +94,7 @@ object TensorBuilder {
     total
   }
 
-  // Execute the actual training, which is a forward pass followed by backpropagation for each example, repeated for the number of epochs.
+  // execute the actual training, which is a forward pass followed by backpropagation for each example, repeated for the number of epochs.
   private def train(
       container: TensoredContainer,
       trainInputs: Array[Array[Double]],
@@ -115,7 +115,7 @@ object TensorBuilder {
     }
   }
 
-  // Scores answers the net already gave and reports how many are within tolerance
+  // scores answers the net already gave and reports how many are within tolerance
   private def checkOutputs(outValues: Array[Double], expected: Array[Double]): Unit = {
     require(outValues.length == expected.length, "need one expected value per output")
     var within: Int = 0
