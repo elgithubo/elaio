@@ -11,7 +11,7 @@ object WeightInitializer {
     val random = new scala.util.Random
     var connectionsInitialized = 0
 
-    for (neuron <- GraphTraversal.reverseTopologicalFromOutputs(outputNodes)) {
+    for (neuron <- GraphTraversal.reverseTopologicalFromOutputs(outputNodes).sequence) {
       val fanIn = neuron.connectionsIn.length
       if (fanIn > 0) {
         val deviation = math.sqrt(fanIn / Activation.secondMomentFactor)

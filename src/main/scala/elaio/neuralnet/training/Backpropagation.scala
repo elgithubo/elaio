@@ -12,27 +12,30 @@ object Backpropagation {
   //   delta_j = f'(z_j) * sum_k (delta_k * w_jk / N_k)   <- N of the target k
   //   dw_ij   = delta_j * a_i / N_j                      <- N of the owner j
   def run(outputNodes: Array[Neuron], learningRate: Double): Unit = {
-    val reverseOrder = GraphTraversal.reverseTopologicalFromOutputs(outputNodes)
-    val reachable = reverseOrder.toSet
-    val outputSet = outputNodes.toSet
+    val order = GraphTraversal.reverseTopologicalFromOutputs(outputNodes)
 
-    for (output <- outputNodes)
-      output.asInstanceOf[OutputNeuron].delta_(
-        (output.asInstanceOf[OutputNeuron].target - output.value) * output.activationDerivative(output.preActivation)
+    for (output <- outputNodes) {
+      val outputNeuron = output.asInstanceOf[OutputNeuron]
+      outputNeuron.delta_(
+        (outputNeuron.target - outputNeuron.value) * outputNeuron.activationDerivative(outputNeuron.preActivation)
       )
+    }
 
-    for (neuron <- reverseOrder.iterator if !outputSet.contains(neuron))
+    for (neuron <- order.sequence.iterator if !order.outputs.contains(neuron))
       neuron.delta_(
         neuron.connectionsOut.foldLeft(0d) { (sum, connection) =>
-          if (reachable.contains(connection.getNeuronTarget))
-            sum + connection.weight * connection.getNeuronTarget.delta / connection.getNeuronTarget.connectionsIn.length
+          val targetNeuron = connection.getNeuronTarget
+          if (order.reachable.contains(targetNeuron))
+            sum + connection.weight * targetNeuron.delta / targetNeuron.connectionsIn.length
           else sum
         } * neuron.activationDerivative(neuron.preActivation) // outgoing sum * activation derivative
       )
 
-    for (neuron <- reverseOrder.reverseIterator)
+    for (neuron <- order.sequence.reverseIterator) {
+      val fanIn = neuron.connectionsIn.length
       for (connectionIn <- neuron.connectionsIn)
-        connectionIn.weight = 
-          connectionIn.weight + learningRate * neuron.delta * connectionIn.getNeuronSource.value / neuron.connectionsIn.length
+        connectionIn.weight =
+          connectionIn.weight + learningRate * neuron.delta * connectionIn.getNeuronSource.value / fanIn
+    }
   }
 }
