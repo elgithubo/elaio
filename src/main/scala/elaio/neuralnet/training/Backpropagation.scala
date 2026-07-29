@@ -5,7 +5,8 @@ import elaio.neuralnet.units.{Neuron, OutputNeuron}
 object Backpropagation {
   // One step of gradient descent over the graph's reverse order.
   // Note that a forward pass must have run. 
-  //delta is -dL/dz for L = 0.5*(target - value)^2, hence the updates add rather than subtract.
+  //
+  // delta is -dL/dz for L = 0.5*(target - value)^2, hence the updates add rather than subtract.
   //
   // collectInConnections averages instead of summing, so the same 1/N appears here:
   //   delta_j = f'(z_j) * sum_k (delta_k * w_jk / N_k)   <- N of the target k
