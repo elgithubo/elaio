@@ -14,5 +14,4 @@ object NeuronCollectionCache {
 
   def get(id: Double): Neuron = cache.getOrElse(id, null)
 
-  def size: Int = cache.size
 }

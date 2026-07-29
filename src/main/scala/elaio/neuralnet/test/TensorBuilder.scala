@@ -30,7 +30,7 @@ object TensorBuilder {
 
     val container = new TensoredContainer(dimOuter, width, new NeuronDataCreator)
     container.init()
-    NetTrace.WriteMessage("total neurons created: " + NeuronCounter.current)
+    NetTrace.WriteMessage("total neurons created: " + NeuronCounter.current.toInt)
 
     // weight initialization has to happen after init(), when every neuron's fan-in is final
     val weightCount = WeightInitializer.initialize(container.outputNodes)
@@ -52,7 +52,6 @@ object TensorBuilder {
     initInputs(container, checkInput)
     // one forward pass with the test values
     forwardPass(container)
-    NetTrace.WriteMessage("distinct neurons visited this pass: " + (NeuronCollectionCache.size + width))
     NetTrace.WriteMessage("")
     val receivedResult: Array[Double] = container.outputNodes.map(_.value)
     checkOutputs(receivedResult, targetOf(checkInput))
