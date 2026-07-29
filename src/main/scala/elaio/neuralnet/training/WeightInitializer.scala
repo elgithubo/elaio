@@ -9,22 +9,15 @@ object WeightInitializer {
   // Runs after the graph is built, walking back from the outputs once fan-in is final.
   def initialize(outputNodes: Array[Neuron]): Int = {
     val random = new scala.util.Random
-    val seen = scala.collection.mutable.Set[Double]()
-    val pending = scala.collection.mutable.Stack[Neuron]()
     var connectionsInitialized = 0
 
-    outputNodes.foreach(neuron => if (seen.add(neuron.id)) pending.push(neuron))
-
-    while (pending.nonEmpty) {
-      val neuron = pending.pop()
+    for (neuron <- GraphTraversal.reverseTopologicalFromOutputs(outputNodes)) {
       val fanIn = neuron.connectionsIn.length
       if (fanIn > 0) {
         val deviation = math.sqrt(fanIn / Activation.secondMomentFactor)
         for (connectionIn <- neuron.connectionsIn) {
           connectionIn.weight = random.nextGaussian() * deviation
           connectionsInitialized = connectionsInitialized + 1
-          val source = connectionIn.getNeuronSource
-          if (seen.add(source.id)) pending.push(source)
         }
       }
     }
