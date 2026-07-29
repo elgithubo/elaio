@@ -1,5 +1,7 @@
 - add bias
 
+- maybe add NaN check
+
 - persist weights
 
 - review claude assisted commit for training in detail
