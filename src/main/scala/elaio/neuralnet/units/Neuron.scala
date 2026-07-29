@@ -10,14 +10,17 @@ abstract class Neuron {
   protected var _delta: Double = 0d
   protected val _id: Double = NeuronCounter.getNext()
 
-  var connectionsOut: Array[Connection] = Array[Connection]()
-  var connectionsIn: Array[Connection] = Array[Connection]()
+  protected var _connectionsOut: Array[Connection] = Array[Connection]()
+  protected var _connectionsIn: Array[Connection] = Array[Connection]()
 
   def value: Double = _value
   def id: Double = _id
   def preActivation: Double = _preActivation
   def delta: Double = _delta
-  def delta_(delta: Double): Unit = { _delta = delta }
+  def delta_=(delta: Double): Unit = { _delta = delta }
+  // no setters: addInConnection and addOutConnection are the only way to wire a neuron
+  def connectionsOut: Array[Connection] = _connectionsOut
+  def connectionsIn: Array[Connection] = _connectionsIn
 
   // One forward pass: pull from every in-connection, average, activate.
   def collectInConnections(): Double = {
@@ -44,11 +47,11 @@ abstract class Neuron {
   }
 
   def addOutConnection(outConnection: Connection): Unit = {
-    connectionsOut = connectionsOut :+ outConnection
+    _connectionsOut = _connectionsOut :+ outConnection
   }
 
   def addInConnection(inConnection: Connection): Unit = {
-    connectionsIn = connectionsIn :+ inConnection
-  }  
+    _connectionsIn = _connectionsIn :+ inConnection
+  }
 
 }

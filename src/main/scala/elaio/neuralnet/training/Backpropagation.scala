@@ -16,26 +16,24 @@ object Backpropagation {
 
     for (output <- outputNodes) {
       val outputNeuron = output.asInstanceOf[OutputNeuron]
-      outputNeuron.delta_(
+      outputNeuron.delta =
         (outputNeuron.target - outputNeuron.value) * outputNeuron.activationDerivative(outputNeuron.preActivation)
-      )
     }
 
     for (neuron <- order.sequence.iterator if !order.outputs.contains(neuron))
-      neuron.delta_(
+      neuron.delta =
         neuron.connectionsOut.foldLeft(0d) { (sum, connection) =>
-          val targetNeuron = connection.getNeuronTarget
+          val targetNeuron = connection.neuronTarget
           if (order.reachable.contains(targetNeuron))
             sum + connection.weight * targetNeuron.delta / targetNeuron.connectionsIn.length
           else sum
         } * neuron.activationDerivative(neuron.preActivation) // outgoing sum * activation derivative
-      )
 
     for (neuron <- order.sequence.reverseIterator) {
       val fanIn = neuron.connectionsIn.length
       for (connectionIn <- neuron.connectionsIn)
         connectionIn.weight =
-          connectionIn.weight + learningRate * neuron.delta * connectionIn.getNeuronSource.value / fanIn
+          connectionIn.weight + learningRate * neuron.delta * connectionIn.neuronSource.value / fanIn
     }
   }
 }

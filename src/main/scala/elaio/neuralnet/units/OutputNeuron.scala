@@ -14,7 +14,5 @@ class OutputNeuron() extends Neuron {
   override def activationFunction(input: Double): Double = input
   override def activationDerivative(input: Double): Double = 1d
 
-  def target: Double =  {
-    _target
-  }
+  def target: Double = _target
 }

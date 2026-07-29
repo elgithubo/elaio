@@ -3,11 +3,9 @@ package elaio.neuralnet.trace
 object NetTrace {
   private var _started: Boolean = false
 
-  def started(): Boolean = {
-    _started
-  }
+  def started: Boolean = _started
 
-  def started_(started: Boolean): Unit =
+  def started_=(started: Boolean): Unit =
     _started = started
 
   def WriteMessage(message: String, indent: BigInt = 0): Unit =

@@ -10,8 +10,8 @@ class TensoredContainer(
     dataCreator: DataCreator,
 ) {
 
-  var _inputNodes = Array.ofDim[Neuron](0)
-  var _outputNodes = Array.ofDim[Neuron](0)
+  private var _inputNodes = Array.ofDim[Neuron](0)
+  private var _outputNodes = Array.ofDim[Neuron](0)
 
   def inputNodes: Array[Neuron] = _inputNodes
   def outputNodes: Array[Neuron] = _outputNodes
@@ -153,10 +153,10 @@ class TensoredContainer(
       connectionNeuronTarget: Neuron
   ): Unit = {
     val connection = new Connection {
-      override val neuronSource: Neuron = connectionNeuronSource
-      override val neuronTarget: Neuron = connectionNeuronTarget
+      protected var _neuronSource: Neuron = connectionNeuronSource
+      protected var _neuronTarget: Neuron = connectionNeuronTarget
     }
-    connection.getNeuronTarget.addInConnection(connection)
-    connection.getNeuronSource.addOutConnection(connection)
+    connection.neuronTarget.addInConnection(connection)
+    connection.neuronSource.addOutConnection(connection)
   }
 }

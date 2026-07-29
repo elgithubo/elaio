@@ -35,7 +35,7 @@ object GraphTraversal {
           postOrder += neuron
         } else if (visited.add(neuron)) {
           stack.push((neuron, true))
-          for (source <- neuron.connectionsIn.iterator.map(_.getNeuronSource).toSet.toVector.sortBy(_.id).reverseIterator)
+          for (source <- neuron.connectionsIn.iterator.map(_.neuronSource).toSet.toVector.sortBy(_.id).reverseIterator)
             stack.push((source, false))
         }
       }

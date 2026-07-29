@@ -1,13 +1,23 @@
 package elaio.neuralnet.connections
-import scala.math.sqrt
+
 import elaio.neuralnet.units.Neuron
 import elaio.neuralnet.processing.NeuronCollectionCache
-trait Connection{
-  val neuronSource: Neuron
-  val neuronTarget: Neuron
+
+trait Connection {
+  protected var _neuronSource: Neuron
+  protected var _neuronTarget: Neuron
+
+  def neuronSource: Neuron = _neuronSource
+  def neuronSource_=(neuron: Neuron): Unit = { _neuronSource = neuron }
+
+  def neuronTarget: Neuron = _neuronTarget
+  def neuronTarget_=(neuron: Neuron): Unit = { _neuronTarget = neuron }
 
   // initialize weight based on a rendom number for now
-  var weight: Double = scala.util.Random.nextDouble() * 2d - 1d
+  private var _weight: Double = scala.util.Random.nextDouble() * 2d - 1d
+
+  def weight: Double = _weight
+  def weight_=(value: Double): Unit = { _weight = value }
 
   def collect(): Double = {
     val cachedNeuron = NeuronCollectionCache.get(neuronSource.id)
@@ -21,8 +31,4 @@ trait Connection{
       }
     neuronValue * weight
   }
-
-  def getNeuronSource: Neuron = neuronSource
-
-  def getNeuronTarget: Neuron = neuronTarget
 }
