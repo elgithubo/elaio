@@ -2,9 +2,5 @@
 -J-XX:ReservedCodeCacheSize=2048m
 # -J-XX:-UseGCOverheadLimit
 -J-XX:+UseG1GC
-# Metals passes -Dbloop.export-meta-build=true on the sbt command line, but the
-# sbt 2 thin client does not forward -D properties to the background server, so
-# sbt-bloop never writes project/.bloop/elaio-build.json and Metals' meta-build
-# BSP connection fails with "Empty build targets". Setting it here reaches the
-# server JVM.
+# Metals wants the following
 -Dbloop.export-meta-build=true
