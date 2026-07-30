@@ -11,9 +11,15 @@ object TensorBuilder {
   private val dimOuter = 3
   private val width = 6
   private val trainCount = 250
-  private val learningRate = 0.005d
+  private val learningRate = 0.015d
   private val epochs = 30000
   private val tolerance = 0.25d
+
+  // Caps the length of a single update, which is what stops a run from exploding in
+  // the first epochs.
+  private val maxUpdateNorm = 700d
+  // Set to epochs to clip throughout, or to 0 to disable clipping entirely.
+  private val clipUntilEpoch = 1000
 
   // the task to learn, stated only here
   private def targetOf(inputValues: Array[Double]): Array[Double] = inputValues.map(_ * 2d)
@@ -42,6 +48,7 @@ object TensorBuilder {
 
     //execute the training, which is a forward pass followed by backpropagation for each example, repeated for the number of epochs.
     NetTrace.WriteMessage("training on " + trainInputs.length + " examples over " + epochs + " epochs with learning rate " + learningRate)
+    NetTrace.WriteMessage("update norm capped at " + maxUpdateNorm + " for the first " + clipUntilEpoch + " epochs")
     NetTrace.WriteMessage("")
     train(container, trainInputs, random)
 
@@ -100,6 +107,8 @@ object TensorBuilder {
       random: scala.util.Random
   ): Unit = {
     for (epoch <- 1 to epochs) {
+      // the cap is only in force while the run is still fragile
+      val updateNorm = if (epoch <= clipUntilEpoch) maxUpdateNorm else Double.PositiveInfinity
       var totalError = 0d
       // shuffled so the updates do not settle into a fixed cycle
       for (inputValues <- random.shuffle(trainInputs.toSeq)) {
@@ -107,8 +116,10 @@ object TensorBuilder {
         initTargets(container, targetOf(inputValues))
         forwardPass(container)
         totalError = totalError + squaredError(container)
-        Backpropagation.run(container.outputNodes, learningRate)
+        Backpropagation.run(container.outputNodes, learningRate, updateNorm)
       }
+      if (epoch == clipUntilEpoch && clipUntilEpoch < epochs)
+        NetTrace.WriteMessage("update cap released after epoch " + epoch, 1)
       if (epoch == 1 || epoch % 100 == 0 || epoch == epochs)
         NetTrace.WriteMessage("epoch " + epoch + ": total squared error = " + totalError, 1)
     }
