@@ -34,7 +34,7 @@ object TensorBuilder {
 
     // weight initialization has to happen after init(), when every neuron's fan-in is final
     val weightCount = WeightInitializer.initialize(container.outputNodes)
-    NetTrace.WriteMessage("connection weights initialized: " + weightCount)
+    NetTrace.WriteMessage("connection weights initialized: " + weightCount.toInt)
 
     val random = new scala.util.Random
     // generate training data, which is just random inputs and the corresponding calculated outputs
