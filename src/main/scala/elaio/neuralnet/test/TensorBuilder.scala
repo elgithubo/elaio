@@ -20,7 +20,7 @@ object TensorBuilder {
 
   // run the test case
   def run(): Unit = {
-    // Enable the following line to write detailed trace messages to stdout, disable it for no output.
+    // enable the following line to write detailed trace messages to stdout, disable it for no output.
     NetTrace.started = true
 
     NetTrace.WriteMessage("start of test run (if processing diverges with NaN, please rerun)")
@@ -61,7 +61,7 @@ object TensorBuilder {
   }
 
   private def randomInput(random: scala.util.Random): Array[Double] =
-    Array.fill(width)(random.nextDouble() * 12d - 6d) // random values in the range [-6, 6]
+    Array.fill(width)(random.nextDouble() * 20d - 10d) // random double values in the range [-10, 10]
 
   // asks the net a question
   private def initInputs(container: TensoredContainer, inputValues: Array[Double]): Unit = {
