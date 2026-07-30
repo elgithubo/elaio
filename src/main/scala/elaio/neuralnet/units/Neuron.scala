@@ -11,8 +11,6 @@ abstract class Neuron {
   protected var _delta: Double = 0d
   protected val _id: Double = NeuronCounter.getNext()
 
-  // a buffer, not an Array: appending to an Array with :+ copies the whole thing
-  // every time, which makes building a neuron quadratic in its fan-in
   protected val _connectionsOut: mutable.ArrayBuffer[Connection] = mutable.ArrayBuffer.empty
   protected val _connectionsIn: mutable.ArrayBuffer[Connection] = mutable.ArrayBuffer.empty
 

@@ -3,7 +3,6 @@ package elaio.neuralnet.units
 import elaio.neuralnet.bigdata.container.DataCreator
 
 class NeuronDataCreator extends DataCreator {
-
   override def create( neuronType: NeuronType.Value ): Neuron = {
     if (neuronType == NeuronType.Input)
       createInput()

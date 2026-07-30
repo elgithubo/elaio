@@ -8,7 +8,7 @@ object NetTrace {
   def started_=(started: Boolean): Unit =
     _started = started
 
-  def WriteMessage(message: String, indent: BigInt = 0): Unit =
+  def WriteMessage(message: String, indent: Int = 0): Unit =
     if(_started) {
       var n = 1
       var prefix: String = ""
