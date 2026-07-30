@@ -20,8 +20,8 @@ package elaio{
   }
 }
 
-// This class is an entry point for testing and debugging.
-// It is meant to call test methods and enable in-IDE debugging.
+// this class is an entry point for testing and debugging.
+// it is meant to call test methods and enable in-IDE debugging.
 import elaio.neuralnet.test.TensorBuilder
 object Main {
   def main(args: Array[String]): Unit = {

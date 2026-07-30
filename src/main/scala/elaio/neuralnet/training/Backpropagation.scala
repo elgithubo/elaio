@@ -1,10 +1,11 @@
 package elaio.neuralnet.training
 
+import elaio.neuralnet.processing.GraphTraversal
 import elaio.neuralnet.units.{Neuron, OutputNeuron}
 
 object Backpropagation {
-  // One step of gradient descent over the graph's reverse order.
-  // Note that a forward pass must have run. 
+  // one step of gradient descent over the graph's reverse order.
+  // note that a forward pass must have run.
   //
   // delta is -dL/dz for L = 0.5*(target - value)^2, hence the updates add rather than subtract.
   //

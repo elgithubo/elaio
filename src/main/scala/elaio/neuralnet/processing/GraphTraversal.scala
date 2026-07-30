@@ -1,4 +1,4 @@
-package elaio.neuralnet.training
+package elaio.neuralnet.processing
 
 import scala.collection.mutable
 import elaio.neuralnet.units.Neuron

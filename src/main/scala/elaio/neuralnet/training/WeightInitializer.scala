@@ -1,6 +1,7 @@
 package elaio.neuralnet.training
 
 import elaio.neuralnet.activation.Activation
+import elaio.neuralnet.processing.GraphTraversal
 import elaio.neuralnet.units.Neuron
 
 object WeightInitializer {
