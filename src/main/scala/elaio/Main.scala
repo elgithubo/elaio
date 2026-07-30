@@ -22,9 +22,7 @@ package elaio{
 
 // this class is an entry point for testing and debugging.
 // it is meant to call test methods and enable in-IDE debugging.
-import elaio.neuralnet.test.TensorBuilder
+import elaio.neuralnet.test.MultiplicatorTest
 object Main {
-  def main(args: Array[String]): Unit = {
-      TensorBuilder.run()
-  }
+  def main(args: Array[String]): Unit = MultiplicatorTest.run()
 }
