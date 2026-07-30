@@ -2,3 +2,5 @@
 -J-XX:ReservedCodeCacheSize=2048m
 # -J-XX:-UseGCOverheadLimit
 -J-XX:+UseG1GC
+# Metals wants the following
+-Dbloop.export-meta-build=true
