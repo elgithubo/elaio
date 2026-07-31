@@ -1,25 +1,27 @@
-package elaio.neuralnet.test
+package elaio.neuralnet.training
 
 import elaio.neuralnet.bigdata.container.TensoredContainer
 import elaio.neuralnet.processing.NeuronCollectionCache
 import elaio.neuralnet.trace.NetTrace
-import elaio.neuralnet.training.Backpropagation
 import elaio.neuralnet.units.OutputNeuron
 
 trait Trainable {
 
+  // how many epochs to run
   protected val epochs: Int
-
+  // define the net's learning rate
   protected val learningRate: Double
-  // Caps the length of a single update, which is what stops a run from exploding in
-  // the first epochs.
+  // Cap the length of a single update, which is what stops a run from exploding in the first epochs.
   protected val maxUpdateNorm: Double
   // Set to epochs to clip throughout, or to 0 to disable clipping entirely.
   protected val clipUntilEpoch: Int
 
+  // ask the net a question
   protected def initInputs(container: TensoredContainer, inputValues: Array[Double]): Unit
+  // tell the net the wanted answer - only backpropagation reads this, never a forward pass
   protected def initTargets(container: TensoredContainer, targetValues: Array[Double]): Unit
-  protected def targetOf(inputValues: Array[Double]): Array[Double]
+
+  // run the test case
   def run(): Unit
 
   protected def forwardPass(container: TensoredContainer): Unit = {
@@ -41,16 +43,22 @@ trait Trainable {
   protected def train(
       container: TensoredContainer,
       trainInputs: Array[Array[Double]],
-      random: scala.util.Random
+      trainOutputs: Array[Array[Double]],
   ): Unit = {
+    require(
+      trainInputs.length == trainOutputs.length,
+      "need one output for every input"
+    )
+
+    val trainingExamples = trainInputs.zip(trainOutputs)
     for (epoch <- 1 to epochs) {
       // the cap is only in force while the run is still fragile
       val updateNorm = if (epoch <= clipUntilEpoch) maxUpdateNorm else Double.PositiveInfinity
       var totalError = 0d
-      // shuffled so the updates do not settle into a fixed cycle
-      for (inputValues <- random.shuffle(trainInputs.toSeq)) {
+
+      for ((inputValues, targetValues) <- trainingExamples) {
         initInputs(container, inputValues)
-        initTargets(container, targetOf(inputValues))
+        initTargets(container, targetValues)
         forwardPass(container)
         totalError = totalError + squaredError(container)
         Backpropagation.run(container.outputNodes, learningRate, updateNorm)
