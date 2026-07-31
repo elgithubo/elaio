@@ -44,19 +44,21 @@ trait Trainable {
       container: TensoredContainer,
       trainInputs: Array[Array[Double]],
       trainOutputs: Array[Array[Double]],
+      random: scala.util.Random,
   ): Unit = {
     require(
       trainInputs.length == trainOutputs.length,
       "need one output for every input"
     )
 
-    val trainingExamples = trainInputs.zip(trainOutputs)
+    val trainingExamples = trainInputs.zip(trainOutputs).toSeq
     for (epoch <- 1 to epochs) {
       // the cap is only in force while the run is still fragile
       val updateNorm = if (epoch <= clipUntilEpoch) maxUpdateNorm else Double.PositiveInfinity
       var totalError = 0d
 
-      for ((inputValues, targetValues) <- trainingExamples) {
+      // shuffled so the updates do not settle into a fixed cycle
+      for ((inputValues, targetValues) <- random.shuffle(trainingExamples)) {
         initInputs(container, inputValues)
         initTargets(container, targetValues)
         forwardPass(container)
