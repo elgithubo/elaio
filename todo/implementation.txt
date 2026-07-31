@@ -8,4 +8,4 @@
 
 - check if there is a more suitable learning rate (with a task harness)
 
-- evaluate if a gradient check (cosine?) makes sense (only after fixing topology problems)
+- evaluate if a gradient check (cosine?) makes sense (maybe not required if bias is in place)
