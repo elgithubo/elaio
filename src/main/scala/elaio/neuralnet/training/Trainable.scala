@@ -43,8 +43,7 @@ trait Trainable {
   protected def train(
       container: TensoredContainer,
       trainInputs: Array[Array[Double]],
-      trainOutputs: Array[Array[Double]],
-      random: scala.util.Random,
+      trainOutputs: Array[Array[Double]]
   ): Unit = {
     require(
       trainInputs.length == trainOutputs.length,
@@ -53,6 +52,7 @@ trait Trainable {
 
     val trainingExamples = trainInputs.zip(trainOutputs).toSeq
     for (epoch <- 1 to epochs) {
+      val random = new scala.util.Random
       // the cap is only in force while the run is still fragile
       val updateNorm = if (epoch <= clipUntilEpoch) maxUpdateNorm else Double.PositiveInfinity
       var totalError = 0d

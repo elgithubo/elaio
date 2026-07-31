@@ -46,7 +46,7 @@ object MultiplicatorTest extends Trainable {
     NetTrace.WriteMessage("training on " + trainInputs.length + " examples over " + epochs + " epochs with learning rate " + learningRate)
     NetTrace.WriteMessage("update norm capped at " + maxUpdateNorm + " for the first " + clipUntilEpoch + " epochs")
     NetTrace.WriteMessage("")
-    train(container, trainInputs, trainOutputs, random)
+    train(container, trainInputs, trainOutputs)
 
     // the actual test: an input the net has never been trained on
     NetTrace.WriteMessage("")
