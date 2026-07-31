@@ -7,7 +7,7 @@ import elaio.neuralnet.training.WeightInitializer
 
 object MultiplicatorTest extends Trainable {
 
-  protected val learningRate = 0.015d
+  protected val learningRate = 0.01d
   protected val epochs = 15000
   protected val maxUpdateNorm = 700d
   protected val clipUntilEpoch = 1000
