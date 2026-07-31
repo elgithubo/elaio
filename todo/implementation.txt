@@ -3,3 +3,5 @@
 - evaluate if a gradient check (cosine?) makes sense (maybe not required if bias is in place)
 
 - persist weights
+
+- multi core usage (threaded (always) vs. multiple jvms (during learning))
