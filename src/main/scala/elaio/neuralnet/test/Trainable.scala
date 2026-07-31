@@ -2,7 +2,6 @@ package elaio.neuralnet.test
 
 import elaio.neuralnet.bigdata.container.TensoredContainer
 import elaio.neuralnet.processing.NeuronCollectionCache
-
 import elaio.neuralnet.trace.NetTrace
 import elaio.neuralnet.training.Backpropagation
 import elaio.neuralnet.units.OutputNeuron
