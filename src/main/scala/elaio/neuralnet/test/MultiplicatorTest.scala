@@ -3,15 +3,14 @@ package elaio.neuralnet.test
 import elaio.neuralnet.bigdata.container.TensoredContainer
 import elaio.neuralnet.trace.NetTrace
 import elaio.neuralnet.units.{InputNeuron, NeuronCounter, NeuronDataCreator, OutputNeuron}
-import elaio.neuralnet.processing.NeuronCollectionCache
-import elaio.neuralnet.training.{Backpropagation, WeightInitializer}
+import elaio.neuralnet.training.WeightInitializer
 
 object MultiplicatorTest extends Trainable {
 
-  val learningRate = 0.015d
-  val epochs = 15000
-  val maxUpdateNorm = 700d
-  val clipUntilEpoch = 1000
+  protected val learningRate = 0.015d
+  protected val epochs = 15000
+  protected val maxUpdateNorm = 700d
+  protected val clipUntilEpoch = 1000
 
   private val dimOuter = 3
   private val width = 5
@@ -19,7 +18,7 @@ object MultiplicatorTest extends Trainable {
   private val tolerance = 0.25d
 
   // the task to learn, stated only here
-  def targetOf(inputValues: Array[Double]): Array[Double] = inputValues.map(_ * 2d)
+  protected def targetOf(inputValues: Array[Double]): Array[Double] = inputValues.map(_ * 2d)
 
   // run the test case
   def run(): Unit = {
@@ -65,14 +64,14 @@ object MultiplicatorTest extends Trainable {
   }
 
   // asks the net a question
-  def initInputs(container: TensoredContainer, inputValues: Array[Double]): Unit = {
+  protected def initInputs(container: TensoredContainer, inputValues: Array[Double]): Unit = {
     require(inputValues.length == width, "expected " + width + " inputs but got " + inputValues.length)
     for (index <- inputValues.indices)
       container.inputNodes(index).asInstanceOf[InputNeuron].initInput(inputValues(index))
   }
 
   // tells the net the wanted answer - only backpropagation reads this, never a forward pass
-  def initTargets(container: TensoredContainer, targetValues: Array[Double]): Unit = {
+  protected def initTargets(container: TensoredContainer, targetValues: Array[Double]): Unit = {
     require(targetValues.length == width, "expected " + width + " targets but got " + targetValues.length)
     for (index <- targetValues.indices)
       container.outputNodes(index).asInstanceOf[OutputNeuron].initOutput(targetValues(index))

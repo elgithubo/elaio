@@ -1,8 +1,8 @@
 package elaio.neuralnet.test
 
-import elaio.neuralnet.bigdata.container.{DataCreator, TensoredContainer}
+import elaio.neuralnet.bigdata.container.TensoredContainer
 import elaio.neuralnet.processing.NeuronCollectionCache
-import elaio.neuralnet.test.Trainable
+
 import elaio.neuralnet.trace.NetTrace
 import elaio.neuralnet.training.Backpropagation
 import elaio.neuralnet.units.OutputNeuron
@@ -10,7 +10,7 @@ import elaio.neuralnet.units.OutputNeuron
 trait Trainable {
 
   protected val epochs: Int
-  
+
   protected val learningRate: Double
   // Caps the length of a single update, which is what stops a run from exploding in
   // the first epochs.
@@ -18,10 +18,10 @@ trait Trainable {
   // Set to epochs to clip throughout, or to 0 to disable clipping entirely.
   protected val clipUntilEpoch: Int
 
-  protected def initInputs(container: elaio.neuralnet.bigdata.container.TensoredContainer, inputValues: Array[Double]): Unit
+  protected def initInputs(container: TensoredContainer, inputValues: Array[Double]): Unit
   protected def initTargets(container: TensoredContainer, targetValues: Array[Double]): Unit
   protected def targetOf(inputValues: Array[Double]): Array[Double]
-  protected def run(): Unit
+  def run(): Unit
 
   protected def forwardPass(container: TensoredContainer): Unit = {
     NeuronCollectionCache.clear()
@@ -57,7 +57,7 @@ trait Trainable {
         Backpropagation.run(container.outputNodes, learningRate, updateNorm)
       }
       if (epoch == 1 || epoch % 100 == 0 || epoch == epochs)
-        NetTrace.WriteMessage("epoch " + epoch + ": total squared error = " + totalError, 1)      
+        NetTrace.WriteMessage("epoch " + epoch + ": total squared error = " + totalError, 1)
       if (epoch == clipUntilEpoch && clipUntilEpoch < epochs)
         NetTrace.WriteMessage("update cap released after epoch " + epoch, 1)
     }

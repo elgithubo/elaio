@@ -1,5 +1,5 @@
 // scala v3 compatibility bootstrap - needed when compiling by hand with scalac insteam of sbt.
-// compile with: 
+// compile with:
 //   scalac `find src -name "*.scala"`
 // and run with:
 //   scala -cp . Main
