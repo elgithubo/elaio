@@ -21,6 +21,8 @@ trait Trainable {
   // tell the net the wanted answer - only backpropagation reads this, never a forward pass
   protected def initTargets(container: TensoredContainer, targetValues: Array[Double]): Unit
 
+  private val random = new scala.util.Random
+
   // run the test case
   def run(): Unit
 
@@ -52,7 +54,6 @@ trait Trainable {
 
     val trainingExamples = trainInputs.zip(trainOutputs).toSeq
     for (epoch <- 1 to epochs) {
-      val random = new scala.util.Random
       // the cap is only in force while the run is still fragile
       val updateNorm = if (epoch <= clipUntilEpoch) maxUpdateNorm else Double.PositiveInfinity
       var totalError = 0d
