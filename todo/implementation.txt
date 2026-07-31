@@ -1,11 +1,5 @@
 - add bias
 
-- maybe add NaN check
+- evaluate if a gradient check (cosine?) makes sense (maybe not required if bias is in place)
 
 - persist weights
-
-- review claude assisted commit for training in detail
-
-- check if there is a more suitable learning rate (with a task harness)
-
-- evaluate if a gradient check (cosine?) makes sense (maybe not required if bias is in place)
