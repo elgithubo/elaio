@@ -10,7 +10,7 @@ _/ __ \|  | \__  \ |  |/  _ \
 Status
 ======
 work in progress
-net can learn to multiply
+net can learn to calculate basic equations
 
 Requires
 ========
@@ -22,7 +22,12 @@ elaio is a learning machine based on a neural network
 
 Quick Run
 =========
-install sbt (Scala Build Tool) and execute 'sbt run'
+install sbt (Scala Build Tool) and execute 'sbt run <task>' where task is one of
+- Addition
+- Subtraction
+- Multiplication
+- Division
+- Potential (currenty fails)
 
 Reference Implementations
 =========================

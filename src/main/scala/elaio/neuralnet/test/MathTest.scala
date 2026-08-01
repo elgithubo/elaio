@@ -1,24 +1,25 @@
- package elaio.neuralnet.test
+package elaio.neuralnet.test
 
 import elaio.neuralnet.bigdata.container.TensoredContainer
 import elaio.neuralnet.trace.NetTrace
 import elaio.neuralnet.units.{InputNeuron, NeuronCounter, NeuronDataCreator, OutputNeuron}
 import elaio.neuralnet.training.{Trainable, WeightInitializer}
 
-object MultiplicatorTest extends Trainable {
+abstract class MathTest extends Trainable {
 
   protected val learningRate = 0.015d
   protected val epochs = 10000
   protected val maxUpdateNorm = 700d
   protected val clipUntilEpoch = 1000
 
+  protected val tolerance = 0.5d
+
   private val dimOuter = 3
   private val width = 5
   private val trainCount = 250
-  private val tolerance = 0.1d
 
-  // the task to learn, stated only here
-  private def targetOf(inputValues: Array[Double]): Array[Double] = inputValues.map(value => value / 5)
+  // the task to learn
+  protected def targetOf(inputValues: Array[Double]): Array[Double]
 
   def run(): Unit = {
     // enable the following line to write detailed trace messages to stdout, disable it for no output.
@@ -82,7 +83,7 @@ object MultiplicatorTest extends Trainable {
       NetTrace.WriteMessage("received outvalue " + (index + 1) + ": " + outValues(index) + " - searched: " + expected(index))
       if (math.abs(expected(index) - outValues(index)) < tolerance) {
         within = within + 1
-        NetTrace.WriteMessage("found outvalue " + (index + 1) + ": " + outValues(index) + " - searched: " + expected(index), 1)
+        NetTrace.WriteMessage("found outvalue", 1)
       }
     }
     NetTrace.WriteMessage(
