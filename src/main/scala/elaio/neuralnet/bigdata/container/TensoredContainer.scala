@@ -1,6 +1,7 @@
 package elaio.neuralnet.bigdata.container
 
 import elaio.neuralnet.connections.Connection
+//import elaio.neuralnet.trace.NetTrace
 import elaio.neuralnet.units.Neuron
 import elaio.neuralnet.units.NeuronType
 
@@ -66,6 +67,7 @@ class TensoredContainer(
         var newNeuronsHere: Array[Neuron] = Array.ofDim[Neuron](0)
         var bottomNeuronsThisRecur: Array[Neuron] = Array.ofDim[Neuron](0)
         var childNeuronsThisRecur: Array[Neuron] = Array.ofDim[Neuron](0)
+        var lowerDimNeuronsThisRecur: Array[Neuron] = Array.ofDim[Neuron](0)
         for (i <- 1 to buildInOutWidth) {
           var newNeuronSameRank = dataCreator.create(NeuronType.Hidden)
           newNeuronsSameRank = newNeuronsSameRank :+ newNeuronSameRank
@@ -92,6 +94,7 @@ class TensoredContainer(
             false,
           )
           neuronsReturn(2) = neuronsLowerDim(2)
+          lowerDimNeuronsThisRecur = neuronsLowerDim(0)
 
           bottomNeuronsThisRecur = neuronsLowerDim(2)
           if(buildDimOuter > 2) // avoid double connections
@@ -106,16 +109,20 @@ class TensoredContainer(
           if (childNeuronsLastRecur.length > 0) {
             var childNeuronIndex: Int = 0
             for (childNeuron <- childNeuronsThisRecur) {
-              if (childNeuron.connectionsIn.isEmpty)
+              if (childNeuron.connectionsIn.isEmpty) {
                 connectNeurons(childNeuronsLastRecur(childNeuronIndex), childNeuron)
+                //NetTrace.WriteMessage("fix1")
+              }
               childNeuronIndex = childNeuronIndex + 1
             }
           }
           if (childNeuronsThisRecur.length > 0) {
             var childNeuronIndex: Int = 0
             for (childNeuron <- childNeuronsLastRecur) {
-              if (childNeuron.connectionsOut.isEmpty)
+              if (childNeuron.connectionsOut.isEmpty) {
                 connectNeurons(childNeuron, childNeuronsThisRecur(childNeuronIndex))
+                //NetTrace.WriteMessage("fix2")
+              }
               childNeuronIndex = childNeuronIndex + 1
             }
           }
@@ -123,10 +130,17 @@ class TensoredContainer(
         } else {
           neuronsReturn(2) = neuronsReturn(2) ++ newNeuronsHere
         }
-        if (isReverseNode)
+        /*if (isReverseNode)
           if (nextNeuronOuterIndexOffset == -buildDimOuter)
             for (outNeuron <- neuronsReturn(1))
-              newNeuronsHere.foreach( connectNeurons(_, outNeuron))
+              newNeuronsHere.foreach( connectNeurons(_, outNeuron))*/
+        // outputs read every reverse group and its child level - widens the output cut
+        if (isReverseNode)
+          for (outNeuron <- neuronsReturn(1)) {
+            newNeuronsHere.foreach( connectNeurons(_, outNeuron))
+            lowerDimNeuronsThisRecur.foreach( connectNeurons(_, outNeuron))
+          }
+
 
         if (buildDimOuter > 1) {
           if (bottomNeuronsLastRecur.length > 0)

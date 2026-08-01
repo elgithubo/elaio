@@ -5,7 +5,7 @@ import elaio.neuralnet.trace.NetTrace
 import elaio.neuralnet.units.{InputNeuron, NeuronCounter, NeuronDataCreator, OutputNeuron}
 import elaio.neuralnet.training.{Trainable, WeightInitializer}
 
-abstract class MathTest extends Trainable {
+trait MathTest extends Trainable {
 
   protected val learningRate = 0.015d
   protected val epochs = 10000
