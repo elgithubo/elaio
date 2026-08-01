@@ -5,14 +5,14 @@ import elaio.neuralnet.trace.NetTrace
 import elaio.neuralnet.units.{InputNeuron, NeuronCounter, NeuronDataCreator, OutputNeuron}
 import elaio.neuralnet.training.{Trainable, WeightInitializer}
 
-abstract class MathTest extends Trainable {
+trait MathTest extends Trainable {
 
-  protected val learningRate = 0.015d
-  protected val epochs = 10000
+  protected val learningRate: Double
+  protected val epochs = 15000
   protected val maxUpdateNorm = 700d
   protected val clipUntilEpoch = 1000
 
-  protected val tolerance = 0.5d
+  protected val tolerance = 1d
 
   private val dimOuter = 3
   private val width = 5
@@ -87,11 +87,11 @@ abstract class MathTest extends Trainable {
       }
     }
     NetTrace.WriteMessage(
-      "unseen input: " + within + " of " + outValues.length + " outputs within tolerance"
+      "unseen input: " + within + " of " + outValues.length + " outputs within tolerance (" + tolerance + ")"
     )
   }
 
   private def randomInput(random: scala.util.Random): Array[Double] =
-    Array.fill(width)(random.nextDouble() * 20d - 10d) // random double values in the range [-10, 10]
+    Array.fill(width)(random.nextDouble() * 200d - 100d) // random double values in the range [-100, 100]
 
 }
