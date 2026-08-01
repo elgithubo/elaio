@@ -46,6 +46,9 @@ object Backpropagation {
             val gradient = neuron.delta * connectionIn.neuronSource.value / fanIn
             sumSquares += gradient * gradient
           }
+          // the bias gradient belongs in the norm too, otherwise the cap scales the
+          // weights but not the biases and distorts the very direction it preserves
+          if (fanIn > 0) sumSquares += neuron.delta * neuron.delta
         }
         val norm = math.sqrt(sumSquares)
         if (norm > maxUpdateNorm) maxUpdateNorm / norm else 1d
@@ -56,6 +59,11 @@ object Backpropagation {
       for (connectionIn <- neuron.connectionsIn)
         connectionIn.weight =
           connectionIn.weight + learningRate * scale * neuron.delta * connectionIn.neuronSource.value / fanIn
+      // dz/db = 1, so no 1/N here - the bias is not averaged in the forward pass.
+      // Skipped for input neurons, which override collectInConnections and never
+      // read their bias, so updating it would only let it drift.
+      if (fanIn > 0)
+        neuron.bias = neuron.bias + learningRate * scale * neuron.delta
     }
   }
 }

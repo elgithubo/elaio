@@ -1,4 +1,4 @@
-package elaio.neuralnet.test
+ package elaio.neuralnet.test
 
 import elaio.neuralnet.bigdata.container.TensoredContainer
 import elaio.neuralnet.trace.NetTrace
@@ -7,18 +7,18 @@ import elaio.neuralnet.training.{Trainable, WeightInitializer}
 
 object MultiplicatorTest extends Trainable {
 
-  protected val learningRate = 0.01d
-  protected val epochs = 15000
+  protected val learningRate = 0.015d
+  protected val epochs = 10000
   protected val maxUpdateNorm = 700d
   protected val clipUntilEpoch = 1000
 
   private val dimOuter = 3
   private val width = 5
   private val trainCount = 250
-  private val tolerance = 0.25d
+  private val tolerance = 0.1d
 
   // the task to learn, stated only here
-  private def targetOf(inputValues: Array[Double]): Array[Double] = inputValues.map(_ * 2d)
+  private def targetOf(inputValues: Array[Double]): Array[Double] = inputValues.map(value => value / 5)
 
   def run(): Unit = {
     // enable the following line to write detailed trace messages to stdout, disable it for no output.

@@ -87,7 +87,7 @@ class TensoredContainer(
         if (buildDimOuter > 1) {
           var neuronsLowerDim = buildNodesRecurse(
             buildDimOuter - 1,
-            1,
+            buildInOutWidth + 1,
             dataCreator,
             false,
           )

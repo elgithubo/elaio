@@ -9,6 +9,10 @@ abstract class Neuron {
   protected var _value: Double = 1d
   protected var _preActivation: Double = 0d
   protected var _delta: Double = 0d
+  // starts at 0, so a fresh net behaves exactly as it did before biases existed.
+  // Without it the net is positively homogeneous - N(c*x) = c*N(x), measured as
+  // exactly 2.000 - and can only ever represent maps that scale linearly.
+  protected var _bias: Double = 0d
   protected val _id: Double = NeuronCounter.getNext()
 
   protected val _connectionsOut: mutable.ArrayBuffer[Connection] = mutable.ArrayBuffer.empty
@@ -19,11 +23,13 @@ abstract class Neuron {
   def preActivation: Double = _preActivation
   def delta: Double = _delta
   def delta_=(delta: Double): Unit = { _delta = delta }
+  def bias: Double = _bias
+  def bias_=(bias: Double): Unit = { _bias = bias }
   // addInConnection and addOutConnection are the only way to wire a neuron
   def connectionsOut: scala.collection.IndexedSeq[Connection] = _connectionsOut
   def connectionsIn: scala.collection.IndexedSeq[Connection] = _connectionsIn
 
-  // one forward pass: pull from every in-connection, average, activate.
+  // one forward pass: pull from every in-connection, average, offset, activate.
   def collectInConnections(): Double = {
 
     var valueSum = 0d
@@ -33,8 +39,10 @@ abstract class Neuron {
     if (connectionsIn.nonEmpty)
       valueSum = valueSum / connectionsIn.length
 
-    _preActivation = valueSum
-    _value = activationFunction(valueSum)
+    // the bias is added after the averaging - it is an independent offset, not
+    // one more incoming value to average in
+    _preActivation = valueSum + _bias
+    _value = activationFunction(_preActivation)
 
     _value
   }
