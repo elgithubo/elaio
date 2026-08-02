@@ -6,9 +6,9 @@ import elaio.neuralnet.units.Neuron
 
 object WeightInitializer {
   // He-style init, inverted because collectInConnections averages rather than sums
-  def initialize(outputNodes: Array[Neuron]): Double = {
+  def initialize(outputNodes: Array[Neuron]): Long = {
     val random = new scala.util.Random
-    var connectionsInitialized = 0
+    var connectionsInitialized = 0L
 
     for (neuron <- GraphTraversal.reverseTopologicalFromOutputs(outputNodes).sequence)
       if (neuron.connectionsIn.length > 0) {

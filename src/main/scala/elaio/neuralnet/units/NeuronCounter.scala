@@ -1,12 +1,12 @@
 package elaio.neuralnet.units
 
 object NeuronCounter {
-  private var counter: Double = 0
+  private var counter = 0L
 
-  def getNext(): Double = {
-    counter = counter+1
+  def getNext(): Long = {
+    counter = counter + 1L
     counter
   }
 
-  def current: Double = counter
+  def current: Long = counter
 }
