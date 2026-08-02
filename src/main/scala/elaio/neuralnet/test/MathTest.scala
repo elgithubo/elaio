@@ -46,7 +46,7 @@ trait MathTest extends Trainable {
 
     //execute the training, which is a forward pass followed by backpropagation for each example, repeated for the number of epochs.
     NetTrace.WriteMessage("training on " + trainInputs.length + " examples over " + epochs + " epochs with learning rate " + learningRate)
-    NetTrace.WriteMessage("update norm capped at " + maxUpdateNorm + " for the first " + clipUntilEpoch + " epochs")
+    NetTrace.WriteMessage("gradient clipping at " + maxUpdateNorm + " for the first " + clipUntilEpoch + " epochs")
     NetTrace.WriteMessage("")
     train(container, trainInputs, trainOutputs)
 

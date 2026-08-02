@@ -14,7 +14,7 @@ trait Trainable {
   protected val learningRate: Double
   // Cap the length of a single update, which is what stops a run from exploding in the first epochs.
   protected val maxUpdateNorm: Double
-  // Set to epochs to clip throughout, or to 0 to disable clipping entirely.
+  // Set to epochs to clip throughout, or to 0 to disable gradient clipping entirely.
   protected val clipUntilEpoch: Int
 
   // ask the net a question
@@ -48,10 +48,7 @@ trait Trainable {
       trainInputs: Array[Array[Double]],
       trainOutputs: Array[Array[Double]]
   ): Unit = {
-    require(
-      trainInputs.length == trainOutputs.length,
-      "need one output for every input"
-    )
+    require(trainInputs.length == trainOutputs.length, "need one output for every input")
 
     val trainingExamples = trainInputs.zip(trainOutputs).toSeq
     for (epoch <- 1 to epochs) {
@@ -69,7 +66,7 @@ trait Trainable {
       }
       if (epoch == 1 || epoch % 100 == 0 || epoch == epochs)
         NetTrace.WriteMessage("epoch " + epoch + ": total squared error = " + totalError, 1)
-      if (epoch == clipUntilEpoch && clipUntilEpoch < epochs)
+      if (epoch == clipUntilEpoch)
         NetTrace.WriteMessage("update cap released after epoch " + epoch, 1)
     }
   }
