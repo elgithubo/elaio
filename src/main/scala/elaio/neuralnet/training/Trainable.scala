@@ -4,6 +4,7 @@ import elaio.neuralnet.bigdata.container.TensoredContainer
 import elaio.neuralnet.processing.NeuronCollectionCache
 import elaio.neuralnet.trace.NetTrace
 import elaio.neuralnet.units.OutputNeuron
+import elaio.neuralnet.processing.Backpropagation
 
 trait Trainable {
 

@@ -5,9 +5,7 @@ import elaio.neuralnet.processing.GraphTraversal
 import elaio.neuralnet.units.Neuron
 
 object WeightInitializer {
-  // He-style init, inverted because collectInConnections averages rather than sums:
-  // Var(w) = N / secondMomentFactor, so weights grow with fan-in instead of shrinking.
-  // Runs after the graph is built, walking back from the outputs once fan-in is final.
+  // He-style init, inverted because collectInConnections averages rather than sums
   def initialize(outputNodes: Array[Neuron]): Double = {
     val random = new scala.util.Random
     var connectionsInitialized = 0
@@ -20,7 +18,7 @@ object WeightInitializer {
           connectionsInitialized = connectionsInitialized + 1
         }
       }
-      
+
     connectionsInitialized
   }
 }

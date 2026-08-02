@@ -17,6 +17,7 @@ trait MathTest extends Trainable {
   private val dimOuter = 3
   private val width = 5
   private val trainCount = 250
+  private val numberOfQuestions = 5
 
   // the task to learn
   protected def targetOf(inputValues: Array[Double]): Array[Double]
@@ -49,16 +50,17 @@ trait MathTest extends Trainable {
     NetTrace.WriteMessage("")
     train(container, trainInputs, trainOutputs)
 
-    // the actual test: an input the net has never been trained on
-    NetTrace.WriteMessage("")
-    val checkInput = randomInput(random)
-    NetTrace.WriteMessage("checking an unseen input: " + checkInput.map(v => f"$v%.3f").mkString(", "))
-    initInputs(container, checkInput)
-    // one forward pass with the test values
-    forwardPass(container)
-    NetTrace.WriteMessage("")
-    val receivedResult: Array[Double] = container.outputNodes.map(_.value)
-    checkOutputs(receivedResult, targetOf(checkInput))
+    // the actual test: test inputs the net has never been trained on
+    (1 to numberOfQuestions).foreach(_ =>
+      NetTrace.WriteMessage("")
+      val checkInput = randomInput(random)
+      NetTrace.WriteMessage("checking an unseen input: " + checkInput.map(v => f"$v%.3f").mkString(", "))
+      initInputs(container, checkInput)
+      // one forward pass with the test values
+      forwardPass(container)
+      val receivedResult: Array[Double] = container.outputNodes.map(_.value)
+      checkOutputs(receivedResult, targetOf(checkInput))
+    )
 
     NetTrace.WriteMessage("")
     NetTrace.WriteMessage("end of test run")

@@ -1,6 +1,5 @@
-package elaio.neuralnet.training
+package elaio.neuralnet.processing
 
-import elaio.neuralnet.processing.GraphTraversal
 import elaio.neuralnet.units.{Neuron, OutputNeuron}
 
 object Backpropagation {
@@ -13,10 +12,7 @@ object Backpropagation {
   //   delta_j = f'(z_j) * sum_k (delta_k * w_jk / N_k)   <- N of the target k
   //   dw_ij   = delta_j * a_i / N_j                      <- N of the owner j
   // maxUpdateNorm caps the length of the whole update vector, leaving its direction
-  // alone. Measured at initialisation, that length varies by a factor of ~89 between
-  // the median step and the worst one, and it is the extreme steps that blow the net
-  // up in the first few epochs. Scaling the whole vector rather than each weight on
-  // its own keeps the step pointing along the gradient.
+  // alone since it is the extreme steps that blow the net
   def run(outputNodes: Array[Neuron], learningRate: Double,
           maxUpdateNorm: Double = Double.PositiveInfinity): Unit = {
     val order = GraphTraversal.reverseTopologicalFromOutputs(outputNodes)
@@ -46,8 +42,6 @@ object Backpropagation {
             val gradient = neuron.delta * connectionIn.neuronSource.value / fanIn
             sumSquares += gradient * gradient
           }
-          // the bias gradient belongs in the norm too, otherwise the cap scales the
-          // weights but not the biases and distorts the very direction it preserves
           if (fanIn > 0) sumSquares += neuron.delta * neuron.delta
         }
         val norm = math.sqrt(sumSquares)
@@ -59,10 +53,7 @@ object Backpropagation {
       for (connectionIn <- neuron.connectionsIn)
         connectionIn.weight =
           connectionIn.weight + learningRate * scale * neuron.delta * connectionIn.neuronSource.value / fanIn
-      // dz/db = 1, so no 1/N here - the bias is not averaged in the forward pass.
-      // Skipped for input neurons, which override collectInConnections and never
-      // read their bias, so updating it would only let it drift.
-      if (fanIn > 0)
+      if (fanIn > 0) // skip input neurons
         neuron.bias = neuron.bias + learningRate * scale * neuron.delta
     }
   }
