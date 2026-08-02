@@ -66,7 +66,7 @@ trait Trainable {
       }
       if (epoch == 1 || epoch % 100 == 0 || epoch == epochs)
         NetTrace.WriteMessage("epoch " + epoch + ": total squared error = " + totalError, 1)
-      if (epoch == clipUntilEpoch)
+      if (epoch == clipUntilEpoch && clipUntilEpoch < epochs)
         NetTrace.WriteMessage("update cap released after epoch " + epoch, 1)
     }
   }
