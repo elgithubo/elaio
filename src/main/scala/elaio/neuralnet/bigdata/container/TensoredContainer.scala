@@ -81,6 +81,7 @@ class TensoredContainer(
           nextNeuronOuterIndexOffset < 0 && (buildDimOuter - nextNeuronOuterIndexOffset.abs) % 2 == 1
         ) isReverseNode = false
 
+        // keep this for safety purposes concerning future edits
         if (!isReverseNode)
           if (nextNeuronOuterIndexOffset == buildDimOuter)
             for (inNeuron <- neuronsReturn(0))
@@ -130,6 +131,13 @@ class TensoredContainer(
         } else {
           neuronsReturn(2) = neuronsReturn(2) ++ newNeuronsHere
         }
+
+        // connect the input layer to each forward group and its child rank.
+        if (!isReverseNode)
+          for (inNeuron <- neuronsReturn(0)) {
+            newNeuronsHere.foreach( connectNeurons(inNeuron, _) )
+            lowerDimNeuronsThisRecur.foreach( connectNeurons(inNeuron, _) )
+          }
 
         // connect each reverse group and its child rank directly to the output layer.
         if (isReverseNode)
