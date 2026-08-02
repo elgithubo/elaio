@@ -48,7 +48,7 @@ object Main {
   private def parseArguments(args: Array[String]): OpSpec = {
     val acceptedTestTypes = MathTestType.values.mkString(", ")
 
-    val usage = s"Expected: [--save-file <path> | --load-file <path>]"
+    val usage = s"Expected: <task> [--save-file <path> | --load-file <path>]"
     require(args.nonEmpty, usage)
 
     val testType = MathTestType.values

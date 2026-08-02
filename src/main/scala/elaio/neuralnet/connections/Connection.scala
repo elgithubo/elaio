@@ -15,6 +15,8 @@ trait Connection {
 
   private var _id: Long = ConnectionCounter.getNext()
 
+  def id: Long = _id
+
   // initialize weight based on a rendom number for now
   private var _weight: Double = scala.util.Random.nextDouble() * 2d - 1d
 

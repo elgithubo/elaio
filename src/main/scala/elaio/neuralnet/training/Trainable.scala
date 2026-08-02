@@ -1,7 +1,8 @@
 package elaio.neuralnet.training
 
+import java.nio.file.Path
 import elaio.neuralnet.bigdata.container.TensoredContainer
-import elaio.neuralnet.persistence.PersistenceAction
+import elaio.neuralnet.persistence.{NetworkStateMapper, PersistenceAction, PersistenceHandler}
 import elaio.neuralnet.processing.NeuronCollectionCache
 import elaio.neuralnet.trace.NetTrace
 import elaio.neuralnet.units.OutputNeuron
@@ -45,8 +46,50 @@ trait Trainable {
     total
   }
 
+  protected def process(
+      container: TensoredContainer,
+      persistenceAction: Option[PersistenceAction],
+      trainingData: => (Array[Array[Double]], Array[Array[Double]])
+  ): Unit = persistenceAction match {
+    case Some(PersistenceAction.Load(file)) =>
+      load(container, file)
+
+    case _ =>
+      // weight initialization has to happen after init(), when every neuron's fan-in is final
+      val weightCount = WeightInitializer.initialize(container.outputNodes)
+      NetTrace.WriteMessage("connection weights initialized: " + weightCount)
+
+      val (trainInputs, trainOutputs) = trainingData
+      NetTrace.WriteMessage("training on " + trainInputs.length + " examples over " + epochs + " epochs with learning rate " + learningRate)
+      NetTrace.WriteMessage("gradient clipping at " + maxUpdateNorm + " for the first " + clipUntilEpoch + " epochs")
+      NetTrace.WriteMessage("")
+      train(container, trainInputs, trainOutputs)
+
+      persistenceAction match {
+        case Some(PersistenceAction.Save(file)) => save(container, file)
+        case _                                  => ()
+      }
+  }
+
+  private def load(container: TensoredContainer, file: Path): Unit = {
+    NetTrace.WriteMessage("loading network state from " + file)
+    val stateContainer = new PersistenceHandler().load(file)
+    NetworkStateMapper.restore(stateContainer, container)
+    NetTrace.WriteMessage(
+      "loaded " + stateContainer.neuronStore.size + " neurons and " + stateContainer.connectionStore.size + " connections"
+    )
+  }
+
+  private def save(container: TensoredContainer, file: Path): Unit = {
+    val stateContainer = NetworkStateMapper.capture(container)
+    new PersistenceHandler().save(stateContainer, file)
+    NetTrace.WriteMessage(
+      "saved " + stateContainer.neuronStore.size + " neurons and " + stateContainer.connectionStore.size + " connections to " + file
+    )
+  }
+
   // execute the actual training, which is a forward pass followed by backpropagation for each example, repeated for the number of epochs.
-  protected def train(
+  private def train(
       container: TensoredContainer,
       trainInputs: Array[Array[Double]],
       trainOutputs: Array[Array[Double]]

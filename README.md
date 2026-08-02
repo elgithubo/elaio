@@ -29,6 +29,10 @@ install sbt (Scala Build Tool) and execute 'sbt run _task_' where _task_ is one 
 - Division
 - Potential (currenty fails)
 
+Persistence
+===========
+for saving/loading network data (weights andbiases) execute 'sbt run <task> --save-file <path> | --load-file <path>'
+
 Reference Implementations
 =========================
 ...to be done (wip)...

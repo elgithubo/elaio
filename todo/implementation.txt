@@ -1,4 +1,3 @@
-- add bias (check with x² transformation)
 - evaluate if a gradient check (cosine?) makes sense (maybe not required if bias is in place)
-- persist weights
+- add check that loading a persistet state is for the correct network operation, e.g. addition
 - multi core usage (threaded (always) vs. multiple jvms (during learning))

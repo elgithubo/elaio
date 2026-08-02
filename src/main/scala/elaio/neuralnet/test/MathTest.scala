@@ -3,7 +3,7 @@ package elaio.neuralnet.test
 import elaio.neuralnet.bigdata.container.TensoredContainer
 import elaio.neuralnet.trace.NetTrace
 import elaio.neuralnet.units.{InputNeuron, NeuronCounter, NeuronDataCreator, OutputNeuron}
-import elaio.neuralnet.training.{Trainable, WeightInitializer}
+import elaio.neuralnet.training.Trainable
 
 trait MathTest extends Trainable {
 
@@ -31,24 +31,22 @@ trait MathTest extends Trainable {
     NetTrace.WriteMessage("build dimension: " + dimOuter)
     NetTrace.WriteMessage("in/out width: " + width)
 
+    val random = new scala.util.Random
+
     val container = new TensoredContainer(dimOuter, width, new NeuronDataCreator)
     container.init()
     NetTrace.WriteMessage("total neurons created: " + NeuronCounter.counter)
 
-    // weight initialization has to happen after init(), when every neuron's fan-in is final
-    val weightCount = WeightInitializer.initialize(container.outputNodes)
-    NetTrace.WriteMessage("connection weights initialized: " + weightCount)
-
-    val random = new scala.util.Random
-    // generate training data, which is just random inputs and the corresponding calculated outputs
-    val trainInputs = Array.fill(trainCount)(randomInput(random))
-    val trainOutputs = trainInputs.map(targetOf)
-
-    //execute the training, which is a forward pass followed by backpropagation for each example, repeated for the number of epochs.
-    NetTrace.WriteMessage("training on " + trainInputs.length + " examples over " + epochs + " epochs with learning rate " + learningRate)
-    NetTrace.WriteMessage("gradient clipping at " + maxUpdateNorm + " for the first " + clipUntilEpoch + " epochs")
-    NetTrace.WriteMessage("")
-    train(container, trainInputs, trainOutputs)
+    // process evaluates training data only when training is required
+    process(
+      container,
+      persistenceAction,
+      {
+        val trainInputs = Array.fill(trainCount)(randomInput(random))
+        val trainOutputs = trainInputs.map(targetOf)
+        (trainInputs, trainOutputs)
+      }
+    )
 
     // the actual test: test inputs the net has never been trained on
     (1 to numberOfQuestions).foreach(_ =>
