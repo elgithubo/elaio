@@ -13,6 +13,8 @@ trait Connection {
   def neuronTarget: Neuron = _neuronTarget
   def neuronTarget_=(neuron: Neuron): Unit = { _neuronTarget = neuron }
 
+  private var _id: Long = ConnectionCounter.getNext()
+
   // initialize weight based on a rendom number for now
   private var _weight: Double = scala.util.Random.nextDouble() * 2d - 1d
 

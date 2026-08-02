@@ -1,6 +1,9 @@
 package elaio.neuralnet.test
 
-object PotentialTest extends MathTest {
+import elaio.neuralnet.persistence.PersistenceAction
+
+final class PotentialTest(override protected val persistenceAction: Option[PersistenceAction] = None)
+    extends MathTest {
   override val tolerance = 50d
   override val epochs = 50000
   override val clipUntilEpoch = 50000

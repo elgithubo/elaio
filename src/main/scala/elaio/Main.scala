@@ -12,6 +12,7 @@ package elaio{
       package container{}
     }
     package connections{}
+    package persistence{}
     package processing{}
     package test{}
     package trace{}
@@ -22,6 +23,8 @@ package elaio{
 
 // this class is an entry point for testing and debugging.
 // it is meant to call test methods and enable in-IDE debugging.
+import java.nio.file.Path
+import elaio.neuralnet.persistence.PersistenceAction
 import elaio.neuralnet.test.{
   AdditionTest,
   DivisionTest,
@@ -32,25 +35,49 @@ import elaio.neuralnet.test.{
 }
 
 object Main {
+  private final case class OpSpec(
+      testType: MathTestType.Value,
+      persistenceAction: Option[PersistenceAction]
+  )
+
   def main(args: Array[String]): Unit = {
-    val accepted = MathTestType.values.mkString(", ")
-    require(args.length == 1, s"Expected one argument: $accepted")
+    val opSpec = parseArguments(args)
+    main(opSpec)
+  }
+
+  private def parseArguments(args: Array[String]): OpSpec = {
+    val acceptedTestTypes = MathTestType.values.mkString(", ")
+
+    val usage = s"Expected: [--save-file <path> | --load-file <path>]"
+    require(args.nonEmpty, usage)
 
     val testType = MathTestType.values
       .find(_.toString.equalsIgnoreCase(args.head))
       .getOrElse(throw new IllegalArgumentException(
-        s"Unknown math test '${args.head}'. Expected one of: $accepted"
+        s"Unknown math test '${args.head}'. Expected one of: $acceptedTestTypes"
       )
     )
 
-    main(testType)
+    val persistenceAction = args.drop(1).toList match {
+      case Nil => None
+      case "--save-file" :: path :: Nil => Some(PersistenceAction.Save(Path.of(path)))
+      case "--load-file" :: path :: Nil => Some(PersistenceAction.Load(Path.of(path)))
+      case option :: Nil if option == "--save-file" || option == "--load-file" =>
+        throw new IllegalArgumentException(s"Missing path after $option. $usage")
+      case option :: _ if option == "--save-file" || option == "--load-file" =>
+        throw new IllegalArgumentException(s"Only one persistence option is allowed. $usage")
+      case option :: _ =>
+        throw new IllegalArgumentException(s"Unknown option '$option'. $usage")
+    }
+
+    OpSpec(testType, persistenceAction)
   }
 
-  def main(testType: MathTestType.Value): Unit = testType match {
-    case MathTestType.Addition       => AdditionTest.run()
-    case MathTestType.Subtraction    => SubtractionTest.run()
-    case MathTestType.Multiplication => MultiplicationTest.run()
-    case MathTestType.Division       => DivisionTest.run()
-    case MathTestType.Potential      => PotentialTest.run()
+  private def main(opSpec: OpSpec): Unit = opSpec.testType match {
+    case MathTestType.Addition       => new AdditionTest(opSpec.persistenceAction).run()
+    case MathTestType.Subtraction    => new SubtractionTest(opSpec.persistenceAction).run()
+    case MathTestType.Multiplication => new MultiplicationTest(opSpec.persistenceAction).run()
+    case MathTestType.Division       => new DivisionTest(opSpec.persistenceAction).run()
+    case MathTestType.Potential      => new PotentialTest(opSpec.persistenceAction).run()
   }
 }

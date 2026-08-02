@@ -1,12 +1,15 @@
 package elaio.neuralnet.training
 
 import elaio.neuralnet.bigdata.container.TensoredContainer
+import elaio.neuralnet.persistence.PersistenceAction
 import elaio.neuralnet.processing.NeuronCollectionCache
 import elaio.neuralnet.trace.NetTrace
 import elaio.neuralnet.units.OutputNeuron
 import elaio.neuralnet.processing.Backpropagation
 
 trait Trainable {
+
+  protected val persistenceAction: Option[PersistenceAction]
 
   // how many epochs to run
   protected val epochs: Int

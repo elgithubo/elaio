@@ -1,6 +1,6 @@
-package elaio.neuralnet.units
+package elaio.neuralnet.connections
 
-object NeuronCounter {
+object ConnectionCounter {
   private var _counter: Long = 0L
 
   def getNext(): Long = {
