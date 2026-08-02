@@ -31,7 +31,7 @@ install sbt (Scala Build Tool) and execute 'sbt run _task_' where _task_ is one 
 
 Persistence
 ===========
-for saving/loading network data (weights andbiases) execute 'sbt run <task> --save-file <path> | --load-file <path>'
+for saving/loading network data (weights and biases) execute 'sbt run <task> --save-file <path> | --load-file <path>'
 
 Reference Implementations
 =========================
