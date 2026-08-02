@@ -33,11 +33,11 @@ trait MathTest extends Trainable {
 
     val container = new TensoredContainer(dimOuter, width, new NeuronDataCreator)
     container.init()
-    NetTrace.WriteMessage("total neurons created: " + NeuronCounter.current.toInt)
+    NetTrace.WriteMessage("total neurons created: " + NeuronCounter.current)
 
     // weight initialization has to happen after init(), when every neuron's fan-in is final
     val weightCount = WeightInitializer.initialize(container.outputNodes)
-    NetTrace.WriteMessage("connection weights initialized: " + weightCount.toInt)
+    NetTrace.WriteMessage("connection weights initialized: " + weightCount)
 
     val random = new scala.util.Random
     // generate training data, which is just random inputs and the corresponding calculated outputs
