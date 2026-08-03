@@ -135,7 +135,12 @@ class TensoredContainer(
         // connect the input layer to each forward group and its child rank.
         if (!isReverseNode)
           for (inNeuron <- neuronsReturn(0)) {
-            newNeuronsHere.foreach( connectNeurons(inNeuron, _) )
+            for (newNeuronHere <- newNeuronsHere) {
+              if(!inNeuron.connectionsOut.exists(connection => connection.neuronTarget == newNeuronHere))  // avoid double connections
+                connectNeurons(inNeuron, newNeuronHere)
+              //else
+                //NetTrace.WriteMessage("fix3")
+            }
             lowerDimNeuronsThisRecur.foreach( connectNeurons(inNeuron, _) )
           }
 
