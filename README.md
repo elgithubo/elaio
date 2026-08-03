@@ -9,7 +9,7 @@ _/ __ \|  | \__  \ |  |/  _ \
 
 Status
 ======
-work in progress
+work in progress\
 net can learn to calculate basic equations
 
 Requires
@@ -31,7 +31,8 @@ install sbt (Scala Build Tool) and execute `sbt run <task>` where `<task>` is on
 
 Persistence
 ===========
-for saving/loading network data (weights and biases) execute `sbt run <task> --save-file <path> | --load-file <path>`
+for saving/loading network data (weights and biases) execute\
+`sbt run <task> --save-file <path> | --load-file <path>`
 
 Reference Implementations
 =========================
