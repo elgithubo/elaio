@@ -1,15 +1,8 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-
 name: Scala CI
 
 on:
   push:
-    branches: [ "main" ]
   pull_request:
-    branches: [ "main" ]
 
 permissions:
   contents: read
@@ -27,11 +20,8 @@ jobs:
         java-version: '26'
         distribution: 'temurin'
         cache: 'sbt'
-      # setup-java only wires up caching - the runner images no longer ship sbt,
-      # so it has to be installed explicitly
     - name: Set up sbt
       uses: sbt/setup-sbt@v1
       # there is no src/test/scala yet, so "sbt test" would report that nothing ran.
-      # switch this back to "sbt test" once real tests exist.
     - name: Compile
       run: sbt compile
