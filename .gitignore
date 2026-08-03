@@ -8,6 +8,7 @@
 .metals/*
 .vscode/*
 log/*
-project/*
 .zed/*
+project/*
+tmp/*
 0
