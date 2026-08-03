@@ -7,9 +7,8 @@ import elaio.neuralnet.training.Trainable
 
 trait MathTest extends Trainable {
 
-  protected val epochs = 15000
-  protected val maxUpdateNorm = 700d
-  protected val clipUntilEpoch = 5000
+  override protected val epochs = 15000
+  override protected val clipUntilEpoch = 7500
 
   protected val tolerance = 1d
 

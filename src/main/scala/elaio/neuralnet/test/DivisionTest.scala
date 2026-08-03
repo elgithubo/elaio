@@ -8,6 +8,7 @@ final class DivisionTest(override protected val persistenceAction: Option[Persis
   override protected val learningRate = 0.015d
   override protected val epochs = 5000
   override protected val clipUntilEpoch = 1000
+  override protected val maxUpdateNorm = 700d
 
   protected def targetOf(inputValues: Array[Double]): Array[Double] = inputValues.map(value => value / 5)
 }
