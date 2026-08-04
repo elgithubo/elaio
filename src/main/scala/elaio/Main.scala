@@ -2,7 +2,7 @@
 // compile with:
 //   scalac `find src -name "*.scala"`
 // and run with:
-//   scala -cp . Main <Task>
+//   scala -cp . Main <Task> [<PersistenceParameters>]
 // must list every package that actually exists under elaio. check against:
 //   grep -h "^package" `find src -type f -name "*.scala" ! -name Main.scala` | sort -u
 package elaio{

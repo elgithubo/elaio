@@ -1,13 +1,14 @@
 **/target
 **/*.class
 **/*.tasty
-.idea
-.scalafmt.conf
 .bloop/*
 .bsp/*
 .metals/*
 .vscode/*
+.zed/*
 log/*
 project/*
-.zed/*
+tmp/*
+.idea
+.scalafmt.conf
 0

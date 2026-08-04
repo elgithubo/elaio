@@ -36,17 +36,7 @@ trait Trainable {
     for (outputNode <- container.outputNodes) outputNode.collectInConnections()
   }
 
-  // summed squared error of the last forward pass against the targets set on the outputs
-  private def squaredError(container: TensoredContainer): Double  = {
-    var total = 0d
-    for (outputNode <- container.outputNodes) {
-      val residual = outputNode.asInstanceOf[OutputNeuron].target - outputNode.value
-      total = total + residual * residual
-    }
-    total
-  }
-
-  protected def process(
+  protected final def process(
       container: TensoredContainer,
       persistenceAction: Option[PersistenceAction],
       trainingData: => (Array[Array[Double]], Array[Array[Double]])
@@ -69,6 +59,16 @@ trait Trainable {
         case Some(PersistenceAction.Save(file)) => save(container, file)
         case _                                  => ()
       }
+  }
+
+  // summed squared error of the last forward pass against the targets set on the outputs
+  private def squaredError(container: TensoredContainer): Double  = {
+    var total = 0d
+    for (outputNode <- container.outputNodes) {
+      val residual = outputNode.asInstanceOf[OutputNeuron].target - outputNode.value
+      total = total + residual * residual
+    }
+    total
   }
 
   private def load(container: TensoredContainer, file: Path): Unit = {

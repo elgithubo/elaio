@@ -7,14 +7,12 @@ import elaio.neuralnet.training.Trainable
 
 trait MathTest extends Trainable {
 
-  protected val learningRate: Double
-  protected val epochs = 15000
-  protected val maxUpdateNorm = 700d
-  protected val clipUntilEpoch = 1000
+  override protected val epochs = 15000
+  override protected val clipUntilEpoch = 7500
 
   protected val tolerance = 1d
 
-  private val dimOuter = 3
+  private val dimOuter = 2
   private val width = 5
   private val trainCount = 250
   private val numberOfQuestions = 5
@@ -22,7 +20,11 @@ trait MathTest extends Trainable {
   // the task to learn
   protected def targetOf(inputValues: Array[Double]): Array[Double]
 
-  def run(): Unit = {
+  // define the input values for a single training example
+  private def randomInput(random: scala.util.Random): Array[Double] =
+    Array.fill(width)(random.nextDouble() * 2000d - 1000d) // random double values in the range [-1000, 1000]
+
+  override def run(): Unit = {
     // enable the following line to write detailed trace messages to stdout, disable it for no output.
     NetTrace.started = true
 
@@ -52,7 +54,7 @@ trait MathTest extends Trainable {
     (1 to numberOfQuestions).foreach(_ =>
       NetTrace.WriteMessage("")
       val checkInput = randomInput(random)
-      NetTrace.WriteMessage("checking an unseen input: " + checkInput.map(v => f"$v%.3f").mkString(", "))
+      NetTrace.WriteMessage("checking an unseen input: " + checkInput.map(v => f"$v%.3f").mkString(" | "))
       initInputs(container, checkInput)
       // one forward pass with the test values
       forwardPass(container)
@@ -90,8 +92,4 @@ trait MathTest extends Trainable {
       "unseen input: " + within + " of " + outValues.length + " outputs within tolerance (" + tolerance + ")"
     )
   }
-
-  private def randomInput(random: scala.util.Random): Array[Double] =
-    Array.fill(width)(random.nextDouble() * 200d - 100d) // random double values in the range [-100, 100]
-
 }
