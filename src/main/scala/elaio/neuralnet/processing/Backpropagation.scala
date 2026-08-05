@@ -1,6 +1,6 @@
 package elaio.neuralnet.processing
 
-import elaio.neuralnet.units.{Neuron, OutputNeuron}
+import elaio.neuralnet.units.OutputNeuron
 
 object Backpropagation {
   // one step of gradient descent over the graph's reverse order.
@@ -13,11 +13,9 @@ object Backpropagation {
   //   dw_ij   = delta_j * a_i / N_j                      <- N of the owner j
   // maxUpdateNorm caps the length of the whole update vector, leaving its direction
   // alone since it is the extreme steps that blow the net
-  def run(outputNodes: Array[Neuron], learningRate: Double,
+  def run(order: GraphTraversal.ReverseOrder, learningRate: Double,
           maxUpdateNorm: Double = Double.PositiveInfinity): Unit = {
-    val order = GraphTraversal.reverseTopologicalFromOutputs(outputNodes)
-
-    for (output <- outputNodes) {
+    for (output <- order.outputs) {
       val outputNeuron = output.asInstanceOf[OutputNeuron]
       outputNeuron.delta =
         (outputNeuron.target - outputNeuron.value) * outputNeuron.activationDerivative(outputNeuron.preActivation)

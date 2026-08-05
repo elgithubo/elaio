@@ -47,7 +47,7 @@ trait Trainable {
 
     case _ =>
       // weight initialization has to happen after init(), when every neuron's fan-in is final
-      val weightCount = WeightInitializer.initialize(container.outputNodes)
+      val weightCount = WeightInitializer.initialize(container.reverseOrder)
       NetTrace.WriteMessage("connection weights initialized: " + weightCount)
 
       val (trainInputs, trainOutputs) = trainingData
@@ -109,7 +109,7 @@ trait Trainable {
         initTargets(container, targetValues)
         forwardPass(container)
         totalError = totalError + squaredError(container)
-        Backpropagation.run(container.outputNodes, learningRate, updateNorm)
+        Backpropagation.run(container.reverseOrder, learningRate, updateNorm)
       }
       if (epoch == 1 || epoch % 100 == 0 || epoch == epochs)
         NetTrace.WriteMessage("epoch " + epoch + ": total squared error = " + totalError, 1)

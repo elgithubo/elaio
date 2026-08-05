@@ -1,6 +1,7 @@
 package elaio.neuralnet.bigdata.container
 
 import elaio.neuralnet.connections.Connection
+import elaio.neuralnet.processing.GraphTraversal
 //import elaio.neuralnet.trace.NetTrace
 import elaio.neuralnet.units.Neuron
 import elaio.neuralnet.units.NeuronType
@@ -13,9 +14,12 @@ class TensoredContainer(
 
   private var _inputNodes = Array.ofDim[Neuron](0)
   private var _outputNodes = Array.ofDim[Neuron](0)
+  private var _reverseOrder: GraphTraversal.ReverseOrder = null
 
   def inputNodes: Array[Neuron] = _inputNodes
   def outputNodes: Array[Neuron] = _outputNodes
+  def reverseOrder: GraphTraversal.ReverseOrder =
+    if( _reverseOrder != null) _reverseOrder else throw new IllegalStateException("container has not been initialized")
 
   def init(): Array[Array[Neuron]] = {
     val result =
@@ -26,6 +30,7 @@ class TensoredContainer(
       )
     _inputNodes = result(0)
     _outputNodes = result(1)
+    _reverseOrder = GraphTraversal.reverseTopologicalFromOutputs(_outputNodes)
     result
   }
 
