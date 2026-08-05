@@ -2,7 +2,6 @@ package elaio.neuralnet.units
 
 import scala.collection.mutable
 import elaio.neuralnet.connections.Connection
-import elaio.neuralnet.activation.Activation
 import elaio.neuralnet.processing.NeuronCollectionCache
 
 abstract class Neuron(val id: Long) {
@@ -29,6 +28,10 @@ abstract class Neuron(val id: Long) {
   def connectionsOut: scala.collection.IndexedSeq[Connection] = _connectionsOut
   def connectionsIn: scala.collection.IndexedSeq[Connection] = _connectionsIn
 
+
+  def activationFunction(input: Double): Double
+  def activationDerivative(input: Double): Double
+
   // one forward pass: pull from every in-connection, average, offset, activate.
   def collectInConnections(cache: NeuronCollectionCache): Double = {
 
@@ -45,14 +48,6 @@ abstract class Neuron(val id: Long) {
     _value = activationFunction(_preActivation)
 
     _value
-  }
-
-  def activationFunction(input: Double): Double = {
-    Activation.activationFunction(input)
-  }
-
-  def activationDerivative(input: Double): Double = {
-    Activation.backpropagationFunction(input)
   }
 
   def addOutConnection(outConnection: Connection): Unit = {
