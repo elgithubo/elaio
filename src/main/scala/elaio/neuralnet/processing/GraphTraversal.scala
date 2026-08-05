@@ -1,6 +1,7 @@
 package elaio.neuralnet.processing
 
 import scala.collection.mutable
+import scala.collection.concurrent.TrieMap
 import elaio.neuralnet.units.Neuron
 
 object GraphTraversal {
@@ -10,7 +11,8 @@ object GraphTraversal {
       outputs: Set[Neuron]
   )
 
-  private val reverseOrderCache = mutable.HashMap.empty[Set[Neuron], ReverseOrder]
+  // concurrent so cached traversals can be shared across threads safely
+  private val reverseOrderCache = TrieMap.empty[Set[Neuron], ReverseOrder]
 
   // Returns all neurons reachable from outputs in reverse-topological order:
   // sinks (usually outputs) first, then their sources towards inputs.
