@@ -4,7 +4,7 @@ import scala.collection.mutable.HashMap
 import elaio.neuralnet.bigdata.container.TensoredContainer
 import elaio.neuralnet.connections.Connection
 import elaio.neuralnet.processing.GraphTraversal
-import elaio.neuralnet.units.{HiddenNeuron, InputNeuron, Neuron, NeuronType, OutputNeuron}
+import elaio.neuralnet.units.{HiddenNeuronLeakyRelu, HiddenNeuronSquare, InputNeuron, Neuron, NeuronType, OutputNeuron}
 
 object NetworkStateMapper {
 
@@ -17,7 +17,8 @@ object NetworkStateMapper {
         neuron.id,
         (neuron match {
           case _: InputNeuron  => NeuronType.Input
-          case _: HiddenNeuron => NeuronType.Hidden
+          case _: HiddenNeuronLeakyRelu => NeuronType.HiddenLeakyRelu
+          case _: HiddenNeuronSquare => NeuronType.HiddenSquare
           case _: OutputNeuron => NeuronType.Output
           case _ => throw new IllegalArgumentException(s"Unsupported neuron type ${neuron.getClass.getName}")
         }).id.toByte,

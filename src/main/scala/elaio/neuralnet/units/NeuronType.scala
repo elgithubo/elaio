@@ -1,5 +1,5 @@
 package elaio.neuralnet.units
 
 object NeuronType extends Enumeration {
-  val Input, Hidden, Output = Value
+  val Input, HiddenLeakyRelu, HiddenSquare, Output = Value
 }

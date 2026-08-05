@@ -27,7 +27,7 @@ install sbt (Scala Build Tool) and execute `sbt run <task>` where `<task>` is on
 - Subtraction
 - Multiplication
 - Division
-- Potential (currenty fails)
+- Potential (wip)
 
 Persistence
 ===========

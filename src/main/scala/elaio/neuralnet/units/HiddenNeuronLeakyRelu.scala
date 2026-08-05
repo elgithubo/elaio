@@ -2,17 +2,7 @@ package elaio.neuralnet.units
 
 import elaio.neuralnet.activation.Activation
 
-class InputNeuron extends Neuron {
-
-  // holds its value instead of computing one
-  override def collectInConnections(): Double = {
-    _value
-  }
-
-  def initInput(initValue: Double): Unit = {
-    _value = initValue
-  }
-
+class HiddenNeuronLeakyRelu extends Neuron {
   override def activationFunction(input: Double): Double = {
     Activation.activationFunctionLeakyRelu(input)
   }

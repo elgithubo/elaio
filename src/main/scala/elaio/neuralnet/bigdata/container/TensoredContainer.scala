@@ -69,7 +69,11 @@ class TensoredContainer(
         var childNeuronsThisRecur: Array[Neuron] = Array.ofDim[Neuron](0)
         var lowerDimNeuronsThisRecur: Array[Neuron] = Array.ofDim[Neuron](0)
         for (i <- 1 to buildInOutWidth) {
-          var newNeuronSameRank = dataCreator.create(NeuronType.Hidden)
+          var newNeuronSameRank =
+            dataCreator.create(if (
+              inputBackpropagationCreationPossible &&
+                nextNeuronOuterIndexOffset == buildDimOuter && i <= inOutWidth / 2
+            ) NeuronType.HiddenSquare else NeuronType.HiddenLeakyRelu)
           newNeuronsSameRank = newNeuronsSameRank :+ newNeuronSameRank
           newNeuronsHere = newNeuronsHere :+ newNeuronSameRank
         }
