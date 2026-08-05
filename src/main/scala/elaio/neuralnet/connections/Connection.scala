@@ -13,7 +13,7 @@ trait Connection(val id: Long) {
   def neuronTarget: Neuron = _neuronTarget
   def neuronTarget_=(neuron: Neuron): Unit = { _neuronTarget = neuron }
 
-  // initialize weight based on a rendom number for now
+  // initialize weight with 0 here since it is initialized later by WeightInitializer
   private var _weight: Double = 0d
 
   def weight: Double = _weight
