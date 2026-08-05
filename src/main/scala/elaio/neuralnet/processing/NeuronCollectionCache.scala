@@ -3,10 +3,9 @@ package elaio.neuralnet.processing
 import scala.collection.mutable.HashMap
 import elaio.neuralnet.units.Neuron
 
-object NeuronCollectionCache {
+// one instance per forward pass, confined to the calling thread
+class NeuronCollectionCache {
   private val cache: HashMap[Long, Neuron] = HashMap.empty[Long, Neuron]
-
-  def clear(): Unit = cache.clear()
 
   def add(neuron: Neuron): Unit = cache(neuron.id) = neuron
 

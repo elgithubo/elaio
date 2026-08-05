@@ -23,14 +23,14 @@ trait Connection {
   def weight: Double = _weight
   def weight_=(value: Double): Unit = { _weight = value }
 
-  def collect(): Double = {
-    val cachedNeuron = NeuronCollectionCache.get(neuronSource.id)
+  def collect(cache: NeuronCollectionCache): Double = {
+    val cachedNeuron = cache.get(neuronSource.id)
     val neuronValue =
       if (cachedNeuron != null) {
         cachedNeuron.value
       } else {
-        val v = neuronSource.collectInConnections()
-        NeuronCollectionCache.add(neuronSource)
+        val v = neuronSource.collectInConnections(cache)
+        cache.add(neuronSource)
         v
       }
     neuronValue * weight

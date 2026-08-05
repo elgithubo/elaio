@@ -32,8 +32,8 @@ trait Trainable {
   def run(): Unit
 
   protected def forwardPass(container: TensoredContainer): Unit = {
-    NeuronCollectionCache.clear()
-    for (outputNode <- container.outputNodes) outputNode.collectInConnections()
+    val cache = new NeuronCollectionCache
+    for (outputNode <- container.outputNodes) outputNode.collectInConnections(cache)
   }
 
   protected final def process(

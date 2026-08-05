@@ -3,6 +3,7 @@ package elaio.neuralnet.units
 import scala.collection.mutable
 import elaio.neuralnet.connections.Connection
 import elaio.neuralnet.activation.Activation
+import elaio.neuralnet.processing.NeuronCollectionCache
 
 abstract class Neuron {
 
@@ -30,11 +31,11 @@ abstract class Neuron {
   def connectionsIn: scala.collection.IndexedSeq[Connection] = _connectionsIn
 
   // one forward pass: pull from every in-connection, average, offset, activate.
-  def collectInConnections(): Double = {
+  def collectInConnections(cache: NeuronCollectionCache): Double = {
 
     var valueSum = 0d
     for (connectionIn <- connectionsIn) {
-      valueSum = valueSum + connectionIn.collect()
+      valueSum = valueSum + connectionIn.collect(cache)
     }
     if (connectionsIn.nonEmpty)
       valueSum = valueSum / connectionsIn.length
