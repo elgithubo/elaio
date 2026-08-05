@@ -27,13 +27,14 @@ trait Trainable {
   protected def initTargets(container: TensoredContainer, targetValues: Array[Double]): Unit
 
   private val random = new scala.util.Random
+  private val neuronCollectionCache = new NeuronCollectionCache
 
   // run the test case
   def run(): Unit
 
   protected def forwardPass(container: TensoredContainer): Unit = {
-    val cache = new NeuronCollectionCache
-    for (outputNode <- container.outputNodes) outputNode.collectInConnections(cache)
+    neuronCollectionCache.clear()
+    for (outputNode <- container.outputNodes) outputNode.collectInConnections(neuronCollectionCache)
   }
 
   protected final def process(
