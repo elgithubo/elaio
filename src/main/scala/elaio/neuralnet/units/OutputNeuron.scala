@@ -1,6 +1,6 @@
 package elaio.neuralnet.units
 
-class OutputNeuron() extends Neuron {
+class OutputNeuron(id: Long) extends Neuron(id) {
 
   protected var _target: Double = 0d
 

@@ -3,7 +3,8 @@ package elaio.neuralnet.processing
 import scala.collection.mutable.HashMap
 import elaio.neuralnet.units.Neuron
 
-object NeuronCollectionCache {
+// reusable within one candidate, confined to its owning thread
+class NeuronCollectionCache {
   private val cache: HashMap[Long, Neuron] = HashMap.empty[Long, Neuron]
 
   def clear(): Unit = cache.clear()

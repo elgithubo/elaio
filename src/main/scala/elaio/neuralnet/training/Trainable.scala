@@ -1,7 +1,7 @@
 package elaio.neuralnet.training
 
 import java.nio.file.Path
-import elaio.neuralnet.bigdata.container.TensoredContainer
+import elaio.neuralnet.bigdata.TensoredContainer
 import elaio.neuralnet.persistence.{NetworkStateMapper, PersistenceAction, PersistenceHandler}
 import elaio.neuralnet.processing.NeuronCollectionCache
 import elaio.neuralnet.trace.NetTrace
@@ -27,13 +27,14 @@ trait Trainable {
   protected def initTargets(container: TensoredContainer, targetValues: Array[Double]): Unit
 
   private val random = new scala.util.Random
+  private val neuronCollectionCache = new NeuronCollectionCache
 
   // run the test case
   def run(): Unit
 
   protected def forwardPass(container: TensoredContainer): Unit = {
-    NeuronCollectionCache.clear()
-    for (outputNode <- container.outputNodes) outputNode.collectInConnections()
+    neuronCollectionCache.clear()
+    for (outputNode <- container.outputNodes) outputNode.collectInConnections(neuronCollectionCache)
   }
 
   protected final def process(
@@ -46,7 +47,7 @@ trait Trainable {
 
     case _ =>
       // weight initialization has to happen after init(), when every neuron's fan-in is final
-      val weightCount = WeightInitializer.initialize(container.outputNodes)
+      val weightCount = WeightInitializer.initialize(container.reverseOrder)
       NetTrace.WriteMessage("connection weights initialized: " + weightCount)
 
       val (trainInputs, trainOutputs) = trainingData
@@ -108,7 +109,7 @@ trait Trainable {
         initTargets(container, targetValues)
         forwardPass(container)
         totalError = totalError + squaredError(container)
-        Backpropagation.run(container.outputNodes, learningRate, updateNorm)
+        Backpropagation.run(container.reverseOrder, learningRate, updateNorm)
       }
       if (epoch == 1 || epoch % 100 == 0 || epoch == epochs)
         NetTrace.WriteMessage("epoch " + epoch + ": total squared error = " + totalError, 1)

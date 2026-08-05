@@ -1,31 +1,29 @@
 package elaio.neuralnet.units
 
-import elaio.neuralnet.bigdata.container.DataCreator
-import elaio.neuralnet.units.HiddenNeuronLeakyRelu
+class NeuronDataCreator {
+  def create(neuronType: NeuronType.Value, id: Long): Neuron = {
 
-class NeuronDataCreator extends DataCreator {
-  override def create( neuronType: NeuronType.Value ): Neuron = {
     if (neuronType == NeuronType.Input)
-      createInput()
+      createInput(id)
     else if (neuronType == NeuronType.Output)
-      createBackpropagation()
+      createBackpropagation(id)
     else if (neuronType == NeuronType.HiddenSquare)
-      createHiddenSquare()
+      createHiddenSquare(id)
     else if (neuronType == NeuronType.HiddenLeakyRelu)
-      createHiddenLeakyRelu()
+      createHiddenLeakyRelu(id)
     else
       throw new IllegalArgumentException("Unknown neuron type: " + neuronType)
   }
-  override def createInput( ): Neuron = {
-    new InputNeuron
+  private def createInput(id: Long): Neuron = {
+    new InputNeuron(id)
   }
-  override def createHiddenLeakyRelu( ): Neuron = {
-    new HiddenNeuronLeakyRelu
+  private def createHiddenLeakyRelu(id: Long): Neuron = {
+    new HiddenNeuronLeakyRelu(id)
   }
-  override def createHiddenSquare( ): Neuron = {
-    new HiddenNeuronSquare
+  private def createHiddenSquare(id: Long): Neuron = {
+    new HiddenNeuronSquare(id)
   }
-  override def createBackpropagation( ): Neuron = {
-    new OutputNeuron
+  private def createBackpropagation(id: Long): Neuron = {
+    new OutputNeuron(id)
   }
 }

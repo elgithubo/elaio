@@ -1,8 +1,8 @@
 package elaio.neuralnet.test
 
-import elaio.neuralnet.bigdata.container.TensoredContainer
+import elaio.neuralnet.bigdata.TensoredContainer
 import elaio.neuralnet.trace.NetTrace
-import elaio.neuralnet.units.{InputNeuron, NeuronCounter, NeuronDataCreator, OutputNeuron}
+import elaio.neuralnet.units.{InputNeuron, NeuronDataCreator, OutputNeuron}
 import elaio.neuralnet.training.Trainable
 
 trait MathTest extends Trainable {
@@ -37,7 +37,7 @@ trait MathTest extends Trainable {
 
     val container = new TensoredContainer(dimOuter, width, new NeuronDataCreator)
     container.init()
-    NetTrace.WriteMessage("total neurons created: " + NeuronCounter.counter)
+    NetTrace.WriteMessage("total neurons created: " + container.reverseOrder.sequence.length)
 
     // process evaluates training data only when training is required
     process(

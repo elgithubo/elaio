@@ -1,11 +1,12 @@
 package elaio.neuralnet.units
 
+import elaio.neuralnet.processing.NeuronCollectionCache
 import elaio.neuralnet.activation.Activation
 
-class InputNeuron extends Neuron {
+class InputNeuron(id: Long) extends Neuron(id) {
 
   // holds its value instead of computing one
-  override def collectInConnections(): Double = {
+  override def collectInConnections(cache: NeuronCollectionCache): Double = {
     _value
   }
 
@@ -19,5 +20,5 @@ class InputNeuron extends Neuron {
 
   override def activationDerivative(input: Double): Double = {
     Activation.backpropagationFunctionLeakyRelu(input)
-  }  
+  }
 }

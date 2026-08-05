@@ -10,16 +10,14 @@ object GraphTraversal {
       outputs: Set[Neuron]
   )
 
-  private val reverseOrderCache = mutable.HashMap.empty[Set[Neuron], ReverseOrder]
+
 
   // Returns all neurons reachable from outputs in reverse-topological order:
   // sinks (usually outputs) first, then their sources towards inputs.
   def reverseTopologicalFromOutputs(outputNodes: Array[Neuron]): ReverseOrder = {
     val outputSet = outputNodes.toSet
-    reverseOrderCache.getOrElseUpdate(outputSet, {
-      val sequence = computeReverseTopologicalFromOutputs(outputSet)
-      ReverseOrder(sequence, sequence.toSet, outputSet)
-    })
+    val sequence = computeReverseTopologicalFromOutputs(outputSet)
+    ReverseOrder(sequence, sequence.toSet, outputSet)
   }
 
   // correct only for an acyclic graph - recurrent connections would break the order silently

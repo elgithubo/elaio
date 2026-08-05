@@ -1,23 +1,32 @@
-package elaio.neuralnet.bigdata.container
+package elaio.neuralnet.bigdata
 
 import elaio.neuralnet.connections.Connection
+import elaio.neuralnet.processing.GraphTraversal
 //import elaio.neuralnet.trace.NetTrace
 import elaio.neuralnet.units.Neuron
+import elaio.neuralnet.units.NeuronDataCreator
 import elaio.neuralnet.units.NeuronType
 
 class TensoredContainer(
     dimOuter: Int,
     inOutWidth: Int,
-    dataCreator: DataCreator,
+    dataCreator: NeuronDataCreator,
 ) {
 
   private var _inputNodes = Array.ofDim[Neuron](0)
   private var _outputNodes = Array.ofDim[Neuron](0)
+  private var _reverseOrder: GraphTraversal.ReverseOrder = null
+  private var neuronIdCounter = 0L
+  private var connectionIdCounter = 0L
 
   def inputNodes: Array[Neuron] = _inputNodes
   def outputNodes: Array[Neuron] = _outputNodes
+  def reverseOrder: GraphTraversal.ReverseOrder =
+    if( _reverseOrder != null) _reverseOrder else throw new IllegalStateException("container has not been initialized")
 
   def init(): Array[Array[Neuron]] = {
+    neuronIdCounter = 0L
+    connectionIdCounter = 0L
     val result =
       buildRootNodes(
         dimOuter,
@@ -26,13 +35,14 @@ class TensoredContainer(
       )
     _inputNodes = result(0)
     _outputNodes = result(1)
+    _reverseOrder = GraphTraversal.reverseTopologicalFromOutputs(_outputNodes)
     result
   }
 
   private def buildRootNodes(
       buildDimOuter: Int,
       buildInOutWidth: Int,
-      dataCreator: DataCreator
+      dataCreator: NeuronDataCreator
   ): Array[Array[Neuron]] = {
     buildNodesRecurse(
       buildDimOuter,
@@ -45,16 +55,16 @@ class TensoredContainer(
   private def buildNodesRecurse(
       buildDimOuter: Int,
       buildInOutWidth: Int,
-      dataCreator: DataCreator,
+      dataCreator: NeuronDataCreator,
       inputBackpropagationCreationPossible: Boolean,
   ): Array[Array[Neuron]] = {
     var neuronsReturn = Array.ofDim[Neuron](3, 0)
 
     if (inputBackpropagationCreationPossible) {
         for (i <- 1 to buildInOutWidth)
-          neuronsReturn(0) = neuronsReturn(0) :+ dataCreator.create(NeuronType.Input)
+          neuronsReturn(0) = neuronsReturn(0) :+ dataCreator.create(NeuronType.Input, nextNeuronId())
         for (i <- 1 to buildInOutWidth)
-          neuronsReturn(1) = neuronsReturn(1) :+ dataCreator.create(NeuronType.Output)
+          neuronsReturn(1) = neuronsReturn(1) :+ dataCreator.create(NeuronType.Output, nextNeuronId())
     }
 
     var bottomNeuronsLastRecur: Array[Neuron] = Array.ofDim[Neuron](0)
@@ -70,10 +80,13 @@ class TensoredContainer(
         var lowerDimNeuronsThisRecur: Array[Neuron] = Array.ofDim[Neuron](0)
         for (i <- 1 to buildInOutWidth) {
           var newNeuronSameRank =
-            dataCreator.create(if (
-              inputBackpropagationCreationPossible &&
-                nextNeuronOuterIndexOffset == buildDimOuter && i <= inOutWidth / 2
-            ) NeuronType.HiddenSquare else NeuronType.HiddenLeakyRelu)
+            dataCreator.create(
+              if (
+                inputBackpropagationCreationPossible &&
+                  nextNeuronOuterIndexOffset == buildDimOuter && i <= inOutWidth / 2
+              ) NeuronType.HiddenSquare else NeuronType.HiddenLeakyRelu,
+              nextNeuronId()
+            )
           newNeuronsSameRank = newNeuronsSameRank :+ newNeuronSameRank
           newNeuronsHere = newNeuronsHere :+ newNeuronSameRank
         }
@@ -179,11 +192,21 @@ class TensoredContainer(
       connectionNeuronSource: Neuron,
       connectionNeuronTarget: Neuron
   ): Unit = {
-    val connection = new Connection {
+    val connection = new Connection(nextConnectionId()) {
       protected var _neuronSource: Neuron = connectionNeuronSource
       protected var _neuronTarget: Neuron = connectionNeuronTarget
     }
     connection.neuronTarget.addInConnection(connection)
     connection.neuronSource.addOutConnection(connection)
+  }
+
+  private def nextNeuronId(): Long = {
+    neuronIdCounter = neuronIdCounter + 1L
+    neuronIdCounter
+  }
+
+  private def nextConnectionId(): Long = {
+    connectionIdCounter = connectionIdCounter + 1L
+    connectionIdCounter
   }
 }

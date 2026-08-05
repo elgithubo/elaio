@@ -8,9 +8,7 @@
 package elaio{
   package neuralnet{
     package activation{}
-    package bigdata{
-      package container{}
-    }
+    package bigdata{}
     package connections{}
     package persistence{}
     package processing{}

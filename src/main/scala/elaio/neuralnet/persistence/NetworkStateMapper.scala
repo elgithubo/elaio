@@ -1,15 +1,14 @@
 package elaio.neuralnet.persistence
 
 import scala.collection.mutable.HashMap
-import elaio.neuralnet.bigdata.container.TensoredContainer
+import elaio.neuralnet.bigdata.TensoredContainer
 import elaio.neuralnet.connections.Connection
-import elaio.neuralnet.processing.GraphTraversal
 import elaio.neuralnet.units.{HiddenNeuronLeakyRelu, HiddenNeuronSquare, InputNeuron, Neuron, NeuronType, OutputNeuron}
 
 object NetworkStateMapper {
 
   def capture(container: TensoredContainer): StateContainer = {
-    val neurons = GraphTraversal.reverseTopologicalFromOutputs(container.outputNodes).sequence
+    val neurons = container.reverseOrder.sequence
     val connections = connectionsFrom(neurons)
     val neuronStore = HashMap.from(neurons.map { neuron =>
       require(java.lang.Double.isFinite(neuron.bias), s"Neuron ${neuron.id} has a non-finite bias")
@@ -38,7 +37,7 @@ object NetworkStateMapper {
   }
 
   def restore(stateContainer: StateContainer, container: TensoredContainer): Unit = {
-    val neurons = GraphTraversal.reverseTopologicalFromOutputs(container.outputNodes).sequence
+    val neurons = container.reverseOrder.sequence
     val connections = connectionsFrom(neurons)
     val neuronsById = neurons.map(neuron => neuron.id -> neuron).toMap
     val connectionsById = connections.map(connection => connection.id -> connection).toMap
