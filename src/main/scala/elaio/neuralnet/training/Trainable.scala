@@ -1,7 +1,7 @@
 package elaio.neuralnet.training
 
 import java.nio.file.Path
-import elaio.neuralnet.bigdata.container.TensoredContainer
+import elaio.neuralnet.bigdata.TensoredContainer
 import elaio.neuralnet.persistence.{NetworkStateMapper, PersistenceAction, PersistenceHandler}
 import elaio.neuralnet.processing.NeuronCollectionCache
 import elaio.neuralnet.trace.NetTrace

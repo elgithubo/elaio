@@ -5,7 +5,7 @@ import elaio.neuralnet.connections.Connection
 import elaio.neuralnet.activation.Activation
 import elaio.neuralnet.processing.NeuronCollectionCache
 
-abstract class Neuron {
+abstract class Neuron(val id: Long) {
 
   protected var _value: Double = 1d
   protected var _preActivation: Double = 0d
@@ -14,13 +14,12 @@ abstract class Neuron {
   // Without it the net is positively homogeneous - N(c*x) = c*N(x), measured as
   // exactly 2.000 - and can only ever represent maps that scale linearly.
   protected var _bias: Double = 0d
-  protected val _id: Long = NeuronCounter.getNext()
+
 
   protected val _connectionsOut: mutable.ArrayBuffer[Connection] = mutable.ArrayBuffer.empty
   protected val _connectionsIn: mutable.ArrayBuffer[Connection] = mutable.ArrayBuffer.empty
 
   def value: Double = _value
-  def id: Long = _id
   def preActivation: Double = _preActivation
   def delta: Double = _delta
   def delta_=(delta: Double): Unit = { _delta = delta }

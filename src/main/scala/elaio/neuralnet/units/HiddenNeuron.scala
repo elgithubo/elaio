@@ -1,3 +1,3 @@
 package elaio.neuralnet.units
 
-class HiddenNeuron extends Neuron {}
+class HiddenNeuron(id: Long) extends Neuron(id) {}

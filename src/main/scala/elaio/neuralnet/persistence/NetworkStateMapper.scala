@@ -1,7 +1,7 @@
 package elaio.neuralnet.persistence
 
 import scala.collection.mutable.HashMap
-import elaio.neuralnet.bigdata.container.TensoredContainer
+import elaio.neuralnet.bigdata.TensoredContainer
 import elaio.neuralnet.connections.Connection
 import elaio.neuralnet.units.{HiddenNeuron, InputNeuron, Neuron, NeuronType, OutputNeuron}
 

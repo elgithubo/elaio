@@ -1,23 +1,21 @@
 package elaio.neuralnet.units
 
-import elaio.neuralnet.bigdata.container.DataCreator
-
-class NeuronDataCreator extends DataCreator {
-  override def create( neuronType: NeuronType.Value ): Neuron = {
+class NeuronDataCreator {
+  def create(neuronType: NeuronType.Value, id: Long): Neuron = {
     if (neuronType == NeuronType.Input)
-      createInput()
+      createInput(id)
     else if (neuronType == NeuronType.Output)
-      createBackpropagation()
+      createBackpropagation(id)
     else
-      createHidden()
+      createHidden(id)
   }
-  override def createInput( ): Neuron = {
-    new InputNeuron
+  protected def createInput(id: Long): Neuron = {
+    new InputNeuron(id)
   }
-  override def createHidden( ): Neuron = {
-    new HiddenNeuron
+  protected def createHidden(id: Long): Neuron = {
+    new HiddenNeuron(id)
   }
-  override def createBackpropagation( ): Neuron = {
-    new OutputNeuron
+  protected def createBackpropagation(id: Long): Neuron = {
+    new OutputNeuron(id)
   }
 }
