@@ -2,7 +2,7 @@ package elaio.neuralnet.test
 
 import elaio.neuralnet.bigdata.TensoredContainer
 import elaio.neuralnet.trace.NetTrace
-import elaio.neuralnet.units.{InputNeuron, NeuronDataCreator, OutputNeuron}
+import elaio.neuralnet.units.{HiddenNeuronLeakyRelu, HiddenNeuronSquare, InputNeuron, NeuronDataCreator, OutputNeuron}
 import elaio.neuralnet.training.Trainable
 
 trait MathTest extends Trainable {
@@ -37,7 +37,12 @@ trait MathTest extends Trainable {
 
     val container = new TensoredContainer(dimOuter, width, new NeuronDataCreator)
     container.init()
-    NetTrace.WriteMessage("total neurons created: " + container.reverseOrder.sequence.length)
+    val neurons = container.reverseOrder.sequence
+    NetTrace.WriteMessage("total neurons created: " + neurons.length)
+    NetTrace.WriteMessage("input neurons: " + neurons.count(_.isInstanceOf[InputNeuron]), 1)
+    NetTrace.WriteMessage("hidden square neurons: " + neurons.count(_.isInstanceOf[HiddenNeuronSquare]), 1)
+    NetTrace.WriteMessage("hidden leaky relu neurons: " + neurons.count(_.isInstanceOf[HiddenNeuronLeakyRelu]), 1)
+    NetTrace.WriteMessage("output neurons: " + neurons.count(_.isInstanceOf[OutputNeuron]), 1)
 
     // process evaluates training data only when training is required
     process(
