@@ -1,4 +1,5 @@
 - evaluate if a gradient check (cosine?) makes sense (maybe not required if bias is in place)
+- check save directory exists before training
 - add check that loading a persistet state is for the correct network operation, e.g. addition
 - add check during loading a persisted state that the saved state is complete (size check)
 - add check during loading a persisted state that NeuronType fits
