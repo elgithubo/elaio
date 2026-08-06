@@ -1,7 +1,7 @@
 package elaio.neuralnet.trace
 
 object NetTrace {
-  private var _started: Boolean = false
+  @volatile private var _started: Boolean = false
 
   def started: Boolean = _started
 
