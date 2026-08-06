@@ -2,6 +2,8 @@ package elaio.neuralnet.persistence
 
 import scala.collection.mutable.HashMap
 
+// serializable state container for a neural network
+// containing weights and biases
 @SerialVersionUID(1L)
 final case class StateContainer(
     neuronStore: HashMap[Long, NeuronData],

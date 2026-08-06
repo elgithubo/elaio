@@ -5,6 +5,7 @@ import elaio.neuralnet.bigdata.TensoredContainer
 import elaio.neuralnet.connections.Connection
 import elaio.neuralnet.units.{HiddenNeuronLeakyRelu, HiddenNeuronSquare, InputNeuron, Neuron, NeuronType, OutputNeuron}
 
+// handler that captures and restores the state of a neural network to/from a serializable state container
 object NetworkStateMapper {
 
   def capture(container: TensoredContainer): StateContainer = {

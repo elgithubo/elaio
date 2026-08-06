@@ -7,9 +7,11 @@ import elaio.neuralnet.units.Neuron
 import elaio.neuralnet.units.NeuronDataCreator
 import elaio.neuralnet.units.NeuronType
 
+// represents a multi-dimensional tensor of dimension dimOuter
 class TensoredContainer(
     dimOuter: Int,
-    inOutWidth: Int,
+    inWidth: Int,
+    outWidth: Int,
     dataCreator: NeuronDataCreator,
 ) {
 
@@ -30,7 +32,8 @@ class TensoredContainer(
     val result =
       buildRootNodes(
         dimOuter,
-        inOutWidth,
+        inWidth,
+        outWidth,
         dataCreator
       )
     _inputNodes = result(0)
@@ -41,12 +44,14 @@ class TensoredContainer(
 
   private def buildRootNodes(
       buildDimOuter: Int,
-      buildInOutWidth: Int,
+      buildInWidth: Int,
+      buildOutWidth: Int,
       dataCreator: NeuronDataCreator
   ): Array[Array[Neuron]] = {
     buildNodesRecurse(
       buildDimOuter,
-      buildInOutWidth,
+      buildInWidth,
+      buildOutWidth,
       dataCreator,
       true
     )
@@ -54,16 +59,17 @@ class TensoredContainer(
 
   private def buildNodesRecurse(
       buildDimOuter: Int,
-      buildInOutWidth: Int,
+      buildInWidth: Int,
+      buildOutWidth: Int,
       dataCreator: NeuronDataCreator,
       inputBackpropagationCreationPossible: Boolean,
   ): Array[Array[Neuron]] = {
     var neuronsReturn = Array.ofDim[Neuron](3, 0)
 
     if (inputBackpropagationCreationPossible) {
-        for (i <- 1 to buildInOutWidth)
+        for (i <- 1 to buildInWidth)
           neuronsReturn(0) = neuronsReturn(0) :+ dataCreator.create(NeuronType.Input, nextNeuronId())
-        for (i <- 1 to buildInOutWidth)
+        for (i <- 1 to buildOutWidth)
           neuronsReturn(1) = neuronsReturn(1) :+ dataCreator.create(NeuronType.Output, nextNeuronId())
     }
 
@@ -78,18 +84,6 @@ class TensoredContainer(
         var bottomNeuronsThisRecur: Array[Neuron] = Array.ofDim[Neuron](0)
         var childNeuronsThisRecur: Array[Neuron] = Array.ofDim[Neuron](0)
         var lowerDimNeuronsThisRecur: Array[Neuron] = Array.ofDim[Neuron](0)
-        for (i <- 1 to buildInOutWidth) {
-          var newNeuronSameRank =
-            dataCreator.create(
-              if (
-                inputBackpropagationCreationPossible &&
-                  nextNeuronOuterIndexOffset == buildDimOuter && i <= inOutWidth
-              ) NeuronType.HiddenSquare else NeuronType.HiddenLeakyRelu,
-              nextNeuronId()
-            )
-          newNeuronsSameRank = newNeuronsSameRank :+ newNeuronSameRank
-          newNeuronsHere = newNeuronsHere :+ newNeuronSameRank
-        }
 
         // determine if the node receives reverse wiring
         var isReverseNode: Boolean = true
@@ -97,6 +91,23 @@ class TensoredContainer(
           nextNeuronOuterIndexOffset > 0 && (buildDimOuter - nextNeuronOuterIndexOffset.abs) % 2 == 0 ||
           nextNeuronOuterIndexOffset < 0 && (buildDimOuter - nextNeuronOuterIndexOffset.abs) % 2 == 1
         ) isReverseNode = false
+
+        for (i <- 1 to buildInWidth.max(buildOutWidth)) {
+          var newNeuronSameRank =
+            dataCreator.create(
+              /* old implementation
+              if (
+                inputBackpropagationCreationPossible &&
+                  nextNeuronOuterIndexOffset == buildDimOuter && i <= inWidth
+                  //nextNeuronOuterIndexOffset % 2 == 0 && i <= inWidth => would double the number of square neurons
+              ) NeuronType.HiddenSquare else NeuronType.HiddenLeakyRelu,*/
+              if (inputBackpropagationCreationPossible && !isReverseNode)
+                NeuronType.HiddenSquare else NeuronType.HiddenLeakyRelu,
+              nextNeuronId()
+            )
+          newNeuronsSameRank = newNeuronsSameRank :+ newNeuronSameRank
+          newNeuronsHere = newNeuronsHere :+ newNeuronSameRank
+        }
 
         // keep this for safety purposes concerning future edits
         if (!isReverseNode)
@@ -107,7 +118,8 @@ class TensoredContainer(
         if (buildDimOuter > 1) {
           var neuronsLowerDim = buildNodesRecurse(
             buildDimOuter - 1,
-            buildInOutWidth + 1,
+            buildInWidth + 1,
+            buildOutWidth + 1,
             dataCreator,
             false,
           )

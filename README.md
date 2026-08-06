@@ -28,6 +28,7 @@ install sbt (Scala Build Tool) and execute `sbt run <task>` where `<task>` is on
 - Multiplication
 - Division
 - Potential (wip)
+- Calculator (can learn all 4 basic operations at once)
 
 Persistence
 ===========

@@ -13,7 +13,7 @@ object GraphTraversal {
 
 
   // Returns all neurons reachable from outputs in reverse-topological order:
-  // sinks (usually outputs) first, then their sources towards inputs.
+  // outputs first, then their sources towards inputs.
   def reverseTopologicalFromOutputs(outputNodes: Array[Neuron]): ReverseOrder = {
     val outputSet = outputNodes.toSet
     val sequence = computeReverseTopologicalFromOutputs(outputSet)
@@ -28,7 +28,7 @@ object GraphTraversal {
 
     for (start <- outputSet.toVector.sortBy(-_.id))
       stack.push((start, false))
-    
+
     while (stack.nonEmpty) {
       val (neuron, expanded) = stack.pop()
       if (expanded) {

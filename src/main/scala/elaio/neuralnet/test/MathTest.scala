@@ -12,17 +12,34 @@ trait MathTest extends Trainable {
 
   protected val tolerance = 1d
 
-  private val dimOuter = 2
-  private val width = 5
-  private val trainCount = 250
-  private val numberOfQuestions = 5
+  protected val dimOuter = 2
+  protected val inWidth = 5
+  protected val outWidth = 5
+  protected val inputMinimum = -1000d
+  protected val inputMaximum = 1000d
+  protected val trainCount = 250
+  protected val numberOfQuestions = 5
 
   // the task to learn
   protected def targetOf(inputValues: Array[Double]): Array[Double]
 
+  // how an input reads in the log - overridden where the channels are not all data
+  protected def describeInput(inputValues: Array[Double]): String =
+    inputValues.map(v => f"$v%.3f").mkString(" | ")
+
+  protected def randomValue(random: scala.util.Random): Double =
+    random.nextDouble() * (inputMaximum - inputMinimum) + inputMinimum
+
   // define the input values for a single training example
-  private def randomInput(random: scala.util.Random): Array[Double] =
-    Array.fill(width)(random.nextDouble() * 2000d - 1000d) // random double values in the range [-1000, 1000]
+  protected def randomInput(random: scala.util.Random): Array[Double] =
+    Array.fill(inWidth)(randomValue(random))
+
+  protected def trainingInputs(random: scala.util.Random): Array[Array[Double]] =
+    Array.fill(trainCount)(randomInput(random))
+
+  // the questions asked after training - overridden where they should be grouped
+  protected def checkInputs(random: scala.util.Random): Seq[Array[Double]] =
+    Seq.fill(numberOfQuestions)(randomInput(random))
 
   override def run(): Unit = {
     // enable the following line to write detailed trace messages to stdout, disable it for no output.
@@ -31,11 +48,12 @@ trait MathTest extends Trainable {
     NetTrace.WriteMessage("start of test run (if processing diverges with NaN, please rerun)")
     NetTrace.WriteMessage("")
     NetTrace.WriteMessage("build dimension: " + dimOuter)
-    NetTrace.WriteMessage("in/out width: " + width)
+    NetTrace.WriteMessage("input width: " + inWidth)
+    NetTrace.WriteMessage("output width: " + outWidth)
 
     val random = new scala.util.Random
 
-    val container = new TensoredContainer(dimOuter, width, new NeuronDataCreator)
+    val container = new TensoredContainer(dimOuter, inWidth, outWidth, new NeuronDataCreator)
     container.init()
     val neurons = container.reverseOrder.sequence
     NetTrace.WriteMessage("total neurons created: " + neurons.length)
@@ -49,17 +67,16 @@ trait MathTest extends Trainable {
       container,
       persistenceAction,
       {
-        val trainInputs = Array.fill(trainCount)(randomInput(random))
+        val trainInputs = trainingInputs(random)
         val trainOutputs = trainInputs.map(targetOf)
         (trainInputs, trainOutputs)
       }
     )
 
     // the actual test: test inputs the net has never been trained on
-    (1 to numberOfQuestions).foreach(_ =>
+    checkInputs(random).foreach(checkInput =>
       NetTrace.WriteMessage("")
-      val checkInput = randomInput(random)
-      NetTrace.WriteMessage("checking an unseen input: " + checkInput.map(v => f"$v%.3f").mkString(" | "))
+      NetTrace.WriteMessage("checking an unseen input: " + describeInput(checkInput))
       initInputs(container, checkInput)
       // one forward pass with the test values
       forwardPass(container)
@@ -72,13 +89,13 @@ trait MathTest extends Trainable {
   }
 
   protected def initInputs(container: TensoredContainer, inputValues: Array[Double]): Unit = {
-    require(inputValues.length == width, "expected " + width + " inputs but got " + inputValues.length)
+    require(inputValues.length == inWidth, "expected " + inWidth + " inputs but got " + inputValues.length)
     for (index <- inputValues.indices)
       container.inputNodes(index).asInstanceOf[InputNeuron].initInput(inputValues(index))
   }
 
   protected def initTargets(container: TensoredContainer, targetValues: Array[Double]): Unit = {
-    require(targetValues.length == width, "expected " + width + " targets but got " + targetValues.length)
+    require(targetValues.length == outWidth, "expected " + outWidth + " targets but got " + targetValues.length)
     for (index <- targetValues.indices)
       container.outputNodes(index).asInstanceOf[OutputNeuron].initOutput(targetValues(index))
   }
@@ -86,12 +103,16 @@ trait MathTest extends Trainable {
   private def checkOutputs(outValues: Array[Double], expected: Array[Double]): Unit = {
     require(outValues.length == expected.length, "need one expected value per output")
     var within: Int = 0
+    // one line per output, fixed width, so a block can be scanned at a glance
     for (index <- outValues.indices) {
-      NetTrace.WriteMessage("received outvalue " + (index + 1) + ": " + outValues(index) + " - searched: " + expected(index))
-      if (math.abs(expected(index) - outValues(index)) < tolerance) {
-        within = within + 1
-        NetTrace.WriteMessage("found outvalue", 1)
-      }
+      val off = math.abs(expected(index) - outValues(index))
+      val hit = off < tolerance
+      if (hit) within = within + 1
+      NetTrace.WriteMessage(
+        f"output ${index + 1}: ${outValues(index)}%13.3f   target ${expected(index)}%13.3f" +
+          f"   off ${off}%9.3f   ${if (hit) "hit" else "-"}",
+        1
+      )
     }
     NetTrace.WriteMessage(
       "unseen input: " + within + " of " + outValues.length + " outputs within tolerance (" + tolerance + ")"
