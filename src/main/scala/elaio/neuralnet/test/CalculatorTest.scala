@@ -13,7 +13,7 @@ final class CalculatorTest(override protected val persistenceAction: Option[Pers
   override protected val tolerance = 10d
   override protected val inWidth = 5 // one value reserved for opcode
   override protected val outWidth = 4 // needs to be inWidth - 1
-  override protected val trainCount = 400 // needs to be divisible by the number of operations
+  override protected val trainCount = 400 // needs to be divisible by the number of questions
   override protected val numberOfQuestions = 20
 
   private final case class Operation(opcode: Double, description: String, calculate: Double => Double)
