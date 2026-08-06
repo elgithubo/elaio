@@ -7,6 +7,7 @@ import elaio.neuralnet.units.Neuron
 import elaio.neuralnet.units.NeuronDataCreator
 import elaio.neuralnet.units.NeuronType
 
+// represents a multi-dimensional tensor of dimension dimOuter
 class TensoredContainer(
     dimOuter: Int,
     inWidth: Int,
@@ -117,8 +118,8 @@ class TensoredContainer(
         if (buildDimOuter > 1) {
           var neuronsLowerDim = buildNodesRecurse(
             buildDimOuter - 1,
-            buildOutWidth + 1,
             buildInWidth + 1,
+            buildOutWidth + 1,
             dataCreator,
             false,
           )

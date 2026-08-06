@@ -4,6 +4,7 @@ import java.io.{InvalidObjectException, ObjectInputStream, ObjectOutputStream}
 import java.nio.file.{Files, Path}
 import scala.util.Using
 
+// handle for saving and loading state containers to/from files
 final class PersistenceHandler {
   def save(stateContainer: StateContainer, path: Path): Unit =
     Using.resource(new ObjectOutputStream(Files.newOutputStream(path))) { output =>

@@ -11,7 +11,8 @@ final class CalculatorTest(override protected val persistenceAction: Option[Pers
   override protected val epochs = 30000
   override protected val clipUntilEpoch = 30000
   override protected val tolerance = 10d
-  override protected val outWidth = 4
+  override protected val inWidth = 5 // one value reserved for opcode
+  override protected val outWidth = 4 // needs to be inWidth - 1
   override protected val trainCount = 400 // needs to be divisible by the number of operations
   override protected val numberOfQuestions = 20
 

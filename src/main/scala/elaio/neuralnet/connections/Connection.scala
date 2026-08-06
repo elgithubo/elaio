@@ -3,6 +3,7 @@ package elaio.neuralnet.connections
 import elaio.neuralnet.units.Neuron
 import elaio.neuralnet.processing.NeuronCollectionCache
 
+// trait for a connection between two neurons
 trait Connection(val id: Long) {
   protected var _neuronSource: Neuron
   protected var _neuronTarget: Neuron

@@ -3,11 +3,12 @@ package elaio.neuralnet.processing
 import elaio.neuralnet.units.OutputNeuron
 
 object Backpropagation {
-  // one step of gradient descent over the graph's reverse order.
+  // processing neuron graph's reverse order.
   // note that a forward pass must have run.
   //
-  // delta is -dL/dz for L = 0.5*(target - value)^2, hence the updates add rather than subtract.
+  // delta is -dL/dz for L = 0.5*(target - value)^2
   //
+  // here comes the math from the ai
   // collectInConnections averages instead of summing, so the same 1/N appears here:
   //   delta_j = f'(z_j) * sum_k (delta_k * w_jk / N_k)   <- N of the target k
   //   dw_ij   = delta_j * a_i / N_j                      <- N of the owner j
