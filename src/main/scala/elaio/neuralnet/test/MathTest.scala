@@ -15,13 +15,13 @@ trait MathTest extends Trainable {
   private val dimOuter = 2
   private val width = 5
   private val trainCount = 250
-  private val numberOfQuestions = 5
+  protected val numberOfQuestions = 5
 
   // the task to learn
   protected def targetOf(inputValues: Array[Double]): Array[Double]
 
   // define the input values for a single training example
-  private def randomInput(random: scala.util.Random): Array[Double] =
+  protected def randomInput(random: scala.util.Random): Array[Double] =
     Array.fill(width)(random.nextDouble() * 2000d - 1000d) // random double values in the range [-1000, 1000]
 
   override def run(): Unit = {

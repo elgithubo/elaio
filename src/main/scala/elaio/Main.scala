@@ -28,6 +28,7 @@ import elaio.neuralnet.test.{
   DivisionTest,
   MathTestType,
   MultiplicationTest,
+  OpcodeTest,
   PotentialTest,
   SubtractionTest
 }
@@ -77,5 +78,6 @@ object Main {
     case MathTestType.Multiplication => new MultiplicationTest(opSpec.persistenceAction).run()
     case MathTestType.Division       => new DivisionTest(opSpec.persistenceAction).run()
     case MathTestType.Potential      => new PotentialTest(opSpec.persistenceAction).run()
+    case MathTestType.Opcode         => new OpcodeTest(opSpec.persistenceAction).run()
   }
 }
