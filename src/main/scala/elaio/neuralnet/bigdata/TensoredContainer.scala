@@ -83,7 +83,7 @@ class TensoredContainer(
             dataCreator.create(
               if (
                 inputBackpropagationCreationPossible &&
-                  nextNeuronOuterIndexOffset == buildDimOuter && i <= inOutWidth / 2
+                  nextNeuronOuterIndexOffset == buildDimOuter && i <= inOutWidth
               ) NeuronType.HiddenSquare else NeuronType.HiddenLeakyRelu,
               nextNeuronId()
             )
