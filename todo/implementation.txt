@@ -3,4 +3,3 @@
 - add check during loading a persisted state that the saved state is complete (size check)
 - add check during loading a persisted state that NeuronType fits
 - add check during loading a persisted state that topology fits
-- multi core usage (threaded (always) vs. multiple jvms (during learning/persistence))
