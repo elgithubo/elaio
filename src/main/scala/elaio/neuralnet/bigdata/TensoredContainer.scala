@@ -212,6 +212,8 @@ class TensoredContainer(
 
   private def neuronGroups(order: GraphTraversal.ReverseOrder): Vector[NeuronGroup] = {
     val depthByNeuron = mutable.HashMap.empty[Neuron, Int]
+
+    /* recursive version - kept in case the iterative one turns out to miss a case
     def depth(neuron: Neuron): Int =
       depthByNeuron.getOrElseUpdate(
         neuron,
@@ -221,10 +223,21 @@ class TensoredContainer(
           .map(depth)
           .maxOption
           .fold(0)(_ + 1)
-      )
+      )*/
+
+    // order.sequence is reverse topological, so reading it backwards visits every
+    // source before the neuron that reads it - one pass, no recursion, no stack limit
+    for (neuron <- order.sequence.reverseIterator)
+      depthByNeuron(neuron) =
+        neuron.connectionsIn.iterator
+          .map(_.neuronSource)
+          .filter(order.reachable)
+          .map(depthByNeuron)
+          .maxOption
+          .fold(0)(_ + 1)
 
     order.sequence
-      .groupBy(depth)
+      .groupBy(depthByNeuron)
       .toVector
       .sortBy(_._1)
       .map { case (groupDepth, neurons) => NeuronGroup(groupDepth, neurons.sortBy(_.id)) }

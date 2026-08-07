@@ -2,6 +2,8 @@ package elaio.neuralnet.activation
 
 object Activation {
 
+  // leaky ReLU leak factor. Must be large to avoid vanishing gradients in deep networks.
+  // rank of the 6->6 map: 2 at leak 0.01, 6 at 0.8 
   private val leakyReluLeak: Double = 0.8d
 
   private val squareScale: Double = 1000d
@@ -17,7 +19,7 @@ object Activation {
     if (input > 0d) 1d else leakyReluLeak
   }
 
-    // Simple scaled input² activation
+  // Simple scaled input² activation
   def activationFunctionSquare(input: Double): Double = {
     input * input / squareScale
   }
