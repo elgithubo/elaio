@@ -2,11 +2,7 @@ name: Scala CI
 
 on:
   push:
-    branches:
-      - main
   pull_request:
-    branches: 
-      - main
 
 permissions:
   contents: read
@@ -20,7 +16,7 @@ jobs:
       uses: actions/setup-java@v5
       with:
         java-version: '26'
-        distribution: 'openjdk'
+        distribution: 'temurin'
         cache: 'sbt'
     - name: Set up sbt
       uses: sbt/setup-sbt@v1
