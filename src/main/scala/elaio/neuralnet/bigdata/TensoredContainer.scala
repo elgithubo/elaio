@@ -1,5 +1,6 @@
 package elaio.neuralnet.bigdata
 
+import scala.collection.mutable
 import elaio.neuralnet.connections.Connection
 import elaio.neuralnet.processing.GraphTraversal
 //import elaio.neuralnet.trace.NetTrace
@@ -13,6 +14,7 @@ class TensoredContainer(
     inWidth: Int,
     outWidth: Int,
     dataCreator: NeuronDataCreator,
+    additionalWiring: Option[AdditionalWiring] = None,
 ) {
 
   private var _inputNodes = Array.ofDim[Neuron](0)
@@ -38,7 +40,15 @@ class TensoredContainer(
       )
     _inputNodes = result(0)
     _outputNodes = result(1)
-    _reverseOrder = GraphTraversal.reverseTopologicalFromOutputs(_outputNodes)
+
+    val baseOrder = GraphTraversal.reverseTopologicalFromOutputs(_outputNodes)
+    _reverseOrder = additionalWiring match {
+      case Some(wiring) =>
+        val context = new AdditionalWiring.Context(neuronGroups(baseOrder), connectNeuronsIfMissing)
+        wiring.wire(context)
+        GraphTraversal.reverseTopologicalFromOutputs(_outputNodes)
+      case None => baseOrder
+    }
     result
   }
 
@@ -199,6 +209,33 @@ class TensoredContainer(
 
     neuronsReturn
   }
+
+  private def neuronGroups(order: GraphTraversal.ReverseOrder): Vector[NeuronGroup] = {
+    val depthByNeuron = mutable.HashMap.empty[Neuron, Int]
+    def depth(neuron: Neuron): Int =
+      depthByNeuron.getOrElseUpdate(
+        neuron,
+        neuron.connectionsIn.iterator
+          .map(_.neuronSource)
+          .filter(order.reachable)
+          .map(depth)
+          .maxOption
+          .fold(0)(_ + 1)
+      )
+
+    order.sequence
+      .groupBy(depth)
+      .toVector
+      .sortBy(_._1)
+      .map { case (groupDepth, neurons) => NeuronGroup(groupDepth, neurons.sortBy(_.id)) }
+  }
+
+  private def connectNeuronsIfMissing(
+      connectionNeuronSource: Neuron,
+      connectionNeuronTarget: Neuron
+  ): Unit =
+    if (!connectionNeuronSource.connectionsOut.exists(_.neuronTarget == connectionNeuronTarget))
+      connectNeurons(connectionNeuronSource, connectionNeuronTarget)
 
   private def connectNeurons(
       connectionNeuronSource: Neuron,
