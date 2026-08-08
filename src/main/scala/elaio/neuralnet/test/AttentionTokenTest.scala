@@ -3,6 +3,16 @@ package elaio.neuralnet.test
 import elaio.neuralnet.persistence.PersistenceAction
 
 // Learns to retrieve the random value associated with a queried key.
+//
+// data structure:
+// Each example contains four tokens with five values each:
+// Token layout: [query marker, one-hot key A/B/C, value]; the target is the queried value.
+// query marker is 0 or one depending on whether it is teaching or asking.
+// [0, 1, 0, 0,  0.42]  |  A → 0.42
+// [0, 0, 0, 1, -0.70]  |  C → -0.70
+// [0, 0, 1, 0,  0.15]  |  B → 0.15
+// [1, 0, 0, 1,  0.00]  |  query C
+// => target: [-0.70]
 final class AttentionTokenTest(override protected val persistenceAction: Option[PersistenceAction] = None)
     extends MathTest {
   private val keyCount = 3
