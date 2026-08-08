@@ -27,39 +27,40 @@ class CalculatorTest(override protected val persistenceAction: Option[Persistenc
       Operation( 1000d, "x / 5",  (x: Double) => x / 5d )
     )
 
-  private def selectedOperation(inputValues: Array[Double]): Int =
-    operations.indices.minBy(operation => math.abs(inputValues(0) - operations(operation).opcode))
+  // opcode and values live in one token, so the whole example is a single row
+  private def selectedOperation(tokens: Array[Array[Double]]): Int =
+    operations.indices.minBy(operation => math.abs(tokens.head(0) - operations(operation).opcode))
 
-  private def inputFor(operation: Int, values: Array[Double]): Array[Double] =
-    Array(operations(operation).opcode) ++ values
+  private def tokensFor(operation: Int, values: Array[Double]): Array[Array[Double]] =
+    Array(Array(operations(operation).opcode) ++ values)
 
   private def randomValues(random: scala.util.Random): Array[Double] =
     Array.fill(outWidth)(randomValue(random))
 
-  override protected def describeInput(inputValues: Array[Double]): String =
-    inputValues.drop(1).map(value => f"$value%.3f").mkString(" | ") +
-      "  ->  " + operations(selectedOperation(inputValues)).description
+  override protected def describeInput(tokens: Array[Array[Double]]): String =
+    tokens.head.drop(1).map(value => f"$value%.3f").mkString(" | ") +
+      "  ->  " + operations(selectedOperation(tokens)).description
 
-  override protected def randomInput(random: scala.util.Random): Array[Double] =
-    inputFor(random.nextInt(operations.length), randomValues(random))
+  override protected def randomTokens(random: scala.util.Random): Array[Array[Double]] =
+    tokensFor(random.nextInt(operations.length), randomValues(random))
 
-  override protected def trainingInputs(random: scala.util.Random): Array[Array[Double]] = {
+  override protected def trainingTokens(random: scala.util.Random): Array[Array[Array[Double]]] = {
     require(trainCount % operations.length == 0, "training examples must divide evenly between operations")
     (for {
       operation <- operations.indices
       _ <- 1 to trainCount / operations.length
-    } yield inputFor(operation, randomValues(random))).toArray
+    } yield tokensFor(operation, randomValues(random))).toArray
   }
 
   // ask each operation equally often and grouped, so the log reads one operation at a time
-  override protected def checkInputs(random: scala.util.Random): Seq[Array[Double]] =
+  override protected def checkTokens(random: scala.util.Random): Seq[Array[Array[Double]]] =
     for {
       operation <- operations.indices
       _ <- 1 to numberOfQuestions / operations.length
-    } yield inputFor(operation, randomValues(random))
+    } yield tokensFor(operation, randomValues(random))
 
-  protected def targetOf(inputValues: Array[Double]): Array[Double] = {
-    val operation = operations(selectedOperation(inputValues)).calculate
-    inputValues.drop(1).map(operation)
+  protected def targetOf(tokens: Array[Array[Double]]): Array[Double] = {
+    val operation = operations(selectedOperation(tokens)).calculate
+    tokens.head.drop(1).map(operation)
   }
 }

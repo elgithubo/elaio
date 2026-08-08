@@ -7,5 +7,5 @@ final class SubtractionTest(override protected val persistenceAction: Option[Per
   override protected val learningRate = 0.005d
   override protected val maxUpdateNorm = 1000d
 
-  protected def targetOf(inputValues: Array[Double]): Array[Double] = inputValues.map(value => value - 13)
+  protected def targetOf(tokens: Array[Array[Double]]): Array[Double] = tokens.flatten.map(value => value - 13)
 }

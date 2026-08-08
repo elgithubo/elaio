@@ -2,6 +2,7 @@ package elaio.neuralnet.training
 
 import java.nio.file.Path
 import elaio.neuralnet.attention.AttentionLayer.ForwardPass
+import elaio.neuralnet.attention.DepthAttention
 import elaio.neuralnet.bigdata.TensoredContainer
 import elaio.neuralnet.persistence.{NetworkStateMapper, PersistenceAction, PersistenceHandler}
 import elaio.neuralnet.processing.NeuronCollectionCache
@@ -30,28 +31,47 @@ trait Trainable {
   private val random = new scala.util.Random
   private val neuronCollectionCache = new NeuronCollectionCache
 
+  // set once the container is built, when attention over depth is wanted
+  protected var attention: Option[DepthAttention] = None
+
   // run the test case
   def run(): Unit
 
+  // returns the attention pass when attention is in use, so training can update it afterwards
   protected def forwardPass(container: TensoredContainer): Option[ForwardPass] =
-    container.forwardPass(neuronCollectionCache)
+    attention match {
+      case Some(depthAttention) => Some(depthAttention.refine(() => plainForwardPass(container)))
+      case None =>
+        plainForwardPass(container)
+        None
+    }
 
-  protected final def processTokens(
-      container: TensoredContainer,
-      tokensDataSet: Array[Array[Array[Double]]],
-      persistenceAction: Option[PersistenceAction],
-      resultsDataSet: Array[Array[Double]]
-  ): Unit = {
-    require(tokensDataSet.length == resultsDataSet.length, "each tokenized example needs a result")
-    process(container, persistenceAction, (tokensDataSet.map(_.flatten), resultsDataSet))
+  private def plainForwardPass(container: TensoredContainer): Unit = {
+    neuronCollectionCache.clear()
+    for (outputNode <- container.outputNodes) outputNode.collectInConnections(neuronCollectionCache)
   }
 
-  protected final def process(
+  // the net reads one flat vector per example, so the token rows are joined here and nowhere else
+  protected final def processTokens(
+      container: TensoredContainer,
+      persistenceAction: Option[PersistenceAction],
+      trainingData: => (Array[Array[Array[Double]]], Array[Array[Double]])
+  ): Unit =
+    process(
+      container,
+      persistenceAction, {
+        val (tokensDataSet, resultsDataSet) = trainingData
+        require(tokensDataSet.length == resultsDataSet.length, "each tokenized example needs a result")
+        (tokensDataSet.map(_.flatten), resultsDataSet)
+      }
+    )
+
+  private def process(
       container: TensoredContainer,
       persistenceAction: Option[PersistenceAction],
       trainingData: => (Array[Array[Double]], Array[Array[Double]])
   ): Unit = {
-    require(!container.attentionEnabled || persistenceAction.isEmpty, "attention persistence is not supported yet")
+    require(attention.isEmpty || persistenceAction.isEmpty, "attention persistence is not supported yet")
     persistenceAction match {
       case Some(PersistenceAction.Load(file)) =>
         load(container, file)
@@ -122,7 +142,8 @@ trait Trainable {
         val attentionPass = forwardPass(container)
         totalError = totalError + squaredError(container)
         Backpropagation.run(container.reverseOrder, learningRate, updateNorm)
-        attentionPass.foreach(pass => container.applyAttentionGradients(pass, learningRate, updateNorm))
+        for (depthAttention <- attention; pass <- attentionPass)
+          depthAttention.applyGradients(pass, learningRate, updateNorm)
       }
       if (epoch == 1 || epoch % 100 == 0 || epoch == epochs)
         NetTrace.WriteMessage("epoch " + epoch + ": total squared error = " + totalError, 1)

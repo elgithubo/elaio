@@ -9,5 +9,5 @@ final class MultiplicationTest(override protected val persistenceAction: Option[
   override protected val clipUntilEpoch = 10000
   override protected val maxUpdateNorm = 2000d
 
-  protected def targetOf(inputValues: Array[Double]): Array[Double] = inputValues.map(value => value * 3)
+  protected def targetOf(tokens: Array[Array[Double]]): Array[Double] = tokens.flatten.map(value => value * 3)
 }

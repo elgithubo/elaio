@@ -10,5 +10,5 @@ final class PotentialTest(override protected val persistenceAction: Option[Persi
   override protected val learningRate = 0.00001d
   override protected val maxUpdateNorm = 50000d
 
-  protected def targetOf(inputValues: Array[Double]): Array[Double] = inputValues.map(value => value * value)
+  protected def targetOf(tokens: Array[Array[Double]]): Array[Double] = tokens.flatten.map(value => value * value)
 }

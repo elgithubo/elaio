@@ -1,5 +1,6 @@
 package elaio.neuralnet.test
 
+import elaio.neuralnet.attention.DepthAttention
 import elaio.neuralnet.bigdata.TensoredContainer
 import elaio.neuralnet.trace.NetTrace
 import elaio.neuralnet.units.{HiddenNeuronLeakyRelu, HiddenNeuronSquare, InputNeuron, NeuronDataCreator, OutputNeuron}
@@ -21,26 +22,32 @@ trait MathTest extends Trainable {
   protected val numberOfQuestions = 5
   protected val attentionEnabled = false
 
+  // An example is tokenCount rows of tokenWidth values. By default a single token carries the
+  // whole input; a task with real token structure overrides tokenWidth. Both are defs, because
+  // a val here would read inWidth before an overriding subclass has assigned it.
+  protected def tokenWidth: Int = inWidth
+  protected final def tokenCount: Int = inWidth / tokenWidth
+
   // the task to learn
-  protected def targetOf(inputValues: Array[Double]): Array[Double]
+  protected def targetOf(tokens: Array[Array[Double]]): Array[Double]
 
   // how an input reads in the log - overridden where the channels are not all data
-  protected def describeInput(inputValues: Array[Double]): String =
-    inputValues.map(v => f"$v%.3f").mkString(" | ")
+  protected def describeInput(tokens: Array[Array[Double]]): String =
+    tokens.map(_.map(v => f"$v%.3f").mkString(" | ")).mkString("  ||  ")
 
   protected def randomValue(random: scala.util.Random): Double =
     random.nextDouble() * (inputMaximum - inputMinimum) + inputMinimum
 
-  // define the input values for a single training example
-  protected def randomInput(random: scala.util.Random): Array[Double] =
-    Array.fill(inWidth)(randomValue(random))
+  // define the tokens of a single training example
+  protected def randomTokens(random: scala.util.Random): Array[Array[Double]] =
+    Array.fill(tokenCount)(Array.fill(tokenWidth)(randomValue(random)))
 
-  protected def trainingInputs(random: scala.util.Random): Array[Array[Double]] =
-    Array.fill(trainCount)(randomInput(random))
+  protected def trainingTokens(random: scala.util.Random): Array[Array[Array[Double]]] =
+    Array.fill(trainCount)(randomTokens(random))
 
   // the questions asked after training - overridden where they should be grouped
-  protected def checkInputs(random: scala.util.Random): Seq[Array[Double]] =
-    Seq.fill(numberOfQuestions)(randomInput(random))
+  protected def checkTokens(random: scala.util.Random): Seq[Array[Array[Double]]] =
+    Seq.fill(numberOfQuestions)(randomTokens(random))
 
   override def run(): Unit = {
     // enable the following line to write detailed trace messages to stdout, disable it for no output.
@@ -49,20 +56,17 @@ trait MathTest extends Trainable {
     NetTrace.WriteMessage("start of test run (if processing diverges with NaN, please rerun)")
     NetTrace.WriteMessage("")
     NetTrace.WriteMessage("build dimension: " + dimOuter)
-    NetTrace.WriteMessage("input width: " + inWidth)
+    NetTrace.WriteMessage("input width: " + inWidth + " (" + tokenCount + " tokens of " + tokenWidth + ")")
     NetTrace.WriteMessage("output width: " + outWidth)
     NetTrace.WriteMessage("global attention refinement: " + attentionEnabled)
+    require(inWidth % tokenWidth == 0, "the input width must divide evenly into tokens of " + tokenWidth)
 
     val random = new scala.util.Random
 
-    val container = new TensoredContainer(
-      dimOuter,
-      inWidth,
-      outWidth,
-      new NeuronDataCreator,
-      attentionEnabled = attentionEnabled
-    )
+    val container = new TensoredContainer(dimOuter, inWidth, outWidth, new NeuronDataCreator)
     container.init()
+    // the depth groups only exist once the graph is built
+    if (attentionEnabled) attention = Some(new DepthAttention(container.depthGroups))
     val neurons = container.reverseOrder.sequence
     NetTrace.WriteMessage("total neurons created: " + neurons.length)
     NetTrace.WriteMessage("input neurons: " + neurons.count(_.isInstanceOf[InputNeuron]), 1)
@@ -70,26 +74,25 @@ trait MathTest extends Trainable {
     NetTrace.WriteMessage("hidden leaky relu neurons: " + neurons.count(_.isInstanceOf[HiddenNeuronLeakyRelu]), 1)
     NetTrace.WriteMessage("output neurons: " + neurons.count(_.isInstanceOf[OutputNeuron]), 1)
 
-    // process evaluates training data only when training is required
-    process(
+    // processTokens evaluates training data only when training is required
+    processTokens(
       container,
       persistenceAction,
       {
-        val trainInputs = trainingInputs(random)
-        val trainOutputs = trainInputs.map(targetOf)
-        (trainInputs, trainOutputs)
+        val trainTokens = trainingTokens(random)
+        (trainTokens, trainTokens.map(targetOf))
       }
     )
 
     // the actual test: test inputs the net has never been trained on
-    checkInputs(random).foreach(checkInput =>
+    checkTokens(random).foreach(checkToken =>
       NetTrace.WriteMessage("")
-      NetTrace.WriteMessage("checking an unseen input: " + describeInput(checkInput))
-      initInputs(container, checkInput)
+      NetTrace.WriteMessage("checking an unseen input: " + describeInput(checkToken))
+      initInputs(container, checkToken.flatten)
       // one forward pass with the test values
       forwardPass(container)
       val receivedResult: Array[Double] = container.outputNodes.map(_.value)
-      checkOutputs(receivedResult, targetOf(checkInput))
+      checkOutputs(receivedResult, targetOf(checkToken))
     )
 
     NetTrace.WriteMessage("")

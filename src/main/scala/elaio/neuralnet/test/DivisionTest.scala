@@ -10,5 +10,5 @@ final class DivisionTest(override protected val persistenceAction: Option[Persis
   override protected val clipUntilEpoch = 1000
   override protected val maxUpdateNorm = 700d
 
-  protected def targetOf(inputValues: Array[Double]): Array[Double] = inputValues.map(value => value / 5)
+  protected def targetOf(tokens: Array[Array[Double]]): Array[Double] = tokens.flatten.map(value => value / 5)
 }
