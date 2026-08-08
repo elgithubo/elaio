@@ -28,8 +28,8 @@ final class AttentionTokenTest(override protected val persistenceAction: Option[
   override protected val inputMinimum = -1d
   override protected val inputMaximum = 1d
   override protected val trainCount = 300
-  override protected val numberOfQuestions = 12
-  override protected val epochs = 1000
+  override protected val numberOfQuestions = 300
+  override protected val epochs = 10000
   override protected val clipUntilEpoch = epochs
   override protected val learningRate = 0.005d
   override protected val maxUpdateNorm = 100d

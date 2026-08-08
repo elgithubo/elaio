@@ -1,19 +1,22 @@
 package elaio.neuralnet.attention
 
 import elaio.neuralnet.attention.AttentionLayer.ForwardPass
-import elaio.neuralnet.processing.NeuronGroup
+import elaio.neuralnet.processing.GraphTraversal
+import elaio.neuralnet.processing.GraphTraversal.ReverseOrder
 import elaio.neuralnet.units.InputNeuron
 
 // Attention across the depth of a graph: one depth group is one token, the neurons inside it
 // are the channels. The result is written back as an additive context on the pre-activation,
 // so a second forward pass sees the refined values. Knows nothing about how the graph was built.
-final class DepthAttention(groups: Vector[NeuronGroup], contextScale: Double = 0.1d) {
+final class DepthAttention(boundOrder: ReverseOrder, contextScale: Double = 0.1d) {
+  private val groups = GraphTraversal.depthGroups(boundOrder)
   require(groups.nonEmpty, "depth attention needs at least one group")
 
   private val layer = new AttentionLayer(groups.map(_.neurons.length).max)
 
   // one plain pass to read from, then one more with the attention context in place
-  def refine(forward: () => Unit): ForwardPass = {
+  def refine(currentOrder: ReverseOrder, forward: () => Unit): ForwardPass = {
+    require(currentOrder eq boundOrder, "depth attention belongs to a different graph")
     clearContexts()
     forward()
     val pass = layer.forward(groupValues())

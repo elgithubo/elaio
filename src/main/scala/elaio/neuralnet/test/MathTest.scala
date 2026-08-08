@@ -59,14 +59,13 @@ trait MathTest extends Trainable {
     NetTrace.WriteMessage("input width: " + inWidth + " (" + tokenCount + " tokens of " + tokenWidth + ")")
     NetTrace.WriteMessage("output width: " + outWidth)
     NetTrace.WriteMessage("global attention refinement: " + attentionEnabled)
-    require(inWidth % tokenWidth == 0, "the input width must divide evenly into tokens of " + tokenWidth)
 
     val random = new scala.util.Random
 
     val container = new TensoredContainer(dimOuter, inWidth, outWidth, new NeuronDataCreator)
     container.init()
-    // the depth groups only exist once the graph is built
-    if (attentionEnabled) attention = Some(new DepthAttention(container.depthGroups))
+    // attention is bound to this exact built graph
+    if (attentionEnabled) attention = Some(new DepthAttention(container.reverseOrder))
     val neurons = container.reverseOrder.sequence
     NetTrace.WriteMessage("total neurons created: " + neurons.length)
     NetTrace.WriteMessage("input neurons: " + neurons.count(_.isInstanceOf[InputNeuron]), 1)

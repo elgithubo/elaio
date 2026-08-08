@@ -40,7 +40,8 @@ trait Trainable {
   // returns the attention pass when attention is in use, so training can update it afterwards
   protected def forwardPass(container: TensoredContainer): Option[ForwardPass] =
     attention match {
-      case Some(depthAttention) => Some(depthAttention.refine(() => plainForwardPass(container)))
+      case Some(depthAttention) =>
+        Some(depthAttention.refine(container.reverseOrder, () => plainForwardPass(container)))
       case None =>
         plainForwardPass(container)
         None
