@@ -8,8 +8,8 @@ class CalculatorTest(override protected val persistenceAction: Option[Persistenc
   override protected val dimOuter = 3
   override protected val learningRate = 0.0001d
   override protected val maxUpdateNorm = 1000d
-  override protected val epochs = 30000
-  override protected val clipUntilEpoch = 30000
+  override protected val epochs = 20000
+  override protected val clipUntilEpoch = epochs
   override protected val tolerance = 10d
   override protected val inWidth = 5 // one value reserved for opcode
   override protected val outWidth = 4 // needs to be inWidth - 1
