@@ -1,12 +1,12 @@
 package elaio.neuralnet.bigdata
 
 import scala.collection.mutable
+import elaio.neuralnet.attention.AttentionLayer
+import elaio.neuralnet.attention.AttentionLayer.ForwardPass
 import elaio.neuralnet.connections.Connection
-import elaio.neuralnet.processing.GraphTraversal
+import elaio.neuralnet.processing.{GraphTraversal, NeuronCollectionCache}
 //import elaio.neuralnet.trace.NetTrace
-import elaio.neuralnet.units.Neuron
-import elaio.neuralnet.units.NeuronDataCreator
-import elaio.neuralnet.units.NeuronType
+import elaio.neuralnet.units.{InputNeuron, Neuron, NeuronDataCreator, NeuronType}
 
 // represents a multi-dimensional tensor of dimension dimOuter
 class TensoredContainer(
@@ -15,6 +15,7 @@ class TensoredContainer(
     outWidth: Int,
     dataCreator: NeuronDataCreator,
     additionalWiring: Option[AdditionalWiring] = None,
+    val attentionEnabled: Boolean = false,
 ) {
 
   private var _inputNodes = Array.ofDim[Neuron](0)
@@ -22,6 +23,9 @@ class TensoredContainer(
   private var _reverseOrder: GraphTraversal.ReverseOrder = null
   private var neuronIdCounter = 0L
   private var connectionIdCounter = 0L
+  private var attentionLayer: Option[AttentionLayer] = None
+  private var attentionGroups = Vector.empty[NeuronGroup]
+  private val attentionContextScale = 0.1d
 
   def inputNodes: Array[Neuron] = _inputNodes
   def outputNodes: Array[Neuron] = _outputNodes
@@ -49,8 +53,86 @@ class TensoredContainer(
         GraphTraversal.reverseTopologicalFromOutputs(_outputNodes)
       case None => baseOrder
     }
+
+    if (attentionEnabled) {
+      attentionGroups = neuronGroups(_reverseOrder)
+      attentionLayer = Some(new AttentionLayer(attentionGroups.map(_.neurons.length).max))
+    } else {
+      attentionGroups = Vector.empty
+      attentionLayer = None
+    }
     result
   }
+
+  def forwardPass(cache: NeuronCollectionCache): Option[ForwardPass] = {
+    clearAttentionContexts()
+    cache.clear()
+    collectOutputs(cache)
+
+    attentionLayer.map { layer =>
+      val pass = layer.forward(attentionInputs())
+      applyAttentionContexts(pass)
+      try {
+        cache.clear()
+        collectOutputs(cache)
+      } finally clearAttentionContexts()
+      pass
+    }
+  }
+
+  // The gradient into the first graph pass is intentionally truncated for now.
+  def applyAttentionGradients(
+      pass: ForwardPass,
+      learningRate: Double,
+      maxGradientNorm: Double
+  ): Unit =
+    attentionLayer.foreach { layer =>
+      val outputGradients = Array.ofDim[Double](attentionGroups.length, layer.groupWidth)
+      for {
+        groupIndex <- attentionGroups.indices
+        neuronIndex <- attentionGroups(groupIndex).neurons.indices
+        neuron = attentionGroups(groupIndex).neurons(neuronIndex)
+        if !neuron.isInstanceOf[InputNeuron]
+      } outputGradients(groupIndex)(neuronIndex) = -neuron.delta * attentionContextScale
+
+      val gradients = layer.backward(pass, outputGradients)
+      layer.applyGradients(gradients, learningRate, maxGradientNorm)
+    }
+
+  private def collectOutputs(cache: NeuronCollectionCache): Unit =
+    for (outputNode <- _outputNodes) outputNode.collectInConnections(cache)
+
+  private def attentionInputs(): Array[Array[Double]] = {
+    val width = attentionLayer.map(_.groupWidth).getOrElse(0)
+    attentionGroups.map { group =>
+      require(group.neurons.forall(_.value.isFinite), "attention input values must be finite")
+      val row = Array.ofDim[Double](width)
+      val meanSquare =
+        group.neurons.iterator.map(neuron => neuron.value * neuron.value).sum / group.neurons.length
+      val rms = math.sqrt(meanSquare + 1e-8)
+      for (neuronIndex <- group.neurons.indices)
+        row(neuronIndex) = group.neurons(neuronIndex).value / rms
+      row
+    }.toArray
+  }
+
+  private def applyAttentionContexts(pass: ForwardPass): Unit =
+    for {
+      groupIndex <- attentionGroups.indices
+      neuronIndex <- attentionGroups(groupIndex).neurons.indices
+      neuron = attentionGroups(groupIndex).neurons(neuronIndex)
+      if !neuron.isInstanceOf[InputNeuron]
+    } {
+      val context = pass.outputGroups(groupIndex)(neuronIndex) * attentionContextScale
+      require(context.isFinite, "attention context values must be finite")
+      neuron.attentionContext_=(context)
+    }
+
+  private def clearAttentionContexts(): Unit =
+    for {
+      group <- attentionGroups
+      neuron <- group.neurons
+    } neuron.attentionContext_=(0d)
 
   private def buildRootNodes(
       buildDimOuter: Int,
@@ -212,18 +294,6 @@ class TensoredContainer(
 
   private def neuronGroups(order: GraphTraversal.ReverseOrder): Vector[NeuronGroup] = {
     val depthByNeuron = mutable.HashMap.empty[Neuron, Int]
-
-    /* recursive version - kept in case the iterative one turns out to miss a case
-    def depth(neuron: Neuron): Int =
-      depthByNeuron.getOrElseUpdate(
-        neuron,
-        neuron.connectionsIn.iterator
-          .map(_.neuronSource)
-          .filter(order.reachable)
-          .map(depth)
-          .maxOption
-          .fold(0)(_ + 1)
-      )*/
 
     // order.sequence is reverse topological, so reading it backwards visits every
     // source before the neuron that reads it - one pass, no recursion, no stack limit

@@ -19,6 +19,7 @@ trait MathTest extends Trainable {
   protected val inputMaximum = 1000d
   protected val trainCount = 250
   protected val numberOfQuestions = 5
+  protected val attentionEnabled = false
 
   // the task to learn
   protected def targetOf(inputValues: Array[Double]): Array[Double]
@@ -50,10 +51,17 @@ trait MathTest extends Trainable {
     NetTrace.WriteMessage("build dimension: " + dimOuter)
     NetTrace.WriteMessage("input width: " + inWidth)
     NetTrace.WriteMessage("output width: " + outWidth)
+    NetTrace.WriteMessage("global attention refinement: " + attentionEnabled)
 
     val random = new scala.util.Random
 
-    val container = new TensoredContainer(dimOuter, inWidth, outWidth, new NeuronDataCreator)
+    val container = new TensoredContainer(
+      dimOuter,
+      inWidth,
+      outWidth,
+      new NeuronDataCreator,
+      attentionEnabled = attentionEnabled
+    )
     container.init()
     val neurons = container.reverseOrder.sequence
     NetTrace.WriteMessage("total neurons created: " + neurons.length)

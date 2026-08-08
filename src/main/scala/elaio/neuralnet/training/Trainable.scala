@@ -1,6 +1,7 @@
 package elaio.neuralnet.training
 
 import java.nio.file.Path
+import elaio.neuralnet.attention.AttentionLayer.ForwardPass
 import elaio.neuralnet.bigdata.TensoredContainer
 import elaio.neuralnet.persistence.{NetworkStateMapper, PersistenceAction, PersistenceHandler}
 import elaio.neuralnet.processing.NeuronCollectionCache
@@ -32,34 +33,45 @@ trait Trainable {
   // run the test case
   def run(): Unit
 
-  protected def forwardPass(container: TensoredContainer): Unit = {
-    neuronCollectionCache.clear()
-    for (outputNode <- container.outputNodes) outputNode.collectInConnections(neuronCollectionCache)
+  protected def forwardPass(container: TensoredContainer): Option[ForwardPass] =
+    container.forwardPass(neuronCollectionCache)
+
+  protected final def processTokens(
+      container: TensoredContainer,
+      tokensDataSet: Array[Array[Array[Double]]],
+      persistenceAction: Option[PersistenceAction],
+      resultsDataSet: Array[Array[Double]]
+  ): Unit = {
+    require(tokensDataSet.length == resultsDataSet.length, "each tokenized example needs a result")
+    process(container, persistenceAction, (tokensDataSet.map(_.flatten), resultsDataSet))
   }
 
   protected final def process(
       container: TensoredContainer,
       persistenceAction: Option[PersistenceAction],
       trainingData: => (Array[Array[Double]], Array[Array[Double]])
-  ): Unit = persistenceAction match {
-    case Some(PersistenceAction.Load(file)) =>
-      load(container, file)
+  ): Unit = {
+    require(!container.attentionEnabled || persistenceAction.isEmpty, "attention persistence is not supported yet")
+    persistenceAction match {
+      case Some(PersistenceAction.Load(file)) =>
+        load(container, file)
 
-    case _ =>
-      // weight initialization has to happen after init(), when every neuron's fan-in is final
-      val weightCount = WeightInitializer.initialize(container.reverseOrder)
-      NetTrace.WriteMessage("connection weights initialized: " + weightCount)
+      case _ =>
+        // weight initialization has to happen after init(), when every neuron's fan-in is final
+        val weightCount = WeightInitializer.initialize(container.reverseOrder)
+        NetTrace.WriteMessage("connection weights initialized: " + weightCount)
 
-      val (trainInputs, trainOutputs) = trainingData
-      NetTrace.WriteMessage("training on " + trainInputs.length + " examples over " + epochs + " epochs with learning rate " + learningRate)
-      NetTrace.WriteMessage("gradient clipping at " + maxUpdateNorm + " for the first " + clipUntilEpoch + " epochs")
-      NetTrace.WriteMessage("")
-      train(container, trainInputs, trainOutputs)
+        val (trainInputs, trainOutputs) = trainingData
+        NetTrace.WriteMessage("training on " + trainInputs.length + " examples over " + epochs + " epochs with learning rate " + learningRate)
+        NetTrace.WriteMessage("gradient clipping at " + maxUpdateNorm + " for the first " + clipUntilEpoch + " epochs")
+        NetTrace.WriteMessage("")
+        train(container, trainInputs, trainOutputs)
 
-      persistenceAction match {
-        case Some(PersistenceAction.Save(file)) => save(container, file)
-        case _                                  => ()
-      }
+        persistenceAction match {
+          case Some(PersistenceAction.Save(file)) => save(container, file)
+          case _                                  => ()
+        }
+    }
   }
 
   // summed squared error of the last forward pass against the targets set on the outputs
@@ -107,9 +119,10 @@ trait Trainable {
       for ((inputValues, targetValues) <- random.shuffle(trainingExamples)) {
         initInputs(container, inputValues)
         initTargets(container, targetValues)
-        forwardPass(container)
+        val attentionPass = forwardPass(container)
         totalError = totalError + squaredError(container)
         Backpropagation.run(container.reverseOrder, learningRate, updateNorm)
+        attentionPass.foreach(pass => container.applyAttentionGradients(pass, learningRate, updateNorm))
       }
       if (epoch == 1 || epoch % 100 == 0 || epoch == epochs)
         NetTrace.WriteMessage("epoch " + epoch + ": total squared error = " + totalError, 1)

@@ -3,7 +3,7 @@ package elaio.neuralnet.test
 import elaio.neuralnet.persistence.PersistenceAction
 
 // One opcode selects the operation applied to four independent input values.
-final class CalculatorTest(override protected val persistenceAction: Option[PersistenceAction] = None)
+class CalculatorTest(override protected val persistenceAction: Option[PersistenceAction] = None)
     extends MathTest {
   override protected val dimOuter = 3
   override protected val learningRate = 0.0001d

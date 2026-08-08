@@ -1,10 +1,13 @@
 package elaio.neuralnet.bigdata
 
-import elaio.neuralnet.units.Neuron
+import elaio.neuralnet.units.{HiddenNeuronSquare, InputNeuron, Neuron, OutputNeuron}
 
 final case class NeuronGroup(depth: Int, neurons: Vector[Neuron])
 
 trait AdditionalWiring {
+  protected def connectionAllowed(source: Neuron, target: Neuron): Boolean =
+    !(source.isInstanceOf[HiddenNeuronSquare] && target.isInstanceOf[HiddenNeuronSquare]) &&
+      !(source.isInstanceOf[InputNeuron] && target.isInstanceOf[OutputNeuron])
   def wire(context: AdditionalWiring.Context): Unit
 }
 

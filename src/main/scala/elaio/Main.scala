@@ -8,6 +8,7 @@
 package elaio{
   package neuralnet{
     package activation{}
+    package attention{}
     package bigdata{}
     package connections{}
     package persistence{}
@@ -25,6 +26,8 @@ import java.nio.file.Path
 import elaio.neuralnet.persistence.PersistenceAction
 import elaio.neuralnet.test.{
   AdditionTest,
+  AttentionTest,
+  AttentionTokenTest,
   DivisionTest,
   MathTestType,
   MultiplicationTest,
@@ -69,6 +72,11 @@ object Main {
         throw new IllegalArgumentException(s"Unknown option '$option'. $usage")
     }
 
+    require(
+      testType != MathTestType.Attention || persistenceAction.isEmpty,
+      "Attention does not support persistence yet"
+    )
+
     OpSpec(testType, persistenceAction)
   }
 
@@ -79,5 +87,7 @@ object Main {
     case MathTestType.Division       => new DivisionTest(opSpec.persistenceAction).run()
     case MathTestType.Potential      => new PotentialTest(opSpec.persistenceAction).run()
     case MathTestType.Calculator     => new CalculatorTest(opSpec.persistenceAction).run()
+    case MathTestType.Attention      => new AttentionTest().run()
+    case MathTestType.AttentionToken => new AttentionTokenTest(opSpec.persistenceAction).run()
   }
 }

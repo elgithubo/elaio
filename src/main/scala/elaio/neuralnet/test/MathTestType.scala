@@ -1,5 +1,5 @@
 package elaio.neuralnet.test
 
 object MathTestType extends Enumeration {
-  val Addition, Subtraction, Multiplication, Division, Potential, Calculator = Value
+  val Addition, Subtraction, Multiplication, Division, Potential, Calculator, Attention, AttentionToken = Value
 }
