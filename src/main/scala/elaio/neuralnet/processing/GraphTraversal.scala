@@ -1,7 +1,8 @@
 package elaio.neuralnet.processing
 
 import scala.collection.mutable
-import elaio.neuralnet.connections.Weight
+import elaio.neuralnet.connections.{Weight}
+import elaio.neuralnet.units.Bias
 import elaio.neuralnet.units.Neuron
 
 // one layer of the graph: every neuron whose longest path from a source has the same length
@@ -13,7 +14,8 @@ object GraphTraversal {
       reachable: Set[Neuron],
       outputs: Set[Neuron],
       connectionWeights: Vector[Weight],
-      hasSharedConnectionWeights: Boolean
+      neuronBiases: Vector[Bias],
+      hasSharedParameters: Boolean
   )
 
   // Layers the reachable neurons by their longest path from a source. Every edge runs from
@@ -46,13 +48,16 @@ object GraphTraversal {
     val outputSet: Set[Neuron] = outputNodes.toSet
     val sequence = computeReverseTopologicalFromOutputs(outputSet)
     val allWeights = sequence.iterator.flatMap(_.connectionsIn).map(_.weightCell).toVector
+    val allBiases = sequence.iterator.filter(_.connectionsIn.nonEmpty).map(_.biasCell).toVector
     val connectionWeights = allWeights.distinct
+    val neuronBiases = allBiases.distinct
     ReverseOrder(
       sequence,
       sequence.toSet,
       outputSet,
       connectionWeights,
-      connectionWeights.length != allWeights.length
+      neuronBiases,
+      connectionWeights.length != allWeights.length || neuronBiases.length != allBiases.length
     )
   }
 

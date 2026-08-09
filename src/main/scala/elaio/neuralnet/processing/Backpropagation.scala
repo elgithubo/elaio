@@ -31,20 +31,23 @@ object Backpropagation {
           else sum
         } * neuron.activationDerivative(neuron.preActivation) // outgoing sum * activation derivative
 
-    if (order.hasSharedConnectionWeights) {
-      // Connections can share one weight, so their gradients form one parameter gradient.
+    if (order.hasSharedParameters) {
+      // Shared cells receive one summed, clipped update.
       order.connectionWeights.foreach(_.accumulatedGradient = 0d)
-      var biasGradientSquares = 0d
+      order.neuronBiases.foreach(_.accumulatedGradient = 0d)
       for (neuron <- order.sequence.reverseIterator) {
         val fanIn = neuron.connectionsIn.length
         for (connectionIn <- neuron.connectionsIn)
           connectionIn.weightCell.accumulatedGradient +=
             neuron.delta * connectionIn.neuronSource.value / fanIn
-        if (fanIn > 0) biasGradientSquares += neuron.delta * neuron.delta
+        if (fanIn > 0)
+          neuron.biasCell.accumulatedGradient += neuron.delta
       }
 
       val weightGradientSquares =
         order.connectionWeights.iterator.map(weight => weight.accumulatedGradient * weight.accumulatedGradient).sum
+      val biasGradientSquares =
+        order.neuronBiases.iterator.map(bias => bias.accumulatedGradient * bias.accumulatedGradient).sum
       val norm = math.sqrt(weightGradientSquares + biasGradientSquares)
       val scale = if (norm > maxUpdateNorm) maxUpdateNorm / norm else 1d
 
@@ -52,9 +55,10 @@ object Backpropagation {
         weight.value += learningRate * scale * weight.accumulatedGradient
         weight.accumulatedGradient = 0d
       }
-      for (neuron <- order.sequence.reverseIterator)
-        if (neuron.connectionsIn.nonEmpty) // skip input neurons
-          neuron.bias += learningRate * scale * neuron.delta
+      for (bias <- order.neuronBiases) {
+        bias.value += learningRate * scale * bias.accumulatedGradient
+        bias.accumulatedGradient = 0d
+      }
     } else {
       val scale =
         if (maxUpdateNorm.isPosInfinity) 1d

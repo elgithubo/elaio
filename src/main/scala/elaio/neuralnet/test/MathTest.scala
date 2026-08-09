@@ -32,6 +32,8 @@ trait MathTest extends Trainable {
   protected def tokenWidth: Int = inWidth
   protected final def tokenCount: Int = inWidth / tokenWidth
 
+  protected val tokenFactor = 1d
+
   // the task to learn
   protected def targetOf(tokens: TokenMatrix): Array[Double]
 
@@ -44,7 +46,7 @@ trait MathTest extends Trainable {
 
   // define the tokens of a single training example
   protected def randomTokens(random: scala.util.Random): TokenMatrix =
-    Array.fill(tokenCount)(Array.fill(tokenWidth)(randomValue(random)))
+    Array.fill(tokenCount)(Array.fill(tokenWidth)(randomValue(random) * tokenFactor))
 
   protected def trainingTokens(random: scala.util.Random): Array[TokenMatrix] =
     Array.fill(trainCount)(randomTokens(random))
