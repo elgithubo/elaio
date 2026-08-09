@@ -9,10 +9,10 @@ class TensoredContainerInOut {
   def inputNodes: Array[InputNeuron] = _inputNodes
   def outputNodes: Array[OutputNeuron] = _outputNodes
 
-  def inputNodes_(nodes: Array[InputNeuron]): Unit =
+  def inputNodes_=(nodes: Array[InputNeuron]): Unit =
     _inputNodes = nodes
 
-  def outputNodes_(nodes: Array[OutputNeuron]): Unit =
+  def outputNodes_=(nodes: Array[OutputNeuron]): Unit =
     _outputNodes = nodes
 
   def addInputNode(node: InputNeuron): Unit =

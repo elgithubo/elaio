@@ -38,8 +38,9 @@ object GraphTraversal {
 
   // Returns all neurons reachable from outputs in reverse-topological order:
   // outputs first, then their sources towards inputs.
-  def reverseTopologicalFromOutputs(outputNodes: Array[Neuron]): ReverseOrder = {
-    val outputSet = outputNodes.toSet
+  // takes any array of neurons - scala arrays are invariant, so Array[OutputNeuron] needs the bound
+  def reverseTopologicalFromOutputs(outputNodes: Array[? <: Neuron]): ReverseOrder = {
+    val outputSet: Set[Neuron] = outputNodes.toSet
     val sequence = computeReverseTopologicalFromOutputs(outputSet)
     ReverseOrder(sequence, sequence.toSet, outputSet)
   }

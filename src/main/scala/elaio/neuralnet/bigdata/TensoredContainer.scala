@@ -40,13 +40,13 @@ class TensoredContainer(
     _inputNodes = result.inputNodes
     _outputNodes = result.outputNodes
 
-    val baseOrder = GraphTraversal.reverseTopologicalFromOutputs(_outputNodes.map(_.asInstanceOf[Neuron]))
+    val baseOrder = GraphTraversal.reverseTopologicalFromOutputs(_outputNodes)
     _reverseOrder = additionalWiring match {
       case Some(wiring) =>
         val context =
           new AdditionalWiring.Context(GraphTraversal.depthGroups(baseOrder), connectNeuronsIfMissing)
         wiring.wire(context)
-        GraphTraversal.reverseTopologicalFromOutputs(_outputNodes.map(_.asInstanceOf[Neuron]))
+        GraphTraversal.reverseTopologicalFromOutputs(_outputNodes)
       case None => baseOrder
     }
   }
@@ -64,13 +64,9 @@ class TensoredContainer(
       dataCreator,
       true
     )
-    var result = new TensoredContainerInOut {}
-    result.inputNodes_(
-      receivedResult.inputNodes.map(_.asInstanceOf[InputNeuron])
-    )
-    result.outputNodes_(
-      receivedResult.outputNodes.map(_.asInstanceOf[OutputNeuron])
-    )
+    val result = new TensoredContainerInOut
+    result.inputNodes = receivedResult.inputNodes.map(_.asInstanceOf[InputNeuron])
+    result.outputNodes = receivedResult.outputNodes.map(_.asInstanceOf[OutputNeuron])
     result
   }
 
@@ -140,7 +136,7 @@ class TensoredContainer(
             dataCreator,
             false,
           )
-          neuronsReturn.intermediateNodes_(neuronsLowerDim.intermediateNodes)
+          neuronsReturn.intermediateNodes = neuronsLowerDim.intermediateNodes
           lowerDimNeuronsThisRecur = neuronsLowerDim.inputNodes
 
           bottomNeuronsThisRecur = neuronsLowerDim.intermediateNodes
@@ -212,7 +208,7 @@ class TensoredContainer(
     }
 
     if (!inputBackpropagationCreationPossible)
-      neuronsReturn.inputNodes_(newNeuronsSameRank)
+      neuronsReturn.inputNodes = newNeuronsSameRank
 
     neuronsReturn
   }

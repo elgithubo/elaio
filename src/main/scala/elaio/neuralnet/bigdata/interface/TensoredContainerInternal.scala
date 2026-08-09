@@ -11,7 +11,7 @@ class TensoredContainerInternal {
   def outputNodes: Array[Neuron] = _outputNodes
   def intermediateNodes: Array[HiddenNeuron] = _intermediateNodes
 
-  def inputNodes_(nodes: Array[Neuron]): Unit =
+  def inputNodes_=(nodes: Array[Neuron]): Unit =
     _inputNodes = nodes
 
   def addInputNode(node: Neuron): Unit =
@@ -20,12 +20,10 @@ class TensoredContainerInternal {
   def addOutputNode(node: Neuron): Unit =
     _outputNodes :+= node
 
-  def intermediateNodes_(nodes: Array[HiddenNeuron]): Unit =
+  def intermediateNodes_=(nodes: Array[HiddenNeuron]): Unit =
     _intermediateNodes = nodes
 
-  def addIntermediateNode(node: HiddenNeuron): Unit =
-    _intermediateNodes :+= node
-
+  // appends - not a setter, so no _= here
   def addIntermediateNodes(nodes: Array[HiddenNeuron]): Unit =
     _intermediateNodes ++= nodes
 }

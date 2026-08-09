@@ -101,13 +101,13 @@ trait MathTest extends Trainable {
   protected def initInputs(container: TensoredContainer, inputValues: Array[Double]): Unit = {
     require(inputValues.length == inWidth, "expected " + inWidth + " inputs but got " + inputValues.length)
     for (index <- inputValues.indices)
-      container.inputNodes(index).asInstanceOf[InputNeuron].initInput(inputValues(index))
+      container.inputNodes(index).initInput(inputValues(index))
   }
 
   protected def initTargets(container: TensoredContainer, targetValues: Array[Double]): Unit = {
     require(targetValues.length == outWidth, "expected " + outWidth + " targets but got " + targetValues.length)
     for (index <- targetValues.indices)
-      container.outputNodes(index).asInstanceOf[OutputNeuron].initOutput(targetValues(index))
+      container.outputNodes(index).initOutput(targetValues(index))
   }
 
   private def checkOutputs(outValues: Array[Double], expected: Array[Double]): Unit = {

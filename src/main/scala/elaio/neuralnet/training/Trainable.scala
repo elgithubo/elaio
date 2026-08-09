@@ -7,7 +7,6 @@ import elaio.neuralnet.bigdata.TensoredContainer
 import elaio.neuralnet.persistence.{NetworkStateMapper, PersistenceAction, PersistenceHandler}
 import elaio.neuralnet.processing.NeuronCollectionCache
 import elaio.neuralnet.trace.NetTrace
-import elaio.neuralnet.units.OutputNeuron
 import elaio.neuralnet.processing.Backpropagation
 
 trait Trainable {
@@ -99,7 +98,7 @@ trait Trainable {
   private def squaredError(container: TensoredContainer): Double  = {
     var total = 0d
     for (outputNode <- container.outputNodes) {
-      val residual = outputNode.asInstanceOf[OutputNeuron].target - outputNode.value
+      val residual = outputNode.target - outputNode.value
       total = total + residual * residual
     }
     total
