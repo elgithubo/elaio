@@ -13,7 +13,7 @@ import elaio.neuralnet.persistence.PersistenceAction
 // [0, 0, 1, 0,  0.15]  |  B → 0.15
 // [1, 0, 0, 1,  0.00]  |  query C
 // => target: [-0.70]
-final class AttentionTokenTest(override protected val persistenceAction: Option[PersistenceAction] = None)
+class AttentionTokenTest(override protected val persistenceAction: Option[PersistenceAction] = None)
     extends MathTest {
   private val keyCount = 3
   private val keyTokenWidth = keyCount + 2 // query marker, one-hot key, value
@@ -30,7 +30,7 @@ final class AttentionTokenTest(override protected val persistenceAction: Option[
   override protected val trainCount = 300
   override protected val numberOfQuestions = 300
   override protected val epochs = 10000
-  override protected val clipUntilEpoch = epochs
+  override protected val clipUntilEpoch = 100
   override protected val learningRate = 0.005d
   override protected val maxUpdateNorm = 100d
   override protected val tolerance = 0.1d
@@ -54,10 +54,10 @@ final class AttentionTokenTest(override protected val persistenceAction: Option[
   private def keyOf(token: Array[Double]): Int =
     (0 until keyCount).maxBy(index => token(index + 1))
 
-  override protected def randomTokens(random: scala.util.Random): Array[Array[Double]] =
+  override protected def randomTokens(random: scala.util.Random): TokenMatrix =
     tokensFor(random, random.nextInt(keyCount))
 
-  override protected def trainingTokens(random: scala.util.Random): Array[Array[Array[Double]]] = {
+  override protected def trainingTokens(random: scala.util.Random): Array[TokenMatrix] = {
     require(trainCount % keyCount == 0, "training examples must divide evenly between keys")
     (for {
       queryKey <- 0 until keyCount
@@ -65,7 +65,7 @@ final class AttentionTokenTest(override protected val persistenceAction: Option[
     } yield tokensFor(random, queryKey)).toArray
   }
 
-  override protected def checkTokens(random: scala.util.Random): Seq[Array[Array[Double]]] = {
+  override protected def checkTokens(random: scala.util.Random): Seq[TokenMatrix] = {
     require(numberOfQuestions % keyCount == 0, "questions must divide evenly between keys")
     for {
       queryKey <- 0 until keyCount
@@ -73,7 +73,7 @@ final class AttentionTokenTest(override protected val persistenceAction: Option[
     } yield tokensFor(random, queryKey)
   }
 
-  override protected def describeInput(tokens: Array[Array[Double]]): String = {
+  override protected def describeInput(tokens: TokenMatrix): String = {
     val memories = tokens.filter(_(0) == 0d).map { token =>
       s"${('A' + keyOf(token)).toChar} -> ${token.last}"
     }
@@ -81,7 +81,7 @@ final class AttentionTokenTest(override protected val persistenceAction: Option[
     memories.mkString(" | ") + s" | query ${('A' + keyOf(query)).toChar}"
   }
 
-  protected def targetOf(tokens: Array[Array[Double]]): Array[Double] = {
+  protected def targetOf(tokens: TokenMatrix): Array[Double] = {
     val query = tokens.find(_(0) == 1d).get
     val queryKey = keyOf(query)
     val memory = tokens.find(token => token(0) == 0d && keyOf(token) == queryKey).get

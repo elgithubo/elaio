@@ -13,13 +13,13 @@ class TensoredContainer(
     outWidth: Int,
     dataCreator: NeuronDataCreator,
     additionalWiring: Option[AdditionalWiring] = None,
-) {
+    // a stack of containers passes one allocator to all of them, so their ids stay distinct
+    ids: IdAllocator = new IdAllocator,
+) extends NeuronNetwork {
 
   private var _inputNodes = Array.ofDim[InputNeuron](0)
   private var _outputNodes = Array.ofDim[OutputNeuron](0)
   private var _reverseOrder: GraphTraversal.ReverseOrder = null
-  private var neuronIdCounter = 0L
-  private var connectionIdCounter = 0L
 
   def inputNodes: Array[InputNeuron] = _inputNodes
   def outputNodes: Array[OutputNeuron] = _outputNodes
@@ -29,8 +29,6 @@ class TensoredContainer(
   def depthGroups: Vector[NeuronGroup] = GraphTraversal.depthGroups(reverseOrder)
 
   def init(): Unit = {
-    neuronIdCounter = 0L
-    connectionIdCounter = 0L
     val result = buildRootNodes(
         dimOuter,
         inWidth,
@@ -232,13 +230,7 @@ class TensoredContainer(
     connection.neuronSource.addOutConnection(connection)
   }
 
-  private def nextNeuronId(): Long = {
-    neuronIdCounter = neuronIdCounter + 1L
-    neuronIdCounter
-  }
+  private def nextNeuronId(): Long = ids.nextNeuronId()
 
-  private def nextConnectionId(): Long = {
-    connectionIdCounter = connectionIdCounter + 1L
-    connectionIdCounter
-  }
+  private def nextConnectionId(): Long = ids.nextConnectionId()
 }

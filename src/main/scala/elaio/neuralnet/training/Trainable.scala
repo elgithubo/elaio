@@ -1,9 +1,8 @@
 package elaio.neuralnet.training
 
 import java.nio.file.Path
-import elaio.neuralnet.attention.AttentionLayer.ForwardPass
 import elaio.neuralnet.attention.DepthAttention
-import elaio.neuralnet.bigdata.TensoredContainer
+import elaio.neuralnet.bigdata.NeuronNetwork
 import elaio.neuralnet.persistence.{NetworkStateMapper, PersistenceAction, PersistenceHandler}
 import elaio.neuralnet.processing.NeuronCollectionCache
 import elaio.neuralnet.trace.NetTrace
@@ -23,37 +22,33 @@ trait Trainable {
   protected val clipUntilEpoch: Int
 
   // ask the net a question
-  protected def initInputs(container: TensoredContainer, inputValues: Array[Double]): Unit
+  protected def initInputs(container: NeuronNetwork, inputValues: Array[Double]): Unit
   // tell the net the wanted answer - only backpropagation reads this, never a forward pass
-  protected def initTargets(container: TensoredContainer, targetValues: Array[Double]): Unit
+  protected def initTargets(container: NeuronNetwork, targetValues: Array[Double]): Unit
 
   private val random = new scala.util.Random
   private val neuronCollectionCache = new NeuronCollectionCache
 
-  // set once the container is built, when attention over depth is wanted
+  // set once the network is built, when attention is wanted
   protected var attention: Option[DepthAttention] = None
 
   // run the test case
   def run(): Unit
 
-  // returns the attention pass when attention is in use, so training can update it afterwards
-  protected def forwardPass(container: TensoredContainer): Option[ForwardPass] =
+  protected def forwardPass(container: NeuronNetwork): Unit =
     attention match {
-      case Some(depthAttention) =>
-        Some(depthAttention.refine(container.reverseOrder, () => plainForwardPass(container)))
-      case None =>
-        plainForwardPass(container)
-        None
+      case Some(depthAttention) => depthAttention.refine(container.reverseOrder, () => plainForwardPass(container))
+      case None                 => plainForwardPass(container)
     }
 
-  private def plainForwardPass(container: TensoredContainer): Unit = {
+  private def plainForwardPass(container: NeuronNetwork): Unit = {
     neuronCollectionCache.clear()
     for (outputNode <- container.outputNodes) outputNode.collectInConnections(neuronCollectionCache)
   }
 
   // the net reads one flat vector per example, so the token rows are joined here and nowhere else
   protected final def processTokens(
-      container: TensoredContainer,
+      container: NeuronNetwork,
       persistenceAction: Option[PersistenceAction],
       trainingData: => (Array[Array[Array[Double]]], Array[Array[Double]])
   ): Unit =
@@ -67,7 +62,7 @@ trait Trainable {
     )
 
   private def process(
-      container: TensoredContainer,
+      container: NeuronNetwork,
       persistenceAction: Option[PersistenceAction],
       trainingData: => (Array[Array[Double]], Array[Array[Double]])
   ): Unit = {
@@ -95,7 +90,7 @@ trait Trainable {
   }
 
   // summed squared error of the last forward pass against the targets set on the outputs
-  private def squaredError(container: TensoredContainer): Double  = {
+  private def squaredError(container: NeuronNetwork): Double  = {
     var total = 0d
     for (outputNode <- container.outputNodes) {
       val residual = outputNode.target - outputNode.value
@@ -104,7 +99,7 @@ trait Trainable {
     total
   }
 
-  private def load(container: TensoredContainer, file: Path): Unit = {
+  private def load(container: NeuronNetwork, file: Path): Unit = {
     NetTrace.WriteMessage("loading network state from " + file)
     val stateContainer = new PersistenceHandler().load(file)
     NetworkStateMapper.restore(stateContainer, container)
@@ -113,7 +108,7 @@ trait Trainable {
     )
   }
 
-  private def save(container: TensoredContainer, file: Path): Unit = {
+  private def save(container: NeuronNetwork, file: Path): Unit = {
     val stateContainer = NetworkStateMapper.capture(container)
     new PersistenceHandler().save(stateContainer, file)
     NetTrace.WriteMessage(
@@ -123,7 +118,7 @@ trait Trainable {
 
   // execute the actual training, which is a forward pass followed by backpropagation for each example, repeated for the number of epochs.
   private def train(
-      container: TensoredContainer,
+      container: NeuronNetwork,
       trainInputs: Array[Array[Double]],
       trainOutputs: Array[Array[Double]]
   ): Unit = {
@@ -139,11 +134,10 @@ trait Trainable {
       for ((inputValues, targetValues) <- random.shuffle(trainingExamples)) {
         initInputs(container, inputValues)
         initTargets(container, targetValues)
-        val attentionPass = forwardPass(container)
+        forwardPass(container)
         totalError = totalError + squaredError(container)
         Backpropagation.run(container.reverseOrder, learningRate, updateNorm)
-        for (depthAttention <- attention; pass <- attentionPass)
-          depthAttention.applyGradients(pass, learningRate, updateNorm)
+        for (depthAttention <- attention) depthAttention.applyGradients(learningRate, updateNorm)
       }
       if (epoch == 1 || epoch % 100 == 0 || epoch == epochs)
         NetTrace.WriteMessage("epoch " + epoch + ": total squared error = " + totalError, 1)

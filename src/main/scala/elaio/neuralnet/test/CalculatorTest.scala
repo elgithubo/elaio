@@ -28,23 +28,23 @@ class CalculatorTest(override protected val persistenceAction: Option[Persistenc
     )
 
   // opcode and values live in one token, so the whole example is a single row
-  private def selectedOperation(tokens: Array[Array[Double]]): Int =
+  private def selectedOperation(tokens: TokenMatrix): Int =
     operations.indices.minBy(operation => math.abs(tokens.head(0) - operations(operation).opcode))
 
-  private def tokensFor(operation: Int, values: Array[Double]): Array[Array[Double]] =
+  private def tokensFor(operation: Int, values: Array[Double]): TokenMatrix =
     Array(Array(operations(operation).opcode) ++ values)
 
   private def randomValues(random: scala.util.Random): Array[Double] =
     Array.fill(outWidth)(randomValue(random))
 
-  override protected def describeInput(tokens: Array[Array[Double]]): String =
+  override protected def describeInput(tokens: TokenMatrix): String =
     tokens.head.drop(1).map(value => f"$value%.3f").mkString(" | ") +
       "  ->  " + operations(selectedOperation(tokens)).description
 
-  override protected def randomTokens(random: scala.util.Random): Array[Array[Double]] =
+  override protected def randomTokens(random: scala.util.Random): TokenMatrix =
     tokensFor(random.nextInt(operations.length), randomValues(random))
 
-  override protected def trainingTokens(random: scala.util.Random): Array[Array[Array[Double]]] = {
+  override protected def trainingTokens(random: scala.util.Random): Array[TokenMatrix] = {
     require(trainCount % operations.length == 0, "training examples must divide evenly between operations")
     (for {
       operation <- operations.indices
@@ -53,13 +53,13 @@ class CalculatorTest(override protected val persistenceAction: Option[Persistenc
   }
 
   // ask each operation equally often and grouped, so the log reads one operation at a time
-  override protected def checkTokens(random: scala.util.Random): Seq[Array[Array[Double]]] =
+  override protected def checkTokens(random: scala.util.Random): Seq[TokenMatrix] =
     for {
       operation <- operations.indices
       _ <- 1 to numberOfQuestions / operations.length
     } yield tokensFor(operation, randomValues(random))
 
-  protected def targetOf(tokens: Array[Array[Double]]): Array[Double] = {
+  protected def targetOf(tokens: TokenMatrix): Array[Double] = {
     val operation = operations(selectedOperation(tokens)).calculate
     tokens.head.drop(1).map(operation)
   }

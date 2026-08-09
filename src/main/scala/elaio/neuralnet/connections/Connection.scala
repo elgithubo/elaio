@@ -14,11 +14,15 @@ trait Connection(val id: Long) {
   def neuronTarget: Neuron = _neuronTarget
   def neuronTarget_=(neuron: Neuron): Unit = { _neuronTarget = neuron }
 
-  // initialize weight with 0 here since it is initialized later by WeightInitializer
-  private var _weight: Double = 0d
+  // initialize weight with 0 here since it is initialized later by WeightInitializer.
+  // a cell of its own by default - sharing means handing the same cell to several connections
+  private var _weight: Weight = new Weight
 
-  def weight: Double = _weight
-  def weight_=(value: Double): Unit = { _weight = value }
+  def weight: Double = _weight.value
+  def weight_=(value: Double): Unit = { _weight.value = value }
+
+  def weightCell: Weight = _weight
+  def weightCell_=(cell: Weight): Unit = { _weight = cell }
 
   def collect(cache: NeuronCollectionCache): Double = {
     val cachedNeuron = cache.get(neuronSource.id)

@@ -27,6 +27,7 @@ import elaio.neuralnet.persistence.PersistenceAction
 import elaio.neuralnet.test.{
   AdditionTest,
   AttentionTokenTest,
+  LayeredDepthTest,
   DivisionTest,
   MathTestType,
   MultiplicationTest,
@@ -72,7 +73,8 @@ object Main {
     }
 
     require(
-      testType != MathTestType.AttentionToken || persistenceAction.isEmpty,
+      !Set(MathTestType.AttentionToken, MathTestType.LayeredDepth).contains(testType) ||
+        persistenceAction.isEmpty,
       "Attention does not support persistence yet"
     )
 
@@ -87,5 +89,6 @@ object Main {
     case MathTestType.Potential      => new PotentialTest(opSpec.persistenceAction).run()
     case MathTestType.Calculator     => new CalculatorTest(opSpec.persistenceAction).run()
     case MathTestType.AttentionToken => new AttentionTokenTest(opSpec.persistenceAction).run()
+    case MathTestType.LayeredDepth   => new LayeredDepthTest(opSpec.persistenceAction).run()
   }
 }

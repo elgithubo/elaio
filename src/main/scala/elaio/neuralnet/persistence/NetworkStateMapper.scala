@@ -1,14 +1,14 @@
 package elaio.neuralnet.persistence
 
 import scala.collection.mutable.HashMap
-import elaio.neuralnet.bigdata.TensoredContainer
+import elaio.neuralnet.bigdata.NeuronNetwork
 import elaio.neuralnet.connections.Connection
 import elaio.neuralnet.units.{HiddenNeuronLeakyRelu, HiddenNeuronSquare, InputNeuron, Neuron, NeuronType, OutputNeuron}
 
 // handler that captures and restores the state of a neural network to/from a serializable state container
 object NetworkStateMapper {
 
-  def capture(container: TensoredContainer): StateContainer = {
+  def capture(container: NeuronNetwork): StateContainer = {
     val neurons = container.reverseOrder.sequence
     val connections = connectionsFrom(neurons)
     val neuronStore = HashMap.from(neurons.map { neuron =>
@@ -37,7 +37,7 @@ object NetworkStateMapper {
     StateContainer(neuronStore, connectionStore)
   }
 
-  def restore(stateContainer: StateContainer, container: TensoredContainer): Unit = {
+  def restore(stateContainer: StateContainer, container: NeuronNetwork): Unit = {
     val neurons = container.reverseOrder.sequence
     val connections = connectionsFrom(neurons)
     val neuronsById = neurons.map(neuron => neuron.id -> neuron).toMap
