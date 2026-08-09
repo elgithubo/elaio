@@ -3,7 +3,8 @@ package elaio.neuralnet.bigdata
 import elaio.neuralnet.connections.Connection
 import elaio.neuralnet.processing.{GraphTraversal, NeuronGroup}
 //import elaio.neuralnet.trace.NetTrace
-import elaio.neuralnet.units.{Neuron, NeuronDataCreator, NeuronType}
+import elaio.neuralnet.units.{HiddenNeuron, Neuron, NeuronDataCreator, NeuronType, InputNeuron, OutputNeuron}
+import elaio.neuralnet.bigdata.interface.{TensoredContainerInternal, TensoredContainerInOut}
 
 // represents a multi-dimensional tensor of dimension dimOuter
 class TensoredContainer(
@@ -14,42 +15,40 @@ class TensoredContainer(
     additionalWiring: Option[AdditionalWiring] = None,
 ) {
 
-  private var _inputNodes = Array.ofDim[Neuron](0)
-  private var _outputNodes = Array.ofDim[Neuron](0)
+  private var _inputNodes = Array.ofDim[InputNeuron](0)
+  private var _outputNodes = Array.ofDim[OutputNeuron](0)
   private var _reverseOrder: GraphTraversal.ReverseOrder = null
   private var neuronIdCounter = 0L
   private var connectionIdCounter = 0L
 
-  def inputNodes: Array[Neuron] = _inputNodes
-  def outputNodes: Array[Neuron] = _outputNodes
+  def inputNodes: Array[InputNeuron] = _inputNodes
+  def outputNodes: Array[OutputNeuron] = _outputNodes
   def reverseOrder: GraphTraversal.ReverseOrder =
     if( _reverseOrder != null) _reverseOrder else throw new IllegalStateException("container has not been initialized")
   // the built graph layered by depth - callers keep the result, it is recomputed on every call
   def depthGroups: Vector[NeuronGroup] = GraphTraversal.depthGroups(reverseOrder)
 
-  def init(): Array[Array[Neuron]] = {
+  def init(): Unit = {
     neuronIdCounter = 0L
     connectionIdCounter = 0L
-    val result =
-      buildRootNodes(
+    val result = buildRootNodes(
         dimOuter,
         inWidth,
         outWidth,
         dataCreator
       )
-    _inputNodes = result(0)
-    _outputNodes = result(1)
+    _inputNodes = result.inputNodes
+    _outputNodes = result.outputNodes
 
-    val baseOrder = GraphTraversal.reverseTopologicalFromOutputs(_outputNodes)
+    val baseOrder = GraphTraversal.reverseTopologicalFromOutputs(_outputNodes.map(_.asInstanceOf[Neuron]))
     _reverseOrder = additionalWiring match {
       case Some(wiring) =>
         val context =
           new AdditionalWiring.Context(GraphTraversal.depthGroups(baseOrder), connectNeuronsIfMissing)
         wiring.wire(context)
-        GraphTraversal.reverseTopologicalFromOutputs(_outputNodes)
+        GraphTraversal.reverseTopologicalFromOutputs(_outputNodes.map(_.asInstanceOf[Neuron]))
       case None => baseOrder
     }
-    result
   }
 
   private def buildRootNodes(
@@ -57,14 +56,22 @@ class TensoredContainer(
       buildInWidth: Int,
       buildOutWidth: Int,
       dataCreator: NeuronDataCreator
-  ): Array[Array[Neuron]] = {
-    buildNodesRecurse(
+  ): TensoredContainerInOut = {
+    val receivedResult = buildNodesRecurse(
       buildDimOuter,
       buildInWidth,
       buildOutWidth,
       dataCreator,
       true
     )
+    var result = new TensoredContainerInOut {}
+    result.inputNodes_(
+      receivedResult.inputNodes.map(_.asInstanceOf[InputNeuron])
+    )
+    result.outputNodes_(
+      receivedResult.outputNodes.map(_.asInstanceOf[OutputNeuron])
+    )
+    result
   }
 
   private def buildNodesRecurse(
@@ -73,25 +80,25 @@ class TensoredContainer(
       buildOutWidth: Int,
       dataCreator: NeuronDataCreator,
       inputBackpropagationCreationPossible: Boolean,
-  ): Array[Array[Neuron]] = {
-    var neuronsReturn = Array.ofDim[Neuron](3, 0)
+  ): TensoredContainerInternal = {
+    var neuronsReturn = new TensoredContainerInternal
 
     if (inputBackpropagationCreationPossible) {
         for (i <- 1 to buildInWidth)
-          neuronsReturn(0) = neuronsReturn(0) :+ dataCreator.create(NeuronType.Input, nextNeuronId())
+          neuronsReturn.addInputNode(dataCreator.create(NeuronType.Input, nextNeuronId()).asInstanceOf[InputNeuron])
         for (i <- 1 to buildOutWidth)
-          neuronsReturn(1) = neuronsReturn(1) :+ dataCreator.create(NeuronType.Output, nextNeuronId())
+          neuronsReturn.addOutputNode(dataCreator.create(NeuronType.Output, nextNeuronId()).asInstanceOf[OutputNeuron])
     }
 
-    var bottomNeuronsLastRecur: Array[Neuron] = Array.ofDim[Neuron](0)
+    var bottomNeuronsLastRecur: Array[HiddenNeuron] = Array.ofDim[HiddenNeuron](0)
     var newNeuronsSameRank: Array[Neuron] = Array.ofDim[Neuron](0)
-    var hereNeuronsLastToConnect: Array[Neuron] = Array.ofDim[Neuron](0)
+    var hereNeuronsLastToConnect: Array[HiddenNeuron] = Array.ofDim[HiddenNeuron](0)
     var childNeuronsLastRecur: Array[Neuron] = Array.ofDim[Neuron](0)
 
     for (nextNeuronOuterIndexOffset <- buildDimOuter to -buildDimOuter by -1) {
       if (nextNeuronOuterIndexOffset != 0) {
-        var newNeuronsHere: Array[Neuron] = Array.ofDim[Neuron](0)
-        var bottomNeuronsThisRecur: Array[Neuron] = Array.ofDim[Neuron](0)
+        var newNeuronsHere: Array[HiddenNeuron] = Array.ofDim[HiddenNeuron](0)
+        var bottomNeuronsThisRecur: Array[HiddenNeuron] = Array.ofDim[HiddenNeuron](0)
         var childNeuronsThisRecur: Array[Neuron] = Array.ofDim[Neuron](0)
         var lowerDimNeuronsThisRecur: Array[Neuron] = Array.ofDim[Neuron](0)
 
@@ -114,7 +121,7 @@ class TensoredContainer(
               if (inputBackpropagationCreationPossible && !isReverseNode)
                 NeuronType.HiddenSquare else NeuronType.HiddenLeakyRelu,
               nextNeuronId()
-            )
+            ).asInstanceOf[HiddenNeuron]
           newNeuronsSameRank = newNeuronsSameRank :+ newNeuronSameRank
           newNeuronsHere = newNeuronsHere :+ newNeuronSameRank
         }
@@ -122,7 +129,7 @@ class TensoredContainer(
         // keep this for safety purposes concerning future edits
         if (!isReverseNode)
           if (nextNeuronOuterIndexOffset == buildDimOuter)
-            for (inNeuron <- neuronsReturn(0))
+            for (inNeuron <- neuronsReturn.inputNodes)
               newNeuronsHere.foreach( connectNeurons(inNeuron, _) )
 
         if (buildDimOuter > 1) {
@@ -133,14 +140,14 @@ class TensoredContainer(
             dataCreator,
             false,
           )
-          neuronsReturn(2) = neuronsLowerDim(2)
-          lowerDimNeuronsThisRecur = neuronsLowerDim(0)
+          neuronsReturn.intermediateNodes_(neuronsLowerDim.intermediateNodes)
+          lowerDimNeuronsThisRecur = neuronsLowerDim.inputNodes
 
-          bottomNeuronsThisRecur = neuronsLowerDim(2)
+          bottomNeuronsThisRecur = neuronsLowerDim.intermediateNodes
           if(buildDimOuter > 2) // avoid double connections
-            childNeuronsThisRecur = neuronsLowerDim(0)
+            childNeuronsThisRecur = neuronsLowerDim.inputNodes
 
-          for (neuronLowerDim <- neuronsLowerDim(0))
+          for (neuronLowerDim <- neuronsLowerDim.inputNodes)
             for (newNeuronHere <- newNeuronsHere)
               if (isReverseNode) connectNeurons(neuronLowerDim, newNeuronHere)
               else connectNeurons(newNeuronHere, neuronLowerDim)
@@ -168,12 +175,12 @@ class TensoredContainer(
           }
           childNeuronsLastRecur = childNeuronsThisRecur
         } else {
-          neuronsReturn(2) = neuronsReturn(2) ++ newNeuronsHere
+          neuronsReturn.addIntermediateNodes(newNeuronsHere)
         }
 
         // connect the input layer to each forward group and its child rank.
         if (!isReverseNode)
-          for (inNeuron <- neuronsReturn(0)) {
+          for (inNeuron <- neuronsReturn.inputNodes) {
             for (newNeuronHere <- newNeuronsHere) {
               if(!inNeuron.connectionsOut.exists(connection => connection.neuronTarget == newNeuronHere))  // avoid double connections
                 connectNeurons(inNeuron, newNeuronHere)
@@ -185,7 +192,7 @@ class TensoredContainer(
 
         // connect each reverse group and its child rank directly to the output layer.
         if (isReverseNode)
-          for (outNeuron <- neuronsReturn(1)) {
+          for (outNeuron <- neuronsReturn.outputNodes) {
             newNeuronsHere.foreach( connectNeurons(_, outNeuron))
             lowerDimNeuronsThisRecur.foreach( connectNeurons(_, outNeuron))
           }
@@ -205,7 +212,7 @@ class TensoredContainer(
     }
 
     if (!inputBackpropagationCreationPossible)
-      neuronsReturn(0) = newNeuronsSameRank
+      neuronsReturn.inputNodes_(newNeuronsSameRank)
 
     neuronsReturn
   }
