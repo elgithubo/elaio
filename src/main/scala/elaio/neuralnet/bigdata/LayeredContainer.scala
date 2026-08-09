@@ -47,7 +47,7 @@ final class LayeredContainer(
 
   def init(): Unit = {
     containers.foreach(_.init())
-    shareWeights()
+    shareParameters()
     _inputNodes = containers.toArray.flatMap(_.inputNodes)
     _outputNodes = Array.fill(outWidth)(
       dataCreator.create(NeuronType.Output, ids.nextNeuronId()).asInstanceOf[OutputNeuron]
@@ -61,22 +61,34 @@ final class LayeredContainer(
     _reverseOrder = GraphTraversal.reverseTopologicalFromOutputs(_outputNodes)
   }
 
-  // Every container is built by the same deterministic recursion, so its n-th connection plays the
-  // same role in every one of them. Pointing them all at the first container's cells is therefore
-  // enough - no separate mapping is needed. The read-out is left out on purpose: it is one layer,
-  // not one per token.
-  private def shareWeights(): Unit = {
-    val reference = connectionsOf(containers.head)
+  // Every container is built by the same deterministic recursion, so its n-th connection and its
+  // n-th neuron play the same role in every one of them. Pointing them all at the first container's
+  // cells is therefore enough - no separate mapping is needed.
+  //
+  // Biases have to travel with the weights. Sharing only the weights would leave every token with
+  // its own offset, so the stack would compute f_i(x) = activation(mean(W*x) + b_i) - one linear
+  // part, N different functions. The read-out is left out on purpose: it is one layer, not one
+  // per token.
+  private def shareParameters(): Unit = {
+    val referenceConnections = connectionsOf(containers.head)
+    val referenceNeurons = neuronsOf(containers.head)
     for (container <- containers.tail) {
-      val shared = connectionsOf(container)
-      require(shared.length == reference.length, "stacked containers must be built alike")
-      for ((referenceConnection, sharedConnection) <- reference.zip(shared))
-        sharedConnection.weightCell = referenceConnection.weightCell
+      val sharedConnections = connectionsOf(container)
+      val sharedNeurons = neuronsOf(container)
+      require(sharedConnections.length == referenceConnections.length, "stacked containers must be built alike")
+      require(sharedNeurons.length == referenceNeurons.length, "stacked containers must be built alike")
+      for ((reference, shared) <- referenceConnections.zip(sharedConnections))
+        shared.weightParameter = reference.weightParameter
+      for ((reference, shared) <- referenceNeurons.zip(sharedNeurons))
+        shared.biasParameter = reference.biasParameter
     }
   }
 
   private def connectionsOf(container: TensoredContainer): Vector[Connection] =
     container.reverseOrder.sequence.flatMap(_.connectionsIn).sortBy(_.id)
+
+  private def neuronsOf(container: TensoredContainer): Vector[Neuron] =
+    container.reverseOrder.sequence.sortBy(_.id)
 
   private def connectNeurons(
       connectionNeuronSource: Neuron,
