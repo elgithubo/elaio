@@ -23,7 +23,7 @@ final class PotentialTest(override protected val persistenceAction: Option[Persi
   override protected val trainCount = 300
   override protected val numberOfQuestions = 300
   override protected val epochs = 25000
-  override protected val clipUntilEpoch = clipUntilEpoch
+  override protected val clipUntilEpoch = epochs
   //override protected val learningRate = 0.005d
   //override protected val maxUpdateNorm = 100d
 
