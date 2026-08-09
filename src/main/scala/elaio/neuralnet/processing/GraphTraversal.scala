@@ -1,6 +1,7 @@
 package elaio.neuralnet.processing
 
 import scala.collection.mutable
+import elaio.neuralnet.connections.Weight
 import elaio.neuralnet.units.Neuron
 
 // one layer of the graph: every neuron whose longest path from a source has the same length
@@ -10,7 +11,9 @@ object GraphTraversal {
   final case class ReverseOrder(
       sequence: Vector[Neuron],
       reachable: Set[Neuron],
-      outputs: Set[Neuron]
+      outputs: Set[Neuron],
+      connectionWeights: Vector[Weight],
+      hasSharedConnectionWeights: Boolean
   )
 
   // Layers the reachable neurons by their longest path from a source. Every edge runs from
@@ -42,7 +45,15 @@ object GraphTraversal {
   def reverseTopologicalFromOutputs(outputNodes: Array[? <: Neuron]): ReverseOrder = {
     val outputSet: Set[Neuron] = outputNodes.toSet
     val sequence = computeReverseTopologicalFromOutputs(outputSet)
-    ReverseOrder(sequence, sequence.toSet, outputSet)
+    val allWeights = sequence.iterator.flatMap(_.connectionsIn).map(_.weightCell).toVector
+    val connectionWeights = allWeights.distinct
+    ReverseOrder(
+      sequence,
+      sequence.toSet,
+      outputSet,
+      connectionWeights,
+      connectionWeights.length != allWeights.length
+    )
   }
 
   // correct only for an acyclic graph - recurrent connections would break the order silently

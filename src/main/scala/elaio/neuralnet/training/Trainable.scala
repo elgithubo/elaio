@@ -1,6 +1,7 @@
 package elaio.neuralnet.training
 
 import java.nio.file.Path
+import elaio.neuralnet.attention.AttentionLayer.ForwardPass
 import elaio.neuralnet.attention.DepthAttention
 import elaio.neuralnet.bigdata.NeuronNetwork
 import elaio.neuralnet.persistence.{NetworkStateMapper, PersistenceAction, PersistenceHandler}
@@ -35,10 +36,13 @@ trait Trainable {
   // run the test case
   def run(): Unit
 
-  protected def forwardPass(container: NeuronNetwork): Unit =
+  protected def forwardPass(container: NeuronNetwork): Option[ForwardPass] =
     attention match {
-      case Some(depthAttention) => depthAttention.refine(container.reverseOrder, () => plainForwardPass(container))
-      case None                 => plainForwardPass(container)
+      case Some(depthAttention) =>
+        Some(depthAttention.refine(container.reverseOrder, () => plainForwardPass(container)))
+      case None =>
+        plainForwardPass(container)
+        None
     }
 
   private def plainForwardPass(container: NeuronNetwork): Unit = {
@@ -134,10 +138,11 @@ trait Trainable {
       for ((inputValues, targetValues) <- random.shuffle(trainingExamples)) {
         initInputs(container, inputValues)
         initTargets(container, targetValues)
-        forwardPass(container)
+        val attentionPass = forwardPass(container)
         totalError = totalError + squaredError(container)
         Backpropagation.run(container.reverseOrder, learningRate, updateNorm)
-        for (depthAttention <- attention) depthAttention.applyGradients(learningRate, updateNorm)
+        for (depthAttention <- attention; pass <- attentionPass)
+          depthAttention.applyGradients(pass, learningRate, updateNorm)
       }
       if (epoch == 1 || epoch % 100 == 0 || epoch == epochs)
         NetTrace.WriteMessage("epoch " + epoch + ": total squared error = " + totalError, 1)

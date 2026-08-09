@@ -43,6 +43,12 @@ object NetworkStateMapper {
     val neuronsById = neurons.map(neuron => neuron.id -> neuron).toMap
     val connectionsById = connections.map(connection => connection.id -> connection).toMap
 
+    require(stateContainer.neuronStore.keySet == neuronsById.keySet, "Persisted neuron IDs do not match the current network")
+    require(
+      stateContainer.connectionStore.keySet == connectionsById.keySet,
+      "Persisted connection IDs do not match the current network"
+    )
+
     for ((id, data) <- stateContainer.connectionStore) {
       require(data.id == id, s"Connection store key $id does not match contained ID ${data.id}") //you never know
       require(java.lang.Double.isFinite(data.weight), s"Persisted connection $id has a non-finite weight")

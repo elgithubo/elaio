@@ -13,22 +13,21 @@ final class DepthAttention(boundOrder: ReverseOrder, contextScale: Double = 0.1d
   require(groups.nonEmpty, "depth attention needs at least one group")
 
   private val layer = new AttentionLayer(groups.map(_.neurons.length).max)
-  private var pass: ForwardPass = null
 
   // one plain pass to read from, then one more with the attention context in place
-  def refine(currentOrder: ReverseOrder, forward: () => Unit): Unit = {
+  def refine(currentOrder: ReverseOrder, forward: () => Unit): ForwardPass = {
     require(currentOrder eq boundOrder, "depth attention belongs to a different graph")
     clearContexts()
     forward()
-    pass = layer.forward(groupValues())
+    val pass = layer.forward(groupValues())
     applyContexts(pass)
     try forward()
     finally clearContexts()
+    pass
   }
 
   // The gradient into the first graph pass is intentionally truncated for now.
-  def applyGradients(learningRate: Double, maxGradientNorm: Double): Unit = {
-    require(pass != null, "refine has to run before its gradients are applied")
+  def applyGradients(pass: ForwardPass, learningRate: Double, maxGradientNorm: Double): Unit = {
     // delta is -dL/dz and the context is added to z, so the loss gradient carries the minus
     val outputGradients = Array.ofDim[Double](groups.length, layer.groupWidth)
     for {

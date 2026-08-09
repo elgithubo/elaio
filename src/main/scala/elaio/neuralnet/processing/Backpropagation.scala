@@ -31,29 +31,55 @@ object Backpropagation {
           else sum
         } * neuron.activationDerivative(neuron.preActivation) // outgoing sum * activation derivative
 
-    val scale =
-      if (maxUpdateNorm.isPosInfinity) 1d
-      else {
-        var sumSquares = 0d
-        for (neuron <- order.sequence.reverseIterator) {
-          val fanIn = neuron.connectionsIn.length
-          for (connectionIn <- neuron.connectionsIn) {
-            val gradient = neuron.delta * connectionIn.neuronSource.value / fanIn
-            sumSquares += gradient * gradient
-          }
-          if (fanIn > 0) sumSquares += neuron.delta * neuron.delta
-        }
-        val norm = math.sqrt(sumSquares)
-        if (norm > maxUpdateNorm) maxUpdateNorm / norm else 1d
+    if (order.hasSharedConnectionWeights) {
+      // Connections can share one weight, so their gradients form one parameter gradient.
+      order.connectionWeights.foreach(_.accumulatedGradient = 0d)
+      var biasGradientSquares = 0d
+      for (neuron <- order.sequence.reverseIterator) {
+        val fanIn = neuron.connectionsIn.length
+        for (connectionIn <- neuron.connectionsIn)
+          connectionIn.weightCell.accumulatedGradient +=
+            neuron.delta * connectionIn.neuronSource.value / fanIn
+        if (fanIn > 0) biasGradientSquares += neuron.delta * neuron.delta
       }
 
-    for (neuron <- order.sequence.reverseIterator) {
-      val fanIn = neuron.connectionsIn.length
-      for (connectionIn <- neuron.connectionsIn)
-        connectionIn.weight =
-          connectionIn.weight + learningRate * scale * neuron.delta * connectionIn.neuronSource.value / fanIn
-      if (fanIn > 0) // skip input neurons
-        neuron.bias = neuron.bias + learningRate * scale * neuron.delta
+      val weightGradientSquares =
+        order.connectionWeights.iterator.map(weight => weight.accumulatedGradient * weight.accumulatedGradient).sum
+      val norm = math.sqrt(weightGradientSquares + biasGradientSquares)
+      val scale = if (norm > maxUpdateNorm) maxUpdateNorm / norm else 1d
+
+      for (weight <- order.connectionWeights) {
+        weight.value += learningRate * scale * weight.accumulatedGradient
+        weight.accumulatedGradient = 0d
+      }
+      for (neuron <- order.sequence.reverseIterator)
+        if (neuron.connectionsIn.nonEmpty) // skip input neurons
+          neuron.bias += learningRate * scale * neuron.delta
+    } else {
+      val scale =
+        if (maxUpdateNorm.isPosInfinity) 1d
+        else {
+          var sumSquares = 0d
+          for (neuron <- order.sequence.reverseIterator) {
+            val fanIn = neuron.connectionsIn.length
+            for (connectionIn <- neuron.connectionsIn) {
+              val gradient = neuron.delta * connectionIn.neuronSource.value / fanIn
+              sumSquares += gradient * gradient
+            }
+            if (fanIn > 0) sumSquares += neuron.delta * neuron.delta
+          }
+          val norm = math.sqrt(sumSquares)
+          if (norm > maxUpdateNorm) maxUpdateNorm / norm else 1d
+        }
+
+      for (neuron <- order.sequence.reverseIterator) {
+        val fanIn = neuron.connectionsIn.length
+        for (connectionIn <- neuron.connectionsIn)
+          connectionIn.weight +=
+            learningRate * scale * neuron.delta * connectionIn.neuronSource.value / fanIn
+        if (fanIn > 0) // skip input neurons
+          neuron.bias += learningRate * scale * neuron.delta
+      }
     }
   }
 }
