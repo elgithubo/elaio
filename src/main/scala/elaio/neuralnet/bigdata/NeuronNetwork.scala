@@ -1,7 +1,7 @@
 package elaio.neuralnet.bigdata
 
 import elaio.neuralnet.TokenMatrix
-import elaio.neuralnet.processing.GraphTraversal
+import elaio.neuralnet.processing.{GraphTraversal, NeuronCollectionCache}
 import elaio.neuralnet.units.{InputNeuron, OutputNeuron}
 
 // What training needs from a built network, regardless of what built it.
@@ -14,4 +14,10 @@ trait NeuronNetwork {
   // token rows are resolved here and nowhere else - a single container joins them, a stack hands
   // one row to each of its containers.
   def initInputs(tokens: TokenMatrix): Unit
+
+  // one full forward pass - overridden where independent parts of the graph can run concurrently
+  def forward(cache: NeuronCollectionCache): Unit = {
+    cache.clear()
+    for (outputNode <- outputNodes) outputNode.collectInConnections(cache)
+  }
 }

@@ -1,8 +1,11 @@
 package elaio.neuralnet.bigdata
 
+import scala.concurrent.{Await, Future}
+import scala.concurrent.duration.Duration
+import scala.concurrent.ExecutionContext.Implicits.global
 import elaio.neuralnet.TokenMatrix
 import elaio.neuralnet.connections.Connection
-import elaio.neuralnet.processing.GraphTraversal
+import elaio.neuralnet.processing.{GraphTraversal, NeuronCollectionCache}
 import elaio.neuralnet.units.{InputNeuron, Neuron, NeuronDataCreator, NeuronType, OutputNeuron}
 
 // The token matrix, materialised. One container per row, all built alike and all sharing their
@@ -45,6 +48,27 @@ final class LayeredContainer(
     else throw new IllegalStateException("container has not been initialized")
 
   def tokenContainers: Vector[TensoredContainer] = containers
+
+  // one cache per token container, each confined to the task that runs its container
+  private val tokenCaches = containers.map(_ => new NeuronCollectionCache)
+
+  // The token containers share no neurons and only read the shared weights during a forward pass,
+  // so they run concurrently. The read-out then collects from a cache seeded with the finished
+  // token outputs, so it never descends into the token graphs again.
+  override def forward(cache: NeuronCollectionCache): Unit =
+    if (containers.length == 1) super.forward(cache)
+    else {
+      val passes = containers.zip(tokenCaches).map { (container, tokenCache) =>
+        Future {
+          tokenCache.clear()
+          for (outputNode <- container.outputNodes) outputNode.collectInConnections(tokenCache)
+        }
+      }
+      passes.foreach(Await.result(_, Duration.Inf))
+      cache.clear()
+      for (container <- containers; tokenOutput <- container.outputNodes) cache.add(tokenOutput)
+      for (outputNode <- _outputNodes) outputNode.collectInConnections(cache)
+    }
 
   // each token goes to its own container, addressed directly rather than through the joined
   // inputNodes - that keeps the token layout an enforced contract instead of a shared assumption

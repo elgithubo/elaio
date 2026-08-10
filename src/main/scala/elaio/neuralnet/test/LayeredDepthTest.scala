@@ -9,7 +9,7 @@ import elaio.neuralnet.trace.NetTrace
 final class LayeredDepthTest(override protected val persistenceAction: Option[PersistenceAction] = None)
     extends AttentionTokenTest(persistenceAction) {
   override protected val layeredTokens = true
-
+  override protected val dimOuter = 5
   override protected def traceAction(): Unit =
     NetTrace.WriteMessage("testing: attention with a token matrix over layered tensored containers")
 }

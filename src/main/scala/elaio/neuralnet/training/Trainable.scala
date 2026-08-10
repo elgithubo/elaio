@@ -47,10 +47,8 @@ trait Trainable {
         None
     }
 
-  private def plainForwardPass(container: NeuronNetwork): Unit = {
-    neuronCollectionCache.clear()
-    for (outputNode <- container.outputNodes) outputNode.collectInConnections(neuronCollectionCache)
-  }
+  private def plainForwardPass(container: NeuronNetwork): Unit =
+    container.forward(neuronCollectionCache)
 
   protected final def processTokens(
       container: NeuronNetwork,
