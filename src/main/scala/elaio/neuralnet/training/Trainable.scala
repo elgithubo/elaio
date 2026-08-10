@@ -74,6 +74,9 @@ trait Trainable {
       trainingData: => (Array[Array[Double]], Array[Array[Double]])
   ): Unit = {
     require(attention.isEmpty || persistenceAction.isEmpty, "attention persistence is not supported yet")
+    NetTrace.WriteMessage("")
+    traceAction()
+    NetTrace.WriteMessage("")
     persistenceAction match {
       case Some(PersistenceAction.Load(file)) =>
         load(container, file)
@@ -86,8 +89,6 @@ trait Trainable {
         val (trainInputs, trainOutputs) = trainingData
         NetTrace.WriteMessage("training on " + trainInputs.length + " examples over " + epochs + " epochs with learning rate " + learningRate)
         NetTrace.WriteMessage("gradient clipping at " + maxUpdateNorm + " for the first " + clipUntilEpoch + " epochs")
-        NetTrace.WriteMessage("")
-        traceAction()
         NetTrace.WriteMessage("")
         train(container, trainInputs, trainOutputs)
 
