@@ -1,6 +1,7 @@
 package elaio.neuralnet.test
 
 import elaio.neuralnet.persistence.PersistenceAction
+import elaio.neuralnet.trace.NetTrace
 
 // Learns to retrieve the random value associated with a queried key.
 //
@@ -53,6 +54,9 @@ class AttentionTokenTest(override protected val persistenceAction: Option[Persis
 
   private def keyOf(token: Array[Double]): Int =
     (0 until keyCount).maxBy(index => token(index + 1))
+
+  override protected def traceAction(): Unit =
+    NetTrace.WriteMessage("testing: attention with a token matrix")
 
   override protected def randomTokens(random: scala.util.Random): TokenMatrix =
     tokensFor(random, random.nextInt(keyCount))

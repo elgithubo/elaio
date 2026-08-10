@@ -1,6 +1,7 @@
 package elaio.neuralnet.test
 
 import elaio.neuralnet.persistence.PersistenceAction
+import elaio.neuralnet.trace.NetTrace
 
 final class PotentialTest(override protected val persistenceAction: Option[PersistenceAction] = None)
     extends MathTest {
@@ -30,4 +31,7 @@ final class PotentialTest(override protected val persistenceAction: Option[Persi
   override protected val tokenFactor = 1000d
 
   protected def targetOf(tokens: TokenMatrix): Array[Double] = tokens.flatten.map(value => value * value)
+
+  override protected def traceAction(): Unit =
+    NetTrace.WriteMessage("testing: x * x")
 }

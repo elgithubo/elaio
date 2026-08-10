@@ -1,6 +1,7 @@
 package elaio.neuralnet.test
 
 import elaio.neuralnet.persistence.PersistenceAction
+import elaio.neuralnet.trace.NetTrace
 
 // One opcode selects the operation applied to four independent input values.
 class CalculatorTest(override protected val persistenceAction: Option[PersistenceAction] = None)
@@ -36,6 +37,9 @@ class CalculatorTest(override protected val persistenceAction: Option[Persistenc
 
   private def randomValues(random: scala.util.Random): Array[Double] =
     Array.fill(outWidth)(randomValue(random))
+
+  override protected def traceAction(): Unit =
+    NetTrace.WriteMessage("testing: calculator for: x + 23, x - 13, x * 3, x / 5")
 
   override protected def describeInput(tokens: TokenMatrix): String =
     tokens.head.drop(1).map(value => f"$value%.3f").mkString(" | ") +

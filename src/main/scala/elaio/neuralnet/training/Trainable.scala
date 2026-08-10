@@ -36,6 +36,9 @@ trait Trainable {
   // run the test case
   def run(): Unit
 
+  protected def traceAction(): Unit =
+    NetTrace.WriteMessage("no further trace action defined - adjust test class to override this message")
+
   protected def forwardPass(container: NeuronNetwork): Option[ForwardPass] =
     attention match {
       case Some(depthAttention) =>
@@ -83,6 +86,8 @@ trait Trainable {
         val (trainInputs, trainOutputs) = trainingData
         NetTrace.WriteMessage("training on " + trainInputs.length + " examples over " + epochs + " epochs with learning rate " + learningRate)
         NetTrace.WriteMessage("gradient clipping at " + maxUpdateNorm + " for the first " + clipUntilEpoch + " epochs")
+        NetTrace.WriteMessage("")
+        traceAction()
         NetTrace.WriteMessage("")
         train(container, trainInputs, trainOutputs)
 
