@@ -29,7 +29,10 @@ class TensoredContainer(
   // the built graph layered by depth - callers keep the result, it is recomputed on every call
   def depthGroups: Vector[NeuronGroup] = GraphTraversal.depthGroups(reverseOrder)
 
-  // one flat input row, so the token rows are read end to end
+  // One flat input row, so the token rows are read end to end. Only the total is checked, not how
+  // the values are split into rows - a single container has no token structure to violate. That
+  // makes it laxer than LayeredContainer on purpose: a wrong token width fails there and passes
+  // here, so a shape error only surfaces once the same test runs on a stack.
   def initInputs(tokens: TokenMatrix): Unit = {
     require(
       tokens.iterator.map(_.length).sum == _inputNodes.length,
