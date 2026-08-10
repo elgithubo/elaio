@@ -14,5 +14,5 @@ final class DivisionTest(override protected val persistenceAction: Option[Persis
   protected def targetOf(tokens: TokenMatrix): Array[Double] = tokens.flatten.map(value => value / 5)
 
   override protected def traceAction(): Unit =
-    NetTrace.WriteMessage("testing: x => x/5")
+    NetTrace.WriteMessage("testing: x / 5")
 }
