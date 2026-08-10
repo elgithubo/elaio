@@ -1,5 +1,6 @@
 package elaio.neuralnet.test
 
+import elaio.neuralnet.TokenMatrix
 import elaio.neuralnet.attention.DepthAttention
 import elaio.neuralnet.bigdata.{LayeredContainer, NeuronNetwork, TensoredContainer}
 import elaio.neuralnet.trace.NetTrace
@@ -91,7 +92,7 @@ trait MathTest extends Trainable {
     checkTokens(random).foreach(checkToken =>
       NetTrace.WriteMessage("")
       NetTrace.WriteMessage("checking an unseen input: " + describeInput(checkToken))
-      initInputs(container, checkToken.flatten)
+      container.initInputs(checkToken)
       // one forward pass with the test values
       forwardPass(container)
       val receivedResult: Array[Double] = container.outputNodes.map(_.value)
@@ -117,12 +118,6 @@ trait MathTest extends Trainable {
       if (attentionEnabled) attention = Some(new DepthAttention(single.reverseOrder))
       single
     }
-
-  protected def initInputs(container: NeuronNetwork, inputValues: Array[Double]): Unit = {
-    require(inputValues.length == inWidth, "expected " + inWidth + " inputs but got " + inputValues.length)
-    for (index <- inputValues.indices)
-      container.inputNodes(index).initInput(inputValues(index))
-  }
 
   protected def initTargets(container: NeuronNetwork, targetValues: Array[Double]): Unit = {
     require(targetValues.length == outWidth, "expected " + outWidth + " targets but got " + targetValues.length)

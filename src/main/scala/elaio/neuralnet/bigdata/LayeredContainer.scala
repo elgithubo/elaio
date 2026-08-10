@@ -1,5 +1,6 @@
 package elaio.neuralnet.bigdata
 
+import elaio.neuralnet.TokenMatrix
 import elaio.neuralnet.connections.Connection
 import elaio.neuralnet.processing.GraphTraversal
 import elaio.neuralnet.units.{InputNeuron, Neuron, NeuronDataCreator, NeuronType, OutputNeuron}
@@ -36,7 +37,7 @@ final class LayeredContainer(
   private var _outputNodes = Array.ofDim[OutputNeuron](0)
   private var _reverseOrder: GraphTraversal.ReverseOrder = null
 
-  // the token inputs end to end, so a flattened token matrix lands in the right places
+  // the token inputs end to end - a convenience view; initInputs addresses the containers directly
   def inputNodes: Array[InputNeuron] = _inputNodes
   def outputNodes: Array[OutputNeuron] = _outputNodes
   def reverseOrder: GraphTraversal.ReverseOrder =
@@ -44,6 +45,18 @@ final class LayeredContainer(
     else throw new IllegalStateException("container has not been initialized")
 
   def tokenContainers: Vector[TensoredContainer] = containers
+
+  // each token goes to its own container, addressed directly rather than through the joined
+  // inputNodes - that keeps the token layout an enforced contract instead of a shared assumption
+  def initInputs(tokens: TokenMatrix): Unit = {
+    require(tokens.length == containers.length, "expected " + containers.length + " tokens but got " + tokens.length)
+    for (tokenIndex <- tokens.indices) {
+      val values = tokens(tokenIndex)
+      val nodes = containers(tokenIndex).inputNodes
+      require(values.length == nodes.length, "token " + tokenIndex + " needs " + nodes.length + " values")
+      for (index <- values.indices) nodes(index).initInput(values(index))
+    }
+  }
 
   def init(): Unit = {
     containers.foreach(_.init())

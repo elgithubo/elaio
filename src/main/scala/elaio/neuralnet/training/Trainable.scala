@@ -3,6 +3,7 @@ package elaio.neuralnet.training
 import java.nio.file.Path
 import elaio.neuralnet.attention.AttentionLayer.ForwardPass
 import elaio.neuralnet.attention.DepthAttention
+import elaio.neuralnet.TokenMatrix
 import elaio.neuralnet.bigdata.NeuronNetwork
 import elaio.neuralnet.persistence.{NetworkStateMapper, PersistenceAction, PersistenceHandler}
 import elaio.neuralnet.processing.NeuronCollectionCache
@@ -22,8 +23,6 @@ trait Trainable {
   // Set to epochs to clip throughout, or to 0 to disable gradient clipping entirely.
   protected val clipUntilEpoch: Int
 
-  // ask the net a question
-  protected def initInputs(container: NeuronNetwork, inputValues: Array[Double]): Unit
   // tell the net the wanted answer - only backpropagation reads this, never a forward pass
   protected def initTargets(container: NeuronNetwork, targetValues: Array[Double]): Unit
 
@@ -53,25 +52,10 @@ trait Trainable {
     for (outputNode <- container.outputNodes) outputNode.collectInConnections(neuronCollectionCache)
   }
 
-  // the net reads one flat vector per example, so the token rows are joined here and nowhere else
   protected final def processTokens(
       container: NeuronNetwork,
       persistenceAction: Option[PersistenceAction],
-      trainingData: => (Array[Array[Array[Double]]], Array[Array[Double]])
-  ): Unit =
-    process(
-      container,
-      persistenceAction, {
-        val (tokensDataSet, resultsDataSet) = trainingData
-        require(tokensDataSet.length == resultsDataSet.length, "each tokenized example needs a result")
-        (tokensDataSet.map(_.flatten), resultsDataSet)
-      }
-    )
-
-  private def process(
-      container: NeuronNetwork,
-      persistenceAction: Option[PersistenceAction],
-      trainingData: => (Array[Array[Double]], Array[Array[Double]])
+      trainingData: => (Array[TokenMatrix], Array[Array[Double]])
   ): Unit = {
     require(attention.isEmpty || persistenceAction.isEmpty, "attention persistence is not supported yet")
     NetTrace.WriteMessage("")
@@ -86,11 +70,12 @@ trait Trainable {
         val weightCount = WeightInitializer.initialize(container.reverseOrder)
         NetTrace.WriteMessage("connection weights initialized: " + weightCount)
 
-        val (trainInputs, trainOutputs) = trainingData
-        NetTrace.WriteMessage("training on " + trainInputs.length + " examples over " + epochs + " epochs with learning rate " + learningRate)
+        val (trainTokens, trainOutputs) = trainingData
+        require(trainTokens.length == trainOutputs.length, "each tokenized example needs a result")
+        NetTrace.WriteMessage("training on " + trainTokens.length + " examples over " + epochs + " epochs with learning rate " + learningRate)
         NetTrace.WriteMessage("gradient clipping at " + maxUpdateNorm + " for the first " + clipUntilEpoch + " epochs")
         NetTrace.WriteMessage("")
-        train(container, trainInputs, trainOutputs)
+        train(container, trainTokens, trainOutputs)
 
         persistenceAction match {
           case Some(PersistenceAction.Save(file)) => save(container, file)
@@ -129,20 +114,20 @@ trait Trainable {
   // execute the actual training, which is a forward pass followed by backpropagation for each example, repeated for the number of epochs.
   private def train(
       container: NeuronNetwork,
-      trainInputs: Array[Array[Double]],
+      trainTokens: Array[TokenMatrix],
       trainOutputs: Array[Array[Double]]
   ): Unit = {
-    require(trainInputs.length == trainOutputs.length, "need one output for every input")
+    require(trainTokens.length == trainOutputs.length, "need one output for every input")
 
-    val trainingExamples = trainInputs.zip(trainOutputs).toSeq
+    val trainingExamples = trainTokens.zip(trainOutputs).toSeq
     for (epoch <- 1 to epochs) {
       // the cap is only in force while the run is still fragile
       val updateNorm = if (epoch <= clipUntilEpoch) maxUpdateNorm else Double.PositiveInfinity
       var totalError = 0d
 
       // shuffled so the updates do not settle into a fixed cycle
-      for ((inputValues, targetValues) <- random.shuffle(trainingExamples)) {
-        initInputs(container, inputValues)
+      for ((tokens, targetValues) <- random.shuffle(trainingExamples)) {
+        container.initInputs(tokens)
         initTargets(container, targetValues)
         val attentionPass = forwardPass(container)
         totalError = totalError + squaredError(container)

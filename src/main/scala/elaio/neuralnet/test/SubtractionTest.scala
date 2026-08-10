@@ -1,5 +1,6 @@
 package elaio.neuralnet.test
 
+import elaio.neuralnet.TokenMatrix
 import elaio.neuralnet.persistence.PersistenceAction
 import elaio.neuralnet.trace.NetTrace
 

@@ -1,5 +1,6 @@
 package elaio.neuralnet.bigdata
 
+import elaio.neuralnet.TokenMatrix
 import elaio.neuralnet.connections.Connection
 import elaio.neuralnet.processing.{GraphTraversal, NeuronGroup}
 //import elaio.neuralnet.trace.NetTrace
@@ -27,6 +28,19 @@ class TensoredContainer(
     if( _reverseOrder != null) _reverseOrder else throw new IllegalStateException("container has not been initialized")
   // the built graph layered by depth - callers keep the result, it is recomputed on every call
   def depthGroups: Vector[NeuronGroup] = GraphTraversal.depthGroups(reverseOrder)
+
+  // one flat input row, so the token rows are read end to end
+  def initInputs(tokens: TokenMatrix): Unit = {
+    require(
+      tokens.iterator.map(_.length).sum == _inputNodes.length,
+      "expected " + _inputNodes.length + " input values but got " + tokens.iterator.map(_.length).sum
+    )
+    var index = 0
+    for (token <- tokens; value <- token) {
+      _inputNodes(index).initInput(value)
+      index = index + 1
+    }
+  }
 
   def init(): Unit = {
     val result = buildRootNodes(
