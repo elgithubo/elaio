@@ -10,9 +10,9 @@ import elaio.neuralnet.trace.NetTrace
 // Each example contains four tokens with five values each:
 // Token layout: [query marker, one-hot key A/B/C, value]; the target is the queried value.
 // query marker is 0 or one depending on whether it is teaching or asking.
-// [0, 1, 0, 0,  0.42]  |  A → 0.42
+// [0, 1, 0, 0,  0.42]  |  A →  0.42
 // [0, 0, 0, 1, -0.70]  |  C → -0.70
-// [0, 0, 1, 0,  0.15]  |  B → 0.15
+// [0, 0, 1, 0,  0.15]  |  B →  0.15
 // [1, 0, 0, 1,  0.00]  |  query C
 // => target: [-0.70]
 class AttentionTokenTest(override protected val persistenceAction: Option[PersistenceAction] = None)
@@ -34,7 +34,7 @@ class AttentionTokenTest(override protected val persistenceAction: Option[Persis
   override protected val epochs = 20000
   override protected val clipUntilEpoch = 0
   override protected val learningRate = 0.005d
-  override protected val maxUpdateNorm = 10d
+  override protected val maxUpdateNorm = 10d // only operative when clipUntilEpoch > 0
   override protected val tolerance = 0.1d
 
   private def keyVector(key: Int): Array[Double] =

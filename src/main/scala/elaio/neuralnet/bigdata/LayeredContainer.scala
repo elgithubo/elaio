@@ -51,9 +51,12 @@ final class LayeredContainer(
   def initInputs(tokens: TokenMatrix): Unit = {
     require(tokens.length == containers.length, "expected " + containers.length + " tokens but got " + tokens.length)
     for (tokenIndex <- tokens.indices) {
+      val expectedWidth = containers(tokenIndex).inputNodes.length
+      require(tokens(tokenIndex).length == expectedWidth, "token " + tokenIndex + " needs " + expectedWidth + " values")
+    }
+    for (tokenIndex <- tokens.indices) {
       val values = tokens(tokenIndex)
       val nodes = containers(tokenIndex).inputNodes
-      require(values.length == nodes.length, "token " + tokenIndex + " needs " + nodes.length + " values")
       for (index <- values.indices) nodes(index).initInput(values(index))
     }
   }

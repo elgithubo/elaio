@@ -31,7 +31,10 @@ trait MathTest extends Trainable {
   // whole input; a task with real token structure overrides tokenWidth. Both are defs, because
   // a val here would read inWidth before an overriding subclass has assigned it.
   protected def tokenWidth: Int = inWidth
-  protected final def tokenCount: Int = inWidth / tokenWidth
+  protected final def tokenCount: Int = {
+    require(tokenWidth > 0 && inWidth % tokenWidth == 0, "input width must be divisible by a positive token width")
+    inWidth / tokenWidth
+  }
 
   protected val tokenFactor = 1d
 
