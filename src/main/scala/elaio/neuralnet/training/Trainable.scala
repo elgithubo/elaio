@@ -115,16 +115,10 @@ trait Trainable {
     require(trainTokens.length == trainOutputs.length, "need one output for every input")
 
     val trainingExamples = trainTokens.zip(trainOutputs).toSeq
-    // Raw gradient norms say whether each independently applied cap binds or is just armed.
-    val graphGradientNorms = Array.ofDim[Double](trainingExamples.length)
-    val attentionGradientNorms = Array.fill(trainingExamples.length)(Double.NaN)
     for (epoch <- 1 to epochs) {
       // the cap is only in force while the run is still fragile
       val updateNorm = if (epoch <= clipUntilEpoch) maxUpdateNorm else Double.PositiveInfinity
       var totalError = 0d
-      var exampleIndex = 0
-      var graphClippedCount = 0
-      var attentionClippedCount = 0
 
       // shuffled so the updates do not settle into a fixed cycle
       for ((tokens, targetValues) <- random.shuffle(trainingExamples)) {
@@ -132,53 +126,14 @@ trait Trainable {
         initTargets(container, targetValues)
         val attentionPass = forwardPass(container)
         totalError = totalError + squaredError(container)
-        val graphRawNorm = Backpropagation.run(container.reverseOrder, learningRate, updateNorm)
-        graphGradientNorms(exampleIndex) = graphRawNorm
-        if (graphRawNorm > updateNorm) graphClippedCount += 1
-        for (depthAttention <- attention; pass <- attentionPass) {
-          val attentionRawNorm = depthAttention.applyGradients(pass, learningRate, updateNorm)
-          attentionGradientNorms(exampleIndex) = attentionRawNorm
-          if (attentionRawNorm > updateNorm) attentionClippedCount += 1
-        }
-        exampleIndex += 1
+        Backpropagation.run(container.reverseOrder, learningRate, updateNorm)
+        for (depthAttention <- attention; pass <- attentionPass)
+          depthAttention.applyGradients(pass, learningRate, updateNorm)
       }
-      if (epoch == 1 || epoch % 100 == 0 || epoch == epochs) {
+      if (epoch == 1 || epoch % 100 == 0 || epoch == epochs)
         NetTrace.WriteMessage("epoch " + epoch + ": total squared error = " + totalError, 1)
-        reportGradientNorms("graph", graphGradientNorms, graphClippedCount, updateNorm)
-        if (attention.nonEmpty)
-          reportGradientNorms("attention", attentionGradientNorms, attentionClippedCount, updateNorm)
-      }
       if (epoch == clipUntilEpoch && epoch < epochs)
         NetTrace.WriteMessage("update cap released after epoch " + epoch, 1)
     }
-  }
-
-  // How hard one parameter group's cap bit this epoch. Graph and attention are reported separately
-  // because each is independently clipped and updated.
-  private def reportGradientNorms(
-      label: String,
-      gradientNorms: Array[Double],
-      clippedCount: Int,
-      cap: Double
-  ): Unit = {
-    val median = medianOf(gradientNorms)
-    // A shared-parameter graph and attention measure the norm even with the cap off.
-    if (median.isNaN) ()
-    else if (cap.isPosInfinity)
-      NetTrace.WriteMessage(f"$label: no gradient cap - median raw norm $median%.1f", 2)
-    else
-      NetTrace.WriteMessage(
-        f"$label gradient cap bound on $clippedCount of ${gradientNorms.length} updates" +
-          f" - cap $cap%.1f, median raw norm $median%.1f, clipped step ${learningRate * cap}%.4f",
-        2
-      )
-  }
-
-  // NaN marks an update whose length was never computed, which is every update once the cap is off
-  private def medianOf(values: Array[Double]): Double = {
-    val measured = values.filterNot(_.isNaN).sorted
-    if (measured.isEmpty) Double.NaN
-    else if (measured.length % 2 == 1) measured(measured.length / 2)
-    else (measured(measured.length / 2 - 1) + measured(measured.length / 2)) / 2d
   }
 }

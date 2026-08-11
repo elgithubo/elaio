@@ -98,7 +98,7 @@ final class AttentionLayer(val groupWidth: Int, random: Random = new Random) {
       gradients: Gradients,
       learningRate: Double,
       maxGradientNorm: Double = Double.PositiveInfinity
-  ): Double = {
+  ): Unit = {
     require(learningRate > 0d && learningRate.isFinite, "learning rate must be positive and finite")
     require(maxGradientNorm > 0d, "maximum gradient norm must be positive")
     requireProjection(gradients.queryProjection, "query projection gradients")
@@ -116,7 +116,6 @@ final class AttentionLayer(val groupWidth: Int, random: Random = new Random) {
     update(queryProjection, gradients.queryProjection, learningRate * scale)
     update(keyProjection, gradients.keyProjection, learningRate * scale)
     update(valueProjection, gradients.valueProjection, learningRate * scale)
-    norm
   }
 
   def queryProjectionWeights: Array[Array[Double]] = copyMatrix(queryProjection)

@@ -18,8 +18,6 @@ class TensoredContainer(
     intermediateOutputs: Boolean = false
 ) extends NeuronNetwork(ids) {
 
-  private val _intermediateOutputs: Boolean = intermediateOutputs
-
   private var _inputNodes = Array.ofDim[InputNeuron](0)
   private var _outputNodes = Array.ofDim[OutputNeuron](0)
   private var _reverseOrder: GraphTraversal.ReverseOrder = null
@@ -98,7 +96,7 @@ class TensoredContainer(
           neuronsReturn.addInputNode(dataCreator.create(NeuronType.Input, ids.nextNeuronId()).asInstanceOf[InputNeuron])
         for (i <- 1 to buildOutWidth)
           neuronsReturn.addOutputNode(
-            if (!_intermediateOutputs)
+            if (!intermediateOutputs)
               dataCreator.create(NeuronType.Output, ids.nextNeuronId()).asInstanceOf[OutputNeuron]
             else
               dataCreator.create(NeuronType.IntermediateOutput, ids.nextNeuronId()).asInstanceOf[IntermediateOutputNeuron]

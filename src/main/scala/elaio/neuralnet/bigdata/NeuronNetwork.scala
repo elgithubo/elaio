@@ -5,7 +5,7 @@ import elaio.neuralnet.connections.Connection
 import elaio.neuralnet.processing.{GraphTraversal, NeuronCollectionCache}
 import elaio.neuralnet.units.{InputNeuron, Neuron, OutputNeuron}
 
-// What training needs from a built network, regardless of what built it.
+// the basis structure of a neural network, which is a directed graph of neurons and connections
 trait NeuronNetwork(ids: IdAllocator) {
   // one allocator for the whole stack - the collection cache and the model files key on the neuron
   // id, so two neurons of one graph carrying the same id would be confused for each other
