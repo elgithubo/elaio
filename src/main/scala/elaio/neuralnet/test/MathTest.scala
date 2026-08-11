@@ -16,15 +16,13 @@ trait MathTest extends Trainable {
 
   protected val dimOuter = 2
   protected val inWidth = 5
-  protected val outWidth = 5
   protected val inputMinimum = -1000d
   protected val inputMaximum = 1000d
   protected val trainCount = 250
   protected val numberOfQuestions = 5
   protected val attentionEnabled = false
-  // build one container per token, instead of one container carrying the whole input
-  protected val layeredTokens = false
-  // how wide one token's representation is where the read-out picks it up - layered builds only
+
+  // how wide one token's representation is where the read-out picks it up
   protected def tokenOutWidth: Int = tokenWidth
 
   // An example is tokenCount rows of tokenWidth values. By default a single token carries the
@@ -67,10 +65,8 @@ trait MathTest extends Trainable {
     NetTrace.WriteMessage("")
     NetTrace.WriteMessage("build dimension: " + dimOuter)
     NetTrace.WriteMessage("input width: " + inWidth + " (" + tokenCount + " tokens of " + tokenWidth + ")")
-    NetTrace.WriteMessage("output width: " + outWidth)
-    NetTrace.WriteMessage(
-      "containers: " + (if (layeredTokens) s"$tokenCount stacked, one per token" else "one carrying the whole input")
-    )
+    NetTrace.WriteMessage("output width: " + tokenOutWidth)
+    NetTrace.WriteMessage( s"containers: $tokenCount stacked, one per token" )
     NetTrace.WriteMessage("attention across depths: " + attentionEnabled)
 
     val random = new scala.util.Random
@@ -113,11 +109,7 @@ trait MathTest extends Trainable {
   // without a read-out rank, so it is the same graph a bare TensoredContainer builds - which is why
   // both cases can go through the same class.
   private def buildNetwork(): NeuronNetwork = {
-    val layered =
-      if (layeredTokens)
-        new LayeredContainer(tokenCount, dimOuter, tokenWidth, tokenOutWidth, outWidth, new NeuronDataCreator)
-      else
-        new LayeredContainer(1, dimOuter, inWidth, outWidth, outWidth, new NeuronDataCreator)
+    val layered = new LayeredContainer(dimOuter, tokenCount, tokenWidth, tokenOutWidth, new NeuronDataCreator)
     layered.init()
     // attention is bound to the exact graph it was built for
     if (attentionEnabled) attention = Some(new DepthAttention(layered.reverseOrder))
@@ -125,7 +117,7 @@ trait MathTest extends Trainable {
   }
 
   protected def initTargets(container: NeuronNetwork, targetValues: Array[Double]): Unit = {
-    require(targetValues.length == outWidth, "expected " + outWidth + " targets but got " + targetValues.length)
+    require(targetValues.length == tokenOutWidth, "expected " + tokenOutWidth + " targets but got " + targetValues.length)
     for (index <- targetValues.indices)
       container.outputNodes(index).initOutput(targetValues(index))
   }

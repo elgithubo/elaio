@@ -13,13 +13,11 @@ final class PotentialTest(override protected val persistenceAction: Option[Persi
   override protected val tolerance = 2000d
   override protected val learningRate = 0.00001d
   override protected val maxUpdateNorm = 50000d
-  override protected val layeredTokens = true
   override protected val attentionEnabled: Boolean = true
 
   override protected def tokenWidth: Int = 5
   override protected val dimOuter = 2
   override protected val inWidth = 5
-  override protected val outWidth = 5
   override protected val inputMinimum = -1d
   override protected val inputMaximum = 1d
   override protected val trainCount = 300

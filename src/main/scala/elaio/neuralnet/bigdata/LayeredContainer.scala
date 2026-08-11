@@ -8,42 +8,37 @@ import elaio.neuralnet.connections.Connection
 import elaio.neuralnet.processing.{GraphTraversal, NeuronCollectionCache}
 import elaio.neuralnet.units.{InputNeuron, Neuron, NeuronDataCreator, NeuronType, OutputNeuron}
 
-// The token matrix, materialised. One container per row, all built alike and all sharing their
-// weights, so the stack is one function applied to every token rather than N separate functions.
+// The token matrix, materialised. One tensored container per row, all built alike and all sharing
+// their weights.
+//
 // It takes N containers rather than one pass per token because an elaio neuron holds a single
 // value - N copies of the state is what lets every token be alive at the same time, which is what
 // attention across tokens needs.
-//
-// The containers touch nowhere in their hidden ranks. Their only meeting point is a read-out layer
-// every token feeds; picking which token matters is the attention's job, not the wiring's.
 //
 // A stack of one is the degenerate case and is built without that read-out: there is no second
 // token to merge, so the rank would only put a linear map in front of a linear map. Such a stack
 // is the same graph a bare TensoredContainer builds, which is what lets every task run here.
 final class LayeredContainer(
-    tokenCount: Int,
+    // the build dimension of the tensored container
     dimOuter: Int,
+    // the number of tokens to process in parallel
+    tokenCount: Int,
+    // the width of one token's representation
     tokenWidth: Int,
     // how wide one token's representation is where the read-out picks it up
     tokenOutWidth: Int,
-    outWidth: Int,
     dataCreator: NeuronDataCreator,
+    ids: IdAllocator = new IdAllocator,
     additionalWiring: Option[AdditionalWiring] = None,
-) extends NeuronNetwork {
+) extends NeuronNetwork(ids) {
 
   require(tokenCount > 0, "a layered container needs at least one token")
 
-  // with no read-out behind it, a lone container carries the network's own output width, and its
-  // outputs stay the linear ones a final rank needs - tokenOutWidth is where the read-out picks a
-  // token up, so it means nothing when there is no read-out
+  // indicate whether the container is pooled (multiple tensored containers) or not (single tensored container)
   private val pooled = tokenCount > 1
-  private val containerOutWidth = if (pooled) tokenOutWidth else outWidth
 
-  // one allocator for the whole stack - the collection cache and the model files key on the neuron
-  // id, so two neurons of one graph carrying the same id would be confused for each other
-  private val ids = new IdAllocator
   private val containers = Vector.fill(tokenCount)(
-    new TensoredContainer(dimOuter, tokenWidth, containerOutWidth, dataCreator, additionalWiring, ids, pooled)
+    new TensoredContainer(dimOuter, tokenWidth, tokenOutWidth, dataCreator, additionalWiring, _ids, pooled)
   )
 
   private var _inputNodes = Array.ofDim[InputNeuron](0)
@@ -56,8 +51,6 @@ final class LayeredContainer(
   def reverseOrder: GraphTraversal.ReverseOrder =
     if (_reverseOrder != null) _reverseOrder
     else throw new IllegalStateException("container has not been initialized")
-
-  def tokenContainers: Vector[TensoredContainer] = containers
 
   // one cache per token container, each confined to the task that runs its container
   private val tokenCaches = containers.map(_ => new NeuronCollectionCache)
@@ -104,36 +97,20 @@ final class LayeredContainer(
     shareParameters()
     _inputNodes = containers.toArray.flatMap(_.inputNodes)
     if (!pooled)
-      // nothing to merge - the lone container's own outputs are the network's
+      // nothing to merge - the lone container's own outputs are the network's outputs
       _outputNodes = containers.head.outputNodes
     else {
-      _outputNodes = Array.fill(outWidth)(
-        dataCreator.create(NeuronType.Output, ids.nextNeuronId()).asInstanceOf[OutputNeuron]
+      _outputNodes = Array.fill(tokenOutWidth)(
+        dataCreator.create(NeuronType.Output, _ids.nextNeuronId()).asInstanceOf[OutputNeuron]
       )
-      // a token container's outputs become hidden nodes of the stack: no target is ever set on them
+      // connect each tensored container outputs to the read-out layer which is shared across all
+      // containers in the stack and combine their outputs
       for {
         container <- containers
         tokenOutput <- container.outputNodes
         readOut <- _outputNodes
       } connectNeurons(tokenOutput, readOut)
     }
-    /* for (container <- containers) {
-      require(
-        _outputNodes.length == 1 || container.outputNodes.length == _outputNodes.length,
-        "readout needs either one pooled output or matching channel widths"
-      )
-      for (channel <- container.outputNodes.indices) {
-        val readOut =
-        if (_outputNodes.length == 1)
-          _outputNodes.head
-        else
-          _outputNodes(channel)
-        connectNeurons(
-          container.outputNodes(channel),
-          readOut
-        )
-      }
-    } */ 
     _reverseOrder = GraphTraversal.reverseTopologicalFromOutputs(_outputNodes)
   }
 
@@ -166,15 +143,4 @@ final class LayeredContainer(
   private def neuronsOf(container: TensoredContainer): Vector[Neuron] =
     container.reverseOrder.sequence.sortBy(_.id)
 
-  private def connectNeurons(
-      connectionNeuronSource: Neuron,
-      connectionNeuronTarget: Neuron
-  ): Unit = {
-    val connection = new Connection(ids.nextConnectionId()) {
-      protected var _neuronSource: Neuron = connectionNeuronSource
-      protected var _neuronTarget: Neuron = connectionNeuronTarget
-    }
-    connection.neuronTarget.addInConnection(connection)
-    connection.neuronSource.addOutConnection(connection)
-  }
 }

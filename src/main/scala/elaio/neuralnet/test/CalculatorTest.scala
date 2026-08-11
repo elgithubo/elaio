@@ -7,14 +7,14 @@ import elaio.neuralnet.trace.NetTrace
 // One opcode selects the operation applied to four independent input values.
 class CalculatorTest(override protected val persistenceAction: Option[PersistenceAction] = None)
     extends MathTest {
-  override protected val dimOuter = 3
+  override protected val dimOuter = 2
   override protected val learningRate = 0.0001d
   override protected val maxUpdateNorm = 1000d
-  override protected val epochs = 25000
+  override protected val epochs = 10000
   override protected val clipUntilEpoch = epochs
   override protected val tolerance = 10d
   override protected val inWidth = 5 // one value reserved for opcode
-  override protected val outWidth = 4 // needs to be inWidth - 1
+  override protected val tokenOutWidth = 4 // needs to be inWidth - 1
   override protected val trainCount = 400 // needs to be divisible by the number of questions
   override protected val numberOfQuestions = 20
 
@@ -37,7 +37,7 @@ class CalculatorTest(override protected val persistenceAction: Option[Persistenc
     Array(Array(operations(operation).opcode) ++ values)
 
   private def randomValues(random: scala.util.Random): Array[Double] =
-    Array.fill(outWidth)(randomValue(random))
+    Array.fill(tokenOutWidth)(randomValue(random))
 
   override protected def traceAction(): Unit =
     NetTrace.WriteMessage("testing: calculator for: x + 23, x - 13, x * 3, x / 5")

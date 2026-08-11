@@ -41,14 +41,11 @@ trait Trainable {
   protected def forwardPass(container: NeuronNetwork): Option[ForwardPass] =
     attention match {
       case Some(depthAttention) =>
-        Some(depthAttention.refine(container.reverseOrder, () => plainForwardPass(container)))
+        Some(depthAttention.refine(container.reverseOrder, () => container.forward(neuronCollectionCache)))
       case None =>
-        plainForwardPass(container)
+        container.forward(neuronCollectionCache)
         None
     }
-
-  private def plainForwardPass(container: NeuronNetwork): Unit =
-    container.forward(neuronCollectionCache)
 
   protected final def processTokens(
       container: NeuronNetwork,

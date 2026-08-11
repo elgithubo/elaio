@@ -1,8 +1,7 @@
 package elaio.neuralnet.bigdata
 
 import elaio.neuralnet.TokenMatrix
-import elaio.neuralnet.connections.Connection
-import elaio.neuralnet.processing.{GraphTraversal, NeuronGroup}
+import elaio.neuralnet.processing.GraphTraversal
 //import elaio.neuralnet.trace.NetTrace
 import elaio.neuralnet.units.{HiddenNeuron, Neuron, NeuronDataCreator, NeuronType, InputNeuron, OutputNeuron, IntermediateOutputNeuron}
 import elaio.neuralnet.bigdata.interface.{TensoredContainerInternal, TensoredContainerInOut}
@@ -17,7 +16,7 @@ class TensoredContainer(
     // a stack of containers passes one allocator to all of them, so their ids stay distinct
     ids: IdAllocator = new IdAllocator,
     intermediateOutputs: Boolean = false
-) extends NeuronNetwork {
+) extends NeuronNetwork(ids) {
 
   private val _intermediateOutputs: Boolean = intermediateOutputs
 
@@ -29,8 +28,6 @@ class TensoredContainer(
   def outputNodes: Array[OutputNeuron] = _outputNodes
   def reverseOrder: GraphTraversal.ReverseOrder =
     if( _reverseOrder != null) _reverseOrder else throw new IllegalStateException("container has not been initialized")
-  // the built graph layered by depth - callers keep the result, it is recomputed on every call
-  def depthGroups: Vector[NeuronGroup] = GraphTraversal.depthGroups(reverseOrder)
 
   // One flat input row, so the token rows are read end to end. Only the total is checked, not how
   // the values are split into rows - a single container has no token structure to violate. That
@@ -39,12 +36,12 @@ class TensoredContainer(
   def initInputs(tokens: TokenMatrix): Unit = {
     require(
       tokens.iterator.map(_.length).sum == _inputNodes.length,
-      "expected " + _inputNodes.length + " input values but got " + tokens.iterator.map(_.length).sum
+      "expected " + _inputNodes.length + " input token values but got " + tokens.iterator.map(_.length).sum
     )
     var index = 0
     for (token <- tokens; value <- token) {
       _inputNodes(index).initInput(value)
-      index = index + 1
+      index += 1
     }
   }
 
@@ -57,7 +54,6 @@ class TensoredContainer(
       )
     _inputNodes = result.inputNodes
     _outputNodes = result.outputNodes
-
     val baseOrder = GraphTraversal.reverseTopologicalFromOutputs(_outputNodes)
     _reverseOrder = additionalWiring match {
       case Some(wiring) =>
@@ -99,13 +95,13 @@ class TensoredContainer(
 
     if (inputBackpropagationCreationPossible) {
         for (i <- 1 to buildInWidth)
-          neuronsReturn.addInputNode(dataCreator.create(NeuronType.Input, nextNeuronId()).asInstanceOf[InputNeuron])
+          neuronsReturn.addInputNode(dataCreator.create(NeuronType.Input, ids.nextNeuronId()).asInstanceOf[InputNeuron])
         for (i <- 1 to buildOutWidth)
           neuronsReturn.addOutputNode(
             if (!_intermediateOutputs)
-              dataCreator.create(NeuronType.Output, nextNeuronId()).asInstanceOf[OutputNeuron]
+              dataCreator.create(NeuronType.Output, ids.nextNeuronId()).asInstanceOf[OutputNeuron]
             else
-              dataCreator.create(NeuronType.IntermediateOutput, nextNeuronId()).asInstanceOf[IntermediateOutputNeuron]
+              dataCreator.create(NeuronType.IntermediateOutput, ids.nextNeuronId()).asInstanceOf[IntermediateOutputNeuron]
           )
     }
 
@@ -139,7 +135,7 @@ class TensoredContainer(
               ) NeuronType.HiddenSquare else NeuronType.HiddenLeakyRelu,*/
               if (inputBackpropagationCreationPossible && !isReverseNode)
                 NeuronType.HiddenSquare else NeuronType.HiddenLeakyRelu,
-              nextNeuronId()
+              ids.nextNeuronId()
             ).asInstanceOf[HiddenNeuron]
           newNeuronsSameRank = newNeuronsSameRank :+ newNeuronSameRank
           newNeuronsHere = newNeuronsHere :+ newNeuronSameRank
@@ -236,6 +232,7 @@ class TensoredContainer(
     neuronsReturn
   }
 
+  // needed to avoid double connections if an additional wiring provider is injected
   private def connectNeuronsIfMissing(
       connectionNeuronSource: Neuron,
       connectionNeuronTarget: Neuron
@@ -243,19 +240,4 @@ class TensoredContainer(
     if (!connectionNeuronSource.connectionsOut.exists(_.neuronTarget == connectionNeuronTarget))
       connectNeurons(connectionNeuronSource, connectionNeuronTarget)
 
-  private def connectNeurons(
-      connectionNeuronSource: Neuron,
-      connectionNeuronTarget: Neuron
-  ): Unit = {
-    val connection = new Connection(nextConnectionId()) {
-      protected var _neuronSource: Neuron = connectionNeuronSource
-      protected var _neuronTarget: Neuron = connectionNeuronTarget
-    }
-    connection.neuronTarget.addInConnection(connection)
-    connection.neuronSource.addOutConnection(connection)
-  }
-
-  private def nextNeuronId(): Long = ids.nextNeuronId()
-
-  private def nextConnectionId(): Long = ids.nextConnectionId()
 }

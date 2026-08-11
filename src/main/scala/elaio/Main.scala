@@ -27,7 +27,6 @@ import elaio.neuralnet.persistence.PersistenceAction
 import elaio.neuralnet.test.{
   AdditionTest,
   AttentionTokenTest,
-  LayeredDepthTest,
   DivisionTest,
   MathTestType,
   MultiplicationTest,
@@ -89,6 +88,5 @@ object Main {
     case MathTestType.Potential      => new PotentialTest(opSpec.persistenceAction).run()
     case MathTestType.Calculator     => new CalculatorTest(opSpec.persistenceAction).run()
     case MathTestType.AttentionToken => new AttentionTokenTest(opSpec.persistenceAction).run()
-    case MathTestType.LayeredDepth   => new LayeredDepthTest(opSpec.persistenceAction).run()
   }
 }
