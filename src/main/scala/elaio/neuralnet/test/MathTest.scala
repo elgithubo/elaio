@@ -7,7 +7,7 @@ import elaio.neuralnet.trace.NetTrace
 import elaio.neuralnet.units.{HiddenNeuronLeakyRelu, HiddenNeuronSquare, InputNeuron, NeuronDataCreator, IntermediateOutputNeuron}
 import elaio.neuralnet.training.Trainable
 
-trait MathTest extends Trainable {
+abstract trait MathTest extends Trainable {
 
   override protected val epochs = 15000
   override protected val clipUntilEpoch = 7500

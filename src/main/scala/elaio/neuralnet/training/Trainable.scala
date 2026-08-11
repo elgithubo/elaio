@@ -10,7 +10,7 @@ import elaio.neuralnet.processing.NeuronCollectionCache
 import elaio.neuralnet.trace.NetTrace
 import elaio.neuralnet.processing.Backpropagation
 
-trait Trainable {
+abstract trait Trainable {
 
   protected val persistenceAction: Option[PersistenceAction]
 

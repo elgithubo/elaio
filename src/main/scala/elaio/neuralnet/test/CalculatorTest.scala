@@ -7,10 +7,10 @@ import elaio.neuralnet.trace.NetTrace
 // One opcode selects the operation applied to four independent input values.
 class CalculatorTest(override protected val persistenceAction: Option[PersistenceAction] = None)
     extends MathTest {
-  override protected val dimOuter = 2
+  override protected val dimOuter = 3
   override protected val learningRate = 0.0001d
   override protected val maxUpdateNorm = 1000d
-  override protected val epochs = 10000
+  override protected val epochs = 25000
   override protected val clipUntilEpoch = epochs
   override protected val tolerance = 10d
   override protected val inWidth = 5 // one value reserved for opcode
