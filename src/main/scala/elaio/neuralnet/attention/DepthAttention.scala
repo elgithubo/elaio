@@ -27,7 +27,7 @@ final class DepthAttention(boundOrder: ReverseOrder, contextScale: Double = 0.1d
   }
 
   // The gradient into the first graph pass is intentionally truncated for now.
-  def applyGradients(pass: ForwardPass, learningRate: Double, maxGradientNorm: Double): Unit = {
+  def applyGradients(pass: ForwardPass, learningRate: Double, maxGradientNorm: Double): Double = {
     // delta is -dL/dz and the context is added to z, so the loss gradient carries the minus
     val outputGradients = Array.ofDim[Double](groups.length, layer.groupWidth)
     for {

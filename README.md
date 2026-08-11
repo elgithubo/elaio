@@ -31,8 +31,7 @@ basic tasks:
 - Potential (wip)
 - Calculator (can learn all 4 basic operations at once)
 advanced tasks (wip):
-- AttentionToken (learns attention on a classic tensored container)
-- LayeredDepth (learns attention on a stack of tensored containers for native token support)
+- AttentionToken (learns attention on a stack of tensored containers for native token support)
 
 Persistence
 ===========

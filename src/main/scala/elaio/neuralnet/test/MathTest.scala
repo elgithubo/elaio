@@ -4,7 +4,7 @@ import elaio.neuralnet.TokenMatrix
 import elaio.neuralnet.attention.DepthAttention
 import elaio.neuralnet.bigdata.{LayeredContainer, NeuronNetwork}
 import elaio.neuralnet.trace.NetTrace
-import elaio.neuralnet.units.{HiddenNeuronLeakyRelu, HiddenNeuronSquare, InputNeuron, NeuronDataCreator, IntermediateOutputNeuron, OutputNeuron}
+import elaio.neuralnet.units.{HiddenNeuronLeakyRelu, HiddenNeuronSquare, InputNeuron, NeuronDataCreator, IntermediateOutputNeuron}
 import elaio.neuralnet.training.Trainable
 
 trait MathTest extends Trainable {
@@ -78,8 +78,8 @@ trait MathTest extends Trainable {
     NetTrace.WriteMessage("input neurons: " + neurons.count(_.isInstanceOf[InputNeuron]), 1)
     NetTrace.WriteMessage("hidden square neurons: " + neurons.count(_.isInstanceOf[HiddenNeuronSquare]), 1)
     NetTrace.WriteMessage("hidden leaky relu neurons: " + neurons.count(_.isInstanceOf[HiddenNeuronLeakyRelu]), 1)
-    NetTrace.WriteMessage("output neurons: " + neurons.count(_.isInstanceOf[OutputNeuron]), 1)
-    NetTrace.WriteMessage("(intermediate output neurons: " + neurons.count(_.isInstanceOf[IntermediateOutputNeuron]) + ")", 1)
+    NetTrace.WriteMessage("intermediate output neurons: " + neurons.count(_.isInstanceOf[IntermediateOutputNeuron]), 1)
+    NetTrace.WriteMessage("output neurons: " + container.outputNodes.length, 1)
 
     // processTokens evaluates training data only when training is required
     processTokens(

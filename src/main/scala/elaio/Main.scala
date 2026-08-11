@@ -72,8 +72,7 @@ object Main {
     }
 
     require(
-      !Set(MathTestType.AttentionToken, MathTestType.LayeredDepth).contains(testType) ||
-        persistenceAction.isEmpty,
+      testType != MathTestType.AttentionToken || persistenceAction.isEmpty,
       "Attention does not support persistence yet"
     )
 
