@@ -16,6 +16,10 @@ import elaio.neuralnet.units.{InputNeuron, Neuron, NeuronDataCreator, NeuronType
 //
 // The containers touch nowhere in their hidden ranks. Their only meeting point is a read-out layer
 // every token feeds; picking which token matters is the attention's job, not the wiring's.
+//
+// A stack of one is the degenerate case and is built without that read-out: there is no second
+// token to merge, so the rank would only put a linear map in front of a linear map. Such a stack
+// is the same graph a bare TensoredContainer builds, which is what lets every task run here.
 final class LayeredContainer(
     tokenCount: Int,
     dimOuter: Int,
@@ -29,11 +33,17 @@ final class LayeredContainer(
 
   require(tokenCount > 0, "a layered container needs at least one token")
 
+  // with no read-out behind it, a lone container carries the network's own output width, and its
+  // outputs stay the linear ones a final rank needs - tokenOutWidth is where the read-out picks a
+  // token up, so it means nothing when there is no read-out
+  private val pooled = tokenCount > 1
+  private val containerOutWidth = if (pooled) tokenOutWidth else outWidth
+
   // one allocator for the whole stack - the collection cache and the model files key on the neuron
   // id, so two neurons of one graph carrying the same id would be confused for each other
   private val ids = new IdAllocator
   private val containers = Vector.fill(tokenCount)(
-    new TensoredContainer(dimOuter, tokenWidth, tokenOutWidth, dataCreator, additionalWiring, ids, true)
+    new TensoredContainer(dimOuter, tokenWidth, containerOutWidth, dataCreator, additionalWiring, ids, pooled)
   )
 
   private var _inputNodes = Array.ofDim[InputNeuron](0)
@@ -72,7 +82,11 @@ final class LayeredContainer(
 
   // each token goes to its own container, addressed directly rather than through the joined
   // inputNodes - that keeps the token layout an enforced contract instead of a shared assumption
-  def initInputs(tokens: TokenMatrix): Unit = {
+  def initInputs(tokens: TokenMatrix): Unit = if (!pooled) {
+    // a lone container has no token structure to violate, so it reads the rows end to end and only
+    // the total is checked - the same laxness a bare TensoredContainer has always had
+    containers.head.initInputs(tokens)
+  } else {
     require(tokens.length == containers.length, "expected " + containers.length + " tokens but got " + tokens.length)
     for (tokenIndex <- tokens.indices) {
       val expectedWidth = containers(tokenIndex).inputNodes.length
@@ -89,15 +103,20 @@ final class LayeredContainer(
     containers.foreach(_.init())
     shareParameters()
     _inputNodes = containers.toArray.flatMap(_.inputNodes)
-    _outputNodes = Array.fill(outWidth)(
-      dataCreator.create(NeuronType.Output, ids.nextNeuronId()).asInstanceOf[OutputNeuron]
-    )
-    // a token container's outputs become hidden nodes of the stack: linear, and no target is set
-    for {
-      container <- containers
-      tokenOutput <- container.outputNodes
-      readOut <- _outputNodes
-    } connectNeurons(tokenOutput, readOut)
+    if (!pooled)
+      // nothing to merge - the lone container's own outputs are the network's
+      _outputNodes = containers.head.outputNodes
+    else {
+      _outputNodes = Array.fill(outWidth)(
+        dataCreator.create(NeuronType.Output, ids.nextNeuronId()).asInstanceOf[OutputNeuron]
+      )
+      // a token container's outputs become hidden nodes of the stack: no target is ever set on them
+      for {
+        container <- containers
+        tokenOutput <- container.outputNodes
+        readOut <- _outputNodes
+      } connectNeurons(tokenOutput, readOut)
+    }
     /* for (container <- containers) {
       require(
         _outputNodes.length == 1 || container.outputNodes.length == _outputNodes.length,

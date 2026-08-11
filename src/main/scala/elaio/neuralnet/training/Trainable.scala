@@ -118,10 +118,14 @@ trait Trainable {
     require(trainTokens.length == trainOutputs.length, "need one output for every input")
 
     val trainingExamples = trainTokens.zip(trainOutputs).toSeq
+    // the raw update lengths of one epoch - they say whether the cap binds or is just armed
+    val updateNorms = Array.ofDim[Double](trainingExamples.length)
     for (epoch <- 1 to epochs) {
       // the cap is only in force while the run is still fragile
       val updateNorm = if (epoch <= clipUntilEpoch) maxUpdateNorm else Double.PositiveInfinity
       var totalError = 0d
+      var exampleIndex = 0
+      var clippedCount = 0
 
       // shuffled so the updates do not settle into a fixed cycle
       for ((tokens, targetValues) <- random.shuffle(trainingExamples)) {
@@ -129,14 +133,43 @@ trait Trainable {
         initTargets(container, targetValues)
         val attentionPass = forwardPass(container)
         totalError = totalError + squaredError(container)
-        Backpropagation.run(container.reverseOrder, learningRate, updateNorm)
+        val rawNorm = Backpropagation.run(container.reverseOrder, learningRate, updateNorm)
+        updateNorms(exampleIndex) = rawNorm
+        if (rawNorm > updateNorm) clippedCount = clippedCount + 1
+        exampleIndex = exampleIndex + 1
         for (depthAttention <- attention; pass <- attentionPass)
           depthAttention.applyGradients(pass, learningRate, updateNorm)
       }
-      if (epoch == 1 || epoch % 100 == 0 || epoch == epochs)
+      if (epoch == 1 || epoch % 100 == 0 || epoch == epochs) {
         NetTrace.WriteMessage("epoch " + epoch + ": total squared error = " + totalError, 1)
+        reportUpdateNorms(updateNorms, clippedCount, updateNorm)
+      }
       if (epoch == clipUntilEpoch && epoch < epochs)
         NetTrace.WriteMessage("update cap released after epoch " + epoch, 1)
     }
+  }
+
+  // how hard the cap bit this epoch. While it binds, a step is learningRate * maxUpdateNorm long
+  // and the gradient's own length does not enter - so the two rates are one knob, not two.
+  private def reportUpdateNorms(updateNorms: Array[Double], clippedCount: Int, cap: Double): Unit = {
+    val median = medianOf(updateNorms)
+    // a shared-parameter graph measures the length even with the cap off, so report what there is
+    if (median.isNaN) ()
+    else if (cap.isPosInfinity)
+      NetTrace.WriteMessage(f"no update cap - median raw norm $median%.1f", 2)
+    else
+      NetTrace.WriteMessage(
+        f"update cap bound on $clippedCount of ${updateNorms.length} updates" +
+          f" - cap $cap%.1f, median raw norm $median%.1f, clipped step ${learningRate * cap}%.4f",
+        2
+      )
+  }
+
+  // NaN marks an update whose length was never computed, which is every update once the cap is off
+  private def medianOf(values: Array[Double]): Double = {
+    val measured = values.filterNot(_.isNaN).sorted
+    if (measured.isEmpty) Double.NaN
+    else if (measured.length % 2 == 1) measured(measured.length / 2)
+    else (measured(measured.length / 2 - 1) + measured(measured.length / 2)) / 2d
   }
 }

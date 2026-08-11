@@ -14,8 +14,11 @@ object Backpropagation {
   //   dw_ij   = delta_j * a_i / N_j                      <- N of the owner j
   // maxUpdateNorm caps the length of the whole update vector, leaving its direction
   // alone since it is the extreme steps that blow the net
+  //
+  // returns the raw length of the update before the cap, so the caller can see whether the cap
+  // binds - NaN when there is no cap and the length was never computed
   def run(order: GraphTraversal.ReverseOrder, learningRate: Double,
-          maxUpdateNorm: Double = Double.PositiveInfinity): Unit = {
+          maxUpdateNorm: Double = Double.PositiveInfinity): Double = {
     for (output <- order.outputs) {
       val outputNeuron = output.asInstanceOf[OutputNeuron]
       outputNeuron.delta =
@@ -59,9 +62,11 @@ object Backpropagation {
         bias.value += learningRate * scale * bias.accumulatedGradient
         bias.accumulatedGradient = 0d
       }
+      norm
     } else {
-      val scale =
-        if (maxUpdateNorm.isPosInfinity) 1d
+      // without a cap the length is left uncomputed - it would cost a full extra pass for nothing
+      val norm =
+        if (maxUpdateNorm.isPosInfinity) Double.NaN
         else {
           var sumSquares = 0d
           for (neuron <- order.sequence.reverseIterator) {
@@ -72,9 +77,10 @@ object Backpropagation {
             }
             if (fanIn > 0) sumSquares += neuron.delta * neuron.delta
           }
-          val norm = math.sqrt(sumSquares)
-          if (norm > maxUpdateNorm) maxUpdateNorm / norm else 1d
+          math.sqrt(sumSquares)
         }
+      // a NaN norm compares false, so an uncapped run keeps its scale of 1
+      val scale = if (norm > maxUpdateNorm) maxUpdateNorm / norm else 1d
 
       for (neuron <- order.sequence.reverseIterator) {
         val fanIn = neuron.connectionsIn.length
@@ -84,6 +90,7 @@ object Backpropagation {
         if (fanIn > 0) // skip input neurons
           neuron.bias += learningRate * scale * neuron.delta
       }
+      norm
     }
   }
 }

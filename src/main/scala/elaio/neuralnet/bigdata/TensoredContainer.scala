@@ -84,10 +84,7 @@ class TensoredContainer(
     )
     val result = new TensoredContainerInOut
     result.inputNodes = receivedResult.inputNodes.map(_.asInstanceOf[InputNeuron])
-    if (!_intermediateOutputs)
-      result.outputNodes = receivedResult.outputNodes.map(_.asInstanceOf[OutputNeuron])
-    else
-      result.outputNodes = receivedResult.outputNodes.map(_.asInstanceOf[IntermediateOutputNeuron])
+    result.outputNodes = receivedResult.outputNodes.map(_.asInstanceOf[OutputNeuron])
     result
   }
 

@@ -2,9 +2,9 @@ package elaio.neuralnet.test
 
 import elaio.neuralnet.TokenMatrix
 import elaio.neuralnet.attention.DepthAttention
-import elaio.neuralnet.bigdata.{LayeredContainer, NeuronNetwork, TensoredContainer}
+import elaio.neuralnet.bigdata.{LayeredContainer, NeuronNetwork}
 import elaio.neuralnet.trace.NetTrace
-import elaio.neuralnet.units.{HiddenNeuronLeakyRelu, HiddenNeuronSquare, InputNeuron, NeuronDataCreator, OutputNeuron}
+import elaio.neuralnet.units.{HiddenNeuronLeakyRelu, HiddenNeuronSquare, InputNeuron, NeuronDataCreator, IntermediateOutputNeuron, OutputNeuron}
 import elaio.neuralnet.training.Trainable
 
 trait MathTest extends Trainable {
@@ -68,7 +68,9 @@ trait MathTest extends Trainable {
     NetTrace.WriteMessage("build dimension: " + dimOuter)
     NetTrace.WriteMessage("input width: " + inWidth + " (" + tokenCount + " tokens of " + tokenWidth + ")")
     NetTrace.WriteMessage("output width: " + outWidth)
-    NetTrace.WriteMessage("containers: " + (if (layeredTokens) s"$tokenCount stacked, one per token" else "one"))
+    NetTrace.WriteMessage(
+      "containers: " + (if (layeredTokens) s"$tokenCount stacked, one per token" else "one carrying the whole input")
+    )
     NetTrace.WriteMessage("attention across depths: " + attentionEnabled)
 
     val random = new scala.util.Random
@@ -80,6 +82,7 @@ trait MathTest extends Trainable {
     NetTrace.WriteMessage("hidden square neurons: " + neurons.count(_.isInstanceOf[HiddenNeuronSquare]), 1)
     NetTrace.WriteMessage("hidden leaky relu neurons: " + neurons.count(_.isInstanceOf[HiddenNeuronLeakyRelu]), 1)
     NetTrace.WriteMessage("output neurons: " + neurons.count(_.isInstanceOf[OutputNeuron]), 1)
+    NetTrace.WriteMessage("(intermediate output neurons: " + neurons.count(_.isInstanceOf[IntermediateOutputNeuron]) + ")", 1)
 
     // processTokens evaluates training data only when training is required
     processTokens(
@@ -106,21 +109,20 @@ trait MathTest extends Trainable {
     NetTrace.WriteMessage("end of test run")
   }
 
-  // one container for everything, or one per token with a read-out layer behind them
-  private def buildNetwork(): NeuronNetwork =
-    if (layeredTokens) {
-      val layered =
+  // One container per token, or a stack of one carrying the whole input. The stack of one is built
+  // without a read-out rank, so it is the same graph a bare TensoredContainer builds - which is why
+  // both cases can go through the same class.
+  private def buildNetwork(): NeuronNetwork = {
+    val layered =
+      if (layeredTokens)
         new LayeredContainer(tokenCount, dimOuter, tokenWidth, tokenOutWidth, outWidth, new NeuronDataCreator)
-      layered.init()
-      // attention is bound to the exact graph it was built for
-      if (attentionEnabled) attention = Some(new DepthAttention(layered.reverseOrder))
-      layered
-    } else {
-      val single = new TensoredContainer(dimOuter, inWidth, outWidth, new NeuronDataCreator)
-      single.init()
-      if (attentionEnabled) attention = Some(new DepthAttention(single.reverseOrder))
-      single
-    }
+      else
+        new LayeredContainer(1, dimOuter, inWidth, outWidth, outWidth, new NeuronDataCreator)
+    layered.init()
+    // attention is bound to the exact graph it was built for
+    if (attentionEnabled) attention = Some(new DepthAttention(layered.reverseOrder))
+    layered
+  }
 
   protected def initTargets(container: NeuronNetwork, targetValues: Array[Double]): Unit = {
     require(targetValues.length == outWidth, "expected " + outWidth + " targets but got " + targetValues.length)
