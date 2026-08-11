@@ -33,7 +33,7 @@ final class LayeredContainer(
   // id, so two neurons of one graph carrying the same id would be confused for each other
   private val ids = new IdAllocator
   private val containers = Vector.fill(tokenCount)(
-    new TensoredContainer(dimOuter, tokenWidth, tokenOutWidth, dataCreator, additionalWiring, ids)
+    new TensoredContainer(dimOuter, tokenWidth, tokenOutWidth, dataCreator, additionalWiring, ids, true)
   )
 
   private var _inputNodes = Array.ofDim[InputNeuron](0)
@@ -98,6 +98,23 @@ final class LayeredContainer(
       tokenOutput <- container.outputNodes
       readOut <- _outputNodes
     } connectNeurons(tokenOutput, readOut)
+    /* for (container <- containers) {
+      require(
+        _outputNodes.length == 1 || container.outputNodes.length == _outputNodes.length,
+        "readout needs either one pooled output or matching channel widths"
+      )
+      for (channel <- container.outputNodes.indices) {
+        val readOut =
+        if (_outputNodes.length == 1)
+          _outputNodes.head
+        else
+          _outputNodes(channel)
+        connectNeurons(
+          container.outputNodes(channel),
+          readOut
+        )
+      }
+    } */ 
     _reverseOrder = GraphTraversal.reverseTopologicalFromOutputs(_outputNodes)
   }
 

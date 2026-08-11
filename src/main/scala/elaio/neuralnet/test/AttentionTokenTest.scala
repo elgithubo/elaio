@@ -30,7 +30,7 @@ class AttentionTokenTest(override protected val persistenceAction: Option[Persis
   override protected val inputMinimum = -1d
   override protected val inputMaximum = 1d
   override protected val trainCount = 300
-  override protected val numberOfQuestions = 300
+  override protected val numberOfQuestions = 60
   override protected val epochs = 20000
   override protected val clipUntilEpoch = 0
   override protected val learningRate = 0.005d

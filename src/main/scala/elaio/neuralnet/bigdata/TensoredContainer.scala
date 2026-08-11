@@ -4,7 +4,7 @@ import elaio.neuralnet.TokenMatrix
 import elaio.neuralnet.connections.Connection
 import elaio.neuralnet.processing.{GraphTraversal, NeuronGroup}
 //import elaio.neuralnet.trace.NetTrace
-import elaio.neuralnet.units.{HiddenNeuron, Neuron, NeuronDataCreator, NeuronType, InputNeuron, OutputNeuron}
+import elaio.neuralnet.units.{HiddenNeuron, Neuron, NeuronDataCreator, NeuronType, InputNeuron, OutputNeuron, IntermediateOutputNeuron}
 import elaio.neuralnet.bigdata.interface.{TensoredContainerInternal, TensoredContainerInOut}
 
 // represents a multi-dimensional tensor of dimension dimOuter
@@ -16,7 +16,10 @@ class TensoredContainer(
     additionalWiring: Option[AdditionalWiring] = None,
     // a stack of containers passes one allocator to all of them, so their ids stay distinct
     ids: IdAllocator = new IdAllocator,
+    intermediateOutputs: Boolean = false
 ) extends NeuronNetwork {
+
+  private val _intermediateOutputs: Boolean = intermediateOutputs
 
   private var _inputNodes = Array.ofDim[InputNeuron](0)
   private var _outputNodes = Array.ofDim[OutputNeuron](0)
@@ -81,7 +84,10 @@ class TensoredContainer(
     )
     val result = new TensoredContainerInOut
     result.inputNodes = receivedResult.inputNodes.map(_.asInstanceOf[InputNeuron])
-    result.outputNodes = receivedResult.outputNodes.map(_.asInstanceOf[OutputNeuron])
+    if (!_intermediateOutputs)
+      result.outputNodes = receivedResult.outputNodes.map(_.asInstanceOf[OutputNeuron])
+    else
+      result.outputNodes = receivedResult.outputNodes.map(_.asInstanceOf[IntermediateOutputNeuron])
     result
   }
 
@@ -90,7 +96,7 @@ class TensoredContainer(
       buildInWidth: Int,
       buildOutWidth: Int,
       dataCreator: NeuronDataCreator,
-      inputBackpropagationCreationPossible: Boolean,
+      inputBackpropagationCreationPossible: Boolean
   ): TensoredContainerInternal = {
     var neuronsReturn = new TensoredContainerInternal
 
@@ -98,7 +104,12 @@ class TensoredContainer(
         for (i <- 1 to buildInWidth)
           neuronsReturn.addInputNode(dataCreator.create(NeuronType.Input, nextNeuronId()).asInstanceOf[InputNeuron])
         for (i <- 1 to buildOutWidth)
-          neuronsReturn.addOutputNode(dataCreator.create(NeuronType.Output, nextNeuronId()).asInstanceOf[OutputNeuron])
+          neuronsReturn.addOutputNode(
+            if (!_intermediateOutputs)
+              dataCreator.create(NeuronType.Output, nextNeuronId()).asInstanceOf[OutputNeuron]
+            else
+              dataCreator.create(NeuronType.IntermediateOutput, nextNeuronId()).asInstanceOf[IntermediateOutputNeuron]
+          )
     }
 
     var bottomNeuronsLastRecur: Array[HiddenNeuron] = Array.ofDim[HiddenNeuron](0)

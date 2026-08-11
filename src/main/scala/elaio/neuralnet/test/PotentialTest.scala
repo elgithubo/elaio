@@ -7,8 +7,8 @@ import elaio.neuralnet.trace.NetTrace
 final class PotentialTest(override protected val persistenceAction: Option[PersistenceAction] = None)
     extends MathTest {
   //private val keyCount = 3
-  private val keyTokenWidth = 1 // keyCount + 2 // query marker, one-hot key, value
-  private val keyTokenCount = 1 //keyCount + 1
+  //private val keyTokenWidth = 1 // keyCount + 2 // query marker, one-hot key, value
+  //private val keyTokenCount = 1 //keyCount + 1
 
   override protected val tolerance = 2000d
   override protected val learningRate = 0.00001d
@@ -16,10 +16,10 @@ final class PotentialTest(override protected val persistenceAction: Option[Persi
   override protected val layeredTokens = true
   override protected val attentionEnabled: Boolean = true
 
-  override protected def tokenWidth: Int = keyTokenWidth
+  override protected def tokenWidth: Int = 5
   override protected val dimOuter = 2
-  override protected val inWidth = keyTokenCount * keyTokenWidth
-  override protected val outWidth = 1
+  override protected val inWidth = 5
+  override protected val outWidth = 5
   override protected val inputMinimum = -1d
   override protected val inputMaximum = 1d
   override protected val trainCount = 300
