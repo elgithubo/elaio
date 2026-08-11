@@ -21,9 +21,9 @@ class AttentionTokenTest(override protected val persistenceAction: Option[Persis
   private val keyTokenWidth = keyCount + 2 // query marker, one-hot key, value
   private val keyTokenCount = keyCount + 1 // one memory per key and one query
 
-  override protected val attentionEnabled: Boolean = true
+  override protected val attentionEnabled = true
 
-  override protected def tokenWidth: Int = keyTokenWidth
+  override protected def tokenWidth = keyTokenWidth
   override protected val dimOuter = 2
   override protected val inWidth = keyTokenCount * keyTokenWidth
   override protected val externalOutWidth = 1
