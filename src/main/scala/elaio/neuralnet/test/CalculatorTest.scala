@@ -14,7 +14,7 @@ class CalculatorTest(override protected val persistenceAction: Option[Persistenc
   override protected val clipUntilEpoch = epochs
   override protected val tolerance = 10d
   override protected val inWidth = 5 // one value reserved for opcode
-  override protected val tokenOutWidth = 4 // needs to be inWidth - 1
+  override protected val externalOutWidth = 4 // needs to be inWidth - 1
   override protected val trainCount = 400 // needs to be divisible by the number of questions
   override protected val numberOfQuestions = 20
 
@@ -37,7 +37,7 @@ class CalculatorTest(override protected val persistenceAction: Option[Persistenc
     Array(Array(operations(operation).opcode) ++ values)
 
   private def randomValues(random: scala.util.Random): Array[Double] =
-    Array.fill(tokenOutWidth)(randomValue(random))
+    Array.fill(externalOutWidth)(randomValue(random))
 
   override protected def traceAction(): Unit =
     NetTrace.WriteMessage("testing: calculator for: x + 23, x - 13, x * 3, x / 5")

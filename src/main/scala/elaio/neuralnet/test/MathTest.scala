@@ -21,6 +21,7 @@ trait MathTest extends Trainable {
   protected val trainCount = 250
   protected val numberOfQuestions = 5
   protected val attentionEnabled = false
+  protected val externalOutWidth = 5
 
   // how wide one token's representation is where the read-out picks it up
   protected def tokenOutWidth: Int = tokenWidth
@@ -65,7 +66,7 @@ trait MathTest extends Trainable {
     NetTrace.WriteMessage("")
     NetTrace.WriteMessage("build dimension: " + dimOuter)
     NetTrace.WriteMessage("input width: " + inWidth + " (" + tokenCount + " tokens of " + tokenWidth + ")")
-    NetTrace.WriteMessage("output width: " + tokenOutWidth)
+    NetTrace.WriteMessage("output width: " + externalOutWidth)
     NetTrace.WriteMessage( s"containers: $tokenCount stacked, one per token" )
     NetTrace.WriteMessage("attention across depths: " + attentionEnabled)
 
@@ -109,7 +110,8 @@ trait MathTest extends Trainable {
   // without a read-out rank, so it is the same graph a bare TensoredContainer builds - which is why
   // both cases can go through the same class.
   private def buildNetwork(): NeuronNetwork = {
-    val layered = new LayeredContainer(dimOuter, tokenCount, tokenWidth, tokenOutWidth, new NeuronDataCreator)
+    val layered =
+      new LayeredContainer(dimOuter, tokenCount, tokenWidth, tokenOutWidth, externalOutWidth, new NeuronDataCreator)
     layered.init()
     // attention is bound to the exact graph it was built for
     if (attentionEnabled) attention = Some(new DepthAttention(layered.reverseOrder))
@@ -117,7 +119,10 @@ trait MathTest extends Trainable {
   }
 
   protected def initTargets(container: NeuronNetwork, targetValues: Array[Double]): Unit = {
-    require(targetValues.length == tokenOutWidth, "expected " + tokenOutWidth + " targets but got " + targetValues.length)
+    require(
+      targetValues.length == externalOutWidth,
+      "expected " + externalOutWidth + " targets but got " + targetValues.length
+    )
     for (index <- targetValues.indices)
       container.outputNodes(index).initOutput(targetValues(index))
   }

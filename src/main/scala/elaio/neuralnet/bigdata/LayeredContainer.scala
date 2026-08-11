@@ -27,6 +27,8 @@ final class LayeredContainer(
     tokenWidth: Int,
     // how wide one token's representation is where the read-out picks it up
     tokenOutWidth: Int,
+    // the width exposed by this network to callers
+    externalOutWidth: Int,
     dataCreator: NeuronDataCreator,
     ids: IdAllocator = new IdAllocator,
     additionalWiring: Option[AdditionalWiring] = None,
@@ -36,9 +38,10 @@ final class LayeredContainer(
 
   // indicate whether the container is pooled (multiple tensored containers) or not (single tensored container)
   private val pooled = tokenCount > 1
+  private val containerOutWidth = if (pooled) tokenOutWidth else externalOutWidth
 
   private val containers = Vector.fill(tokenCount)(
-    new TensoredContainer(dimOuter, tokenWidth, tokenOutWidth, dataCreator, additionalWiring, _ids, pooled)
+    new TensoredContainer(dimOuter, tokenWidth, containerOutWidth, dataCreator, additionalWiring, _ids, pooled)
   )
 
   private var _inputNodes = Array.ofDim[InputNeuron](0)
@@ -100,7 +103,7 @@ final class LayeredContainer(
       // nothing to merge - the lone container's own outputs are the network's outputs
       _outputNodes = containers.head.outputNodes
     else {
-      _outputNodes = Array.fill(tokenOutWidth)(
+      _outputNodes = Array.fill(externalOutWidth)(
         dataCreator.create(NeuronType.Output, _ids.nextNeuronId()).asInstanceOf[OutputNeuron]
       )
       // connect each tensored container outputs to the read-out layer which is shared across all
