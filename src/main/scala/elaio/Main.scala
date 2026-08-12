@@ -1,29 +1,3 @@
-// scala v3 compatibility bootstrap - needed when compiling by hand with scalac insteam of sbt.
-// compile with:
-//   scalac `find src -name "*.scala"`
-// and run with:
-//   scala -cp . Main <Task> [<PersistenceParameters>]
-// must list every package that actually exists under elaio. check against:
-//   grep -h "^package" `find src -type f -name "*.scala" ! -name Main.scala` | sort -u
-package elaio{
-  package neuralnet{
-    package activation{}
-    package attention{}
-    package bigdata{
-      package interface{}
-    }
-    package connections{}
-    package persistence{}
-    package processing{}
-    package test{}
-    package trace{}
-    package training{}
-    package units{}
-  }
-}
-
-// this class is an entry point for testing and debugging.
-// it is meant to call test methods and enable in-IDE debugging.
 import java.nio.file.Path
 import elaio.neuralnet.persistence.PersistenceAction
 import elaio.neuralnet.test.{
@@ -37,6 +11,8 @@ import elaio.neuralnet.test.{
   SubtractionTest
 }
 
+// this class is an entry point for testing and debugging.
+// it is meant to call test methods and enable in-IDE debugging.
 object Main {
   private final case class OpSpec(
       testType: MathTestType.Value,

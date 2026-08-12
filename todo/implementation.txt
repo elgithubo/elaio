@@ -5,3 +5,4 @@
 - check save directory exists before training
 - add check that loading a persistet state is for the correct network operation, e.g. addition
 - add check during loading a persisted state that NeuronType fits
+- add a test suite for 'sbt test'

@@ -8,6 +8,7 @@
 .zed/*
 log/*
 project/*
+!project/build.properties
 tmp/*
 .idea
 .scalafmt.conf

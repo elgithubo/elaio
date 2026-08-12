@@ -9,10 +9,7 @@ trait Connection(val id: Long) {
   protected var _neuronTarget: Neuron
 
   def neuronSource: Neuron = _neuronSource
-  def neuronSource_=(neuron: Neuron): Unit = { _neuronSource = neuron }
-
   def neuronTarget: Neuron = _neuronTarget
-  def neuronTarget_=(neuron: Neuron): Unit = { _neuronTarget = neuron }
 
   // initialize weight with 0 here since it is initialized later by WeightInitializer.
   // a cell of its own by default - sharing means handing the same cell to several connections

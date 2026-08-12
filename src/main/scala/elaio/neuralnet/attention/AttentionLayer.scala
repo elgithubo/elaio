@@ -13,7 +13,6 @@ object AttentionLayer {
   )
 
   final case class Gradients(
-      inputGroups: Array[Array[Double]],
       queryProjection: Array[Array[Double]],
       keyProjection: Array[Array[Double]],
       valueProjection: Array[Array[Double]]
@@ -80,14 +79,7 @@ final class AttentionLayer(val groupWidth: Int, random: Random = new Random) {
     val keyProjectionGradients = multiply(inputTranspose, keyGradients)
     val valueProjectionGradients = multiply(inputTranspose, valueGradients)
 
-    val inputGradients = add(
-      multiply(queryGradients, transpose(queryProjection)),
-      multiply(keyGradients, transpose(keyProjection)),
-      multiply(valueGradients, transpose(valueProjection))
-    )
-
     Gradients(
-      inputGradients,
       queryProjectionGradients,
       keyProjectionGradients,
       valueProjectionGradients
