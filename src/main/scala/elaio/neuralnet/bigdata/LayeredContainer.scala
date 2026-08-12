@@ -41,7 +41,7 @@ final class LayeredContainer(
   private val containerOutWidth = if (pooled) tokenOutWidth else externalOutWidth
 
   private val containers = Vector.fill(tokenCount)(
-    new TensoredContainer(dimOuter, tokenWidth, containerOutWidth, dataCreator, additionalWiring, _ids, pooled)
+    new TensoredContainer(dimOuter, tokenWidth, containerOutWidth, dataCreator, additionalWiring, ids, pooled)
   )
 
   private var _inputNodes = Array.ofDim[InputNeuron](0)
@@ -104,7 +104,7 @@ final class LayeredContainer(
       _outputNodes = containers.head.outputNodes
     else {
       _outputNodes = Array.fill(externalOutWidth)(
-        dataCreator.create(NeuronType.Output, _ids.nextNeuronId()).asInstanceOf[OutputNeuron]
+        dataCreator.create(NeuronType.Output, ids.nextNeuronId()).asInstanceOf[OutputNeuron]
       )
       // connect each tensored container outputs to the read-out layer which is shared across all
       // containers in the stack and combine their outputs

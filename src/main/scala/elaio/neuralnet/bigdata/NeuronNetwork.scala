@@ -9,7 +9,6 @@ import elaio.neuralnet.units.{InputNeuron, Neuron, OutputNeuron}
 trait NeuronNetwork(ids: IdAllocator) {
   // one allocator for the whole stack - the collection cache and the model files key on the neuron
   // id, so two neurons of one graph carrying the same id would be confused for each other
-  protected val _ids: IdAllocator = ids
 
   def inputNodes: Array[InputNeuron]
   def outputNodes: Array[OutputNeuron]
@@ -30,7 +29,7 @@ trait NeuronNetwork(ids: IdAllocator) {
       connectionNeuronSource: Neuron,
       connectionNeuronTarget: Neuron
   ): Unit = {
-    val connection = new Connection(_ids.nextConnectionId()) {
+    val connection = new Connection(ids.nextConnectionId()) {
       protected var _neuronSource: Neuron = connectionNeuronSource
       protected var _neuronTarget: Neuron = connectionNeuronTarget
     }
