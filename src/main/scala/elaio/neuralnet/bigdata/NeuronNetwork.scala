@@ -2,7 +2,7 @@ package elaio.neuralnet.bigdata
 
 import elaio.neuralnet.TokenMatrix
 import elaio.neuralnet.connections.Connection
-import elaio.neuralnet.processing.{GraphTraversal, NeuronCollectionCache}
+import elaio.neuralnet.processing.{Backpropagation, GraphTraversal, NeuronCollectionCache}
 import elaio.neuralnet.units.{InputNeuron, Neuron, OutputNeuron}
 
 // the basis structure of a neural network, which is a directed graph of neurons and connections
@@ -23,6 +23,14 @@ trait NeuronNetwork(ids: IdAllocator) {
   def forward(cache: NeuronCollectionCache): Unit = {
     cache.clear()
     for (outputNode <- outputNodes) outputNode.collectInConnections(cache)
+  }
+
+  // the delta phase of backpropagation - overridden where disjoint graph slices can run
+  // concurrently; applying the updates stays serial because the parameters are shared
+  def calculateDeltas(): Unit = {
+    val order = reverseOrder
+    Backpropagation.calculateOutputDeltas(order)
+    Backpropagation.calculateDeltas(order.sequence, order.reachable, order.outputs)
   }
 
   protected final def connectNeurons(

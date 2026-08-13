@@ -5,7 +5,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.ExecutionContext.Implicits.global
 import elaio.neuralnet.TokenMatrix
 import elaio.neuralnet.connections.Connection
-import elaio.neuralnet.processing.{GraphTraversal, NeuronCollectionCache}
+import elaio.neuralnet.processing.{Backpropagation, GraphTraversal, NeuronCollectionCache}
 import elaio.neuralnet.units.{InputNeuron, Neuron, NeuronDataCreator, NeuronType, OutputNeuron}
 
 // The token matrix, materialised. One tensored container per row, all built alike and all sharing
@@ -74,6 +74,20 @@ final class LayeredContainer(
       cache.clear()
       for (container <- containers; tokenOutput <- container.outputNodes) cache.add(tokenOutput)
       for (outputNode <- _outputNodes) outputNode.collectInConnections(cache)
+    }
+
+  // The read-out deltas are calculated first, then every token branch reads them from its
+  // connectionsOut. A branch writes only its own neurons' deltas, so the branches run
+  // concurrently - applying the updates stays serial in Backpropagation.applyUpdates.
+  override def calculateDeltas(): Unit =
+    if (!pooled) super.calculateDeltas()
+    else {
+      val order = reverseOrder
+      Backpropagation.calculateOutputDeltas(order)
+      val branches = containers.map { container =>
+        Future(Backpropagation.calculateDeltas(container.reverseOrder.sequence, order.reachable, Set.empty))
+      }
+      branches.foreach(Await.result(_, Duration.Inf))
     }
 
   // each token goes to its own container, addressed directly rather than through the joined

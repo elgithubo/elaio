@@ -1,36 +1,42 @@
 package elaio.neuralnet.processing
 
-import elaio.neuralnet.units.OutputNeuron
+import elaio.neuralnet.units.{Neuron, OutputNeuron}
 
 object Backpropagation {
   // processing neuron graph's reverse order.
   // note that a forward pass must have run.
   //
-  // delta is -dL/dz for L = 0.5*(target - value)^2
-  //
   // here comes the math from the ai
   // collectInConnections averages instead of summing, so the same 1/N appears here:
   //   delta_j = f'(z_j) * sum_k (delta_k * w_jk / N_k)   <- N of the target k
   //   dw_ij   = delta_j * a_i / N_j                      <- N of the owner j
-  // maxUpdateNorm caps the length of the whole update vector, leaving its direction
-  // alone since it is the extreme steps that blow the net
-  def run(order: GraphTraversal.ReverseOrder, learningRate: Double,
-          maxUpdateNorm: Double = Double.PositiveInfinity): Unit = {
+
+  // delta is -dL/dz for L = 0.5*(target - value)^2
+  def calculateOutputDeltas(order: GraphTraversal.ReverseOrder): Unit =
     for (output <- order.outputs) {
       val outputNeuron = output.asInstanceOf[OutputNeuron]
       outputNeuron.delta =
         (outputNeuron.target - outputNeuron.value) * outputNeuron.activationDerivative(outputNeuron.preActivation)
     }
 
-    for (neuron <- order.sequence.iterator if !order.outputs.contains(neuron))
+  // Deltas for one reverse-topological slice of the graph. The neurons the slice feeds into must
+  // already carry their deltas. A slice writes only its own neurons, so disjoint slices are safe
+  // to run concurrently.
+  def calculateDeltas(sequence: Vector[Neuron], reachable: Set[Neuron], skip: Set[Neuron]): Unit =
+    for (neuron <- sequence.iterator if !skip.contains(neuron))
       neuron.delta =
         neuron.connectionsOut.foldLeft(0d) { (sum, connection) =>
           val targetNeuron = connection.neuronTarget
-          if (order.reachable.contains(targetNeuron))
+          if (reachable.contains(targetNeuron))
             sum + connection.weight * targetNeuron.delta / targetNeuron.connectionsIn.length
           else sum
         } * neuron.activationDerivative(neuron.preActivation) // outgoing sum * activation derivative
 
+  // Turns the deltas into parameter updates - every delta must have been calculated before.
+  // maxUpdateNorm caps the length of the whole update vector, leaving its direction
+  // alone since it is the extreme steps that blow the net.
+  def applyUpdates(order: GraphTraversal.ReverseOrder, learningRate: Double,
+                   maxUpdateNorm: Double = Double.PositiveInfinity): Unit = {
     if (order.hasSharedParameters) {
       // Shared cells receive one summed, clipped update.
       order.connectionWeights.foreach(_.accumulatedGradient = 0d)

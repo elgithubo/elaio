@@ -126,7 +126,9 @@ trait Trainable {
         initTargets(container, targetValues)
         val attentionPass = forwardPass(container)
         totalError = totalError + squaredError(container)
-        Backpropagation.run(container.reverseOrder, learningRate, updateNorm)
+        // deltas may run concurrently per token branch; the shared updates stay serial
+        container.calculateDeltas()
+        Backpropagation.applyUpdates(container.reverseOrder, learningRate, updateNorm)
         for (depthAttention <- attention; pass <- attentionPass)
           depthAttention.applyGradients(pass, learningRate, updateNorm)
       }
