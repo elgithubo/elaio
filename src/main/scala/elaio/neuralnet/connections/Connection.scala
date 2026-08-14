@@ -22,14 +22,16 @@ trait Connection(val id: Long) {
   def weightCell_=(cell: Weight): Unit = { _weight = cell }
 
   def collect(cache: NeuronCollectionCache): Double = {
-    val cachedNeuron = cache.get(neuronSource.id)
+    // Cache accessors locally because this runs once per traversed connection.
+    val source = neuronSource
+    val cachedNeuron = cache.get(source.id)
     val neuronValue =
       if (cachedNeuron != null) {
         cachedNeuron.value
       } else {
-        val v = neuronSource.collectInConnections(cache)
-        cache.add(neuronSource)
-        v
+        val value = source.collectInConnections(cache)
+        cache.add(source)
+        value
       }
     neuronValue * weight
   }

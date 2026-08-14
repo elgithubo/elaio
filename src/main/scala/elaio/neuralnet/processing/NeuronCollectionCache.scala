@@ -1,11 +1,12 @@
 package elaio.neuralnet.processing
 
-import scala.collection.mutable.HashMap
+import scala.collection.mutable.LongMap
 import elaio.neuralnet.units.Neuron
 
-// reusable within one candidate, confined to its owning thread
+// Reusable within one candidate and thread-confined
 class NeuronCollectionCache {
-  private val cache: HashMap[Long, Neuron] = HashMap.empty[Long, Neuron]
+  // performance tweak: LongMap avoids boxing IDs on the hot path.
+  private val cache: LongMap[Neuron] = LongMap.empty[Neuron]
 
   def clear(): Unit = cache.clear()
 

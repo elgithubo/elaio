@@ -40,12 +40,19 @@ abstract class Neuron(val id: Long) {
   // one forward pass: pull from every in-connection, average, offset, activate.
   def collectInConnections(cache: NeuronCollectionCache): Double = {
 
+    // performance tweak: indexed traversal avoids iterator allocation in this forward-pass hot path.
+    //                    also values are cached vals to avoid recomputation
+    val connections = connectionsIn
+    val connectionCount = connections.length
     var valueSum = 0d
-    for (connectionIn <- connectionsIn)
-      valueSum = valueSum + connectionIn.collect(cache)
+    var connectionIndex = 0
+    while (connectionIndex < connectionCount) {
+      valueSum += connections(connectionIndex).collect(cache)
+      connectionIndex += 1
+    }
 
-    if (connectionsIn.nonEmpty)
-      valueSum = valueSum / connectionsIn.length
+    if (connectionCount > 0)
+      valueSum /= connectionCount
 
     // the bias is added after the averaging - it is an independent offset, not
     // one more incoming value to average in

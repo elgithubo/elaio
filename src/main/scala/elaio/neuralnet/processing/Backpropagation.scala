@@ -35,60 +35,118 @@ object Backpropagation {
   // Turns the deltas into parameter updates - every delta must have been calculated before.
   // maxUpdateNorm caps the length of the whole update vector, leaving its direction
   // alone since it is the extreme steps that blow the net.
+  // Indexed loops are intentional here because this pass visits every connection per example.
   def applyUpdates(order: GraphTraversal.ReverseOrder, learningRate: Double,
                    maxUpdateNorm: Double = Double.PositiveInfinity): Unit = {
     if (order.hasSharedParameters) {
       // Shared cells receive one summed, clipped update.
-      order.connectionWeights.foreach(_.accumulatedGradient = 0d)
-      order.neuronBiases.foreach(_.accumulatedGradient = 0d)
-      for (neuron <- order.sequence.reverseIterator) {
-        val fanIn = neuron.connectionsIn.length
-        for (connectionIn <- neuron.connectionsIn)
-          connectionIn.weightCell.accumulatedGradient +=
-            neuron.delta * connectionIn.neuronSource.value / fanIn
-        if (fanIn > 0)
-          neuron.biasCell.accumulatedGradient += neuron.delta
+      val weights = order.connectionWeights
+      val biases = order.neuronBiases
+      var index = 0
+      while (index < weights.length) {
+        weights(index).accumulatedGradient = 0d
+        index += 1
+      }
+      index = 0
+      while (index < biases.length) {
+        biases(index).accumulatedGradient = 0d
+        index += 1
       }
 
-      val weightGradientSquares =
-        order.connectionWeights.iterator.map(weight => weight.accumulatedGradient * weight.accumulatedGradient).sum
-      val biasGradientSquares =
-        order.neuronBiases.iterator.map(bias => bias.accumulatedGradient * bias.accumulatedGradient).sum
+      val sequence = order.sequence
+      var neuronIndex = sequence.length - 1
+      while (neuronIndex >= 0) {
+        val neuron = sequence(neuronIndex)
+        val connectionsIn = neuron.connectionsIn
+        val fanIn = connectionsIn.length
+        val neuronDelta = neuron.delta
+        var connectionIndex = 0
+        while (connectionIndex < fanIn) {
+          val connection = connectionsIn(connectionIndex)
+          val weight = connection.weightCell
+          weight.accumulatedGradient += neuronDelta * connection.neuronSource.value / fanIn
+          connectionIndex += 1
+        }
+        if (fanIn > 0)
+          neuron.biasCell.accumulatedGradient += neuronDelta
+        neuronIndex -= 1
+      }
+
+      var weightGradientSquares = 0d
+      index = 0
+      while (index < weights.length) {
+        val gradient = weights(index).accumulatedGradient
+        weightGradientSquares += gradient * gradient
+        index += 1
+      }
+      var biasGradientSquares = 0d
+      index = 0
+      while (index < biases.length) {
+        val gradient = biases(index).accumulatedGradient
+        biasGradientSquares += gradient * gradient
+        index += 1
+      }
       val norm = math.sqrt(weightGradientSquares + biasGradientSquares)
       val scale = if (norm > maxUpdateNorm) maxUpdateNorm / norm else 1d
+      val scaledLearningRate = learningRate * scale
 
-      for (weight <- order.connectionWeights) {
-        weight.value += learningRate * scale * weight.accumulatedGradient
+      index = 0
+      while (index < weights.length) {
+        val weight = weights(index)
+        weight.value += scaledLearningRate * weight.accumulatedGradient
         weight.accumulatedGradient = 0d
+        index += 1
       }
-      for (bias <- order.neuronBiases) {
-        bias.value += learningRate * scale * bias.accumulatedGradient
+      index = 0
+      while (index < biases.length) {
+        val bias = biases(index)
+        bias.value += scaledLearningRate * bias.accumulatedGradient
         bias.accumulatedGradient = 0d
+        index += 1
       }
     } else {
+      val sequence = order.sequence
       val scale =
         if (maxUpdateNorm.isPosInfinity) 1d
         else {
           var sumSquares = 0d
-          for (neuron <- order.sequence.reverseIterator) {
-            val fanIn = neuron.connectionsIn.length
-            for (connectionIn <- neuron.connectionsIn) {
-              val gradient = neuron.delta * connectionIn.neuronSource.value / fanIn
+          var neuronIndex = sequence.length - 1
+          while (neuronIndex >= 0) {
+            // caching values in local variables since this is a very performance critical section
+            val neuron = sequence(neuronIndex)
+            val connectionsIn = neuron.connectionsIn
+            val fanIn = connectionsIn.length
+            val neuronDelta = neuron.delta
+            var connectionIndex = 0
+            while (connectionIndex < fanIn) {
+              val connection = connectionsIn(connectionIndex)
+              val gradient = neuronDelta * connection.neuronSource.value / fanIn
               sumSquares += gradient * gradient
+              connectionIndex += 1
             }
-            if (fanIn > 0) sumSquares += neuron.delta * neuron.delta
+            if (fanIn > 0) sumSquares += neuronDelta * neuronDelta
+            neuronIndex -= 1
           }
           val norm = math.sqrt(sumSquares)
           if (norm > maxUpdateNorm) maxUpdateNorm / norm else 1d
         }
 
-      for (neuron <- order.sequence.reverseIterator) {
-        val fanIn = neuron.connectionsIn.length
-        for (connectionIn <- neuron.connectionsIn)
-          connectionIn.weight +=
-            learningRate * scale * neuron.delta * connectionIn.neuronSource.value / fanIn
+      val scaledLearningRate = learningRate * scale
+      var neuronIndex = sequence.length - 1
+      while (neuronIndex >= 0) {
+        val neuron = sequence(neuronIndex)
+        val connectionsIn = neuron.connectionsIn
+        val fanIn = connectionsIn.length
+        val neuronDelta = neuron.delta
+        var connectionIndex = 0
+        while (connectionIndex < fanIn) {
+          val connection = connectionsIn(connectionIndex)
+          connection.weight += scaledLearningRate * neuronDelta * connection.neuronSource.value / fanIn
+          connectionIndex += 1
+        }
         if (fanIn > 0) // skip input neurons
-          neuron.bias += learningRate * scale * neuron.delta
+          neuron.bias += scaledLearningRate * neuronDelta
+        neuronIndex -= 1
       }
     }
   }

@@ -13,7 +13,7 @@ final class PotentialTest(override protected val persistenceAction: Option[Persi
   override protected val tolerance = 2000d
   override protected val learningRate = 0.00001d
   override protected val maxUpdateNorm = 50000d
-  override protected val attentionEnabled: Boolean = true
+  //override protected val attentionEnabled: Boolean = true
 
   override protected def tokenWidth: Int = 5
   override protected val dimOuter = 2
@@ -24,8 +24,6 @@ final class PotentialTest(override protected val persistenceAction: Option[Persi
   override protected val numberOfQuestions = 300
   override protected val epochs = 25000
   override protected val clipUntilEpoch = epochs
-  //override protected val learningRate = 0.005d
-  //override protected val maxUpdateNorm = 100d
 
   override protected val tokenFactor = 1000d
 
