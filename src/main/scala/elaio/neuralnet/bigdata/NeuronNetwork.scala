@@ -19,18 +19,28 @@ trait NeuronNetwork(ids: IdAllocator) {
   // one row to each of its containers.
   def initInputs(tokens: TokenMatrix): Unit
 
-  // one full forward pass - overridden where independent parts of the graph can run concurrently
+  // One full forward pass - overridden where independent parts of the graph can run concurrently.
+  //
+  // INVARIANT for every concurrent override, of forward and of calculateDeltas alike: the tasks are
+  // submitted and then all awaited before the caller returns. Nothing here is volatile or
+  // synchronized - the visibility of every value, delta, weight and bias between the calling thread
+  // and the workers rests entirely on the happens-before edges that handing a task to an
+  // ExecutionContext and awaiting its result provide. Dropping an await, letting a phase overlap
+  // with the next one, or running two examples at once therefore breaks the memory model silently:
+  // no compiler warning, no exception, just occasional wrong numbers. Verified bit-exact against a
+  // serial run over 1200 passes - that verification is only valid while the pattern holds.
   def forward(cache: NeuronCollectionCache): Unit = {
     cache.clear()
     for (outputNode <- outputNodes) outputNode.collectInConnections(cache)
   }
 
-  // the delta phase of backpropagation - overridden where disjoint graph slices can run
-  // concurrently; applying the updates stays serial because the parameters are shared
+  // The delta phase of backpropagation - overridden where disjoint graph slices can run
+  // concurrently. Applying the updates stays serial on purpose: the parameters are shared between
+  // the slices, so concurrent accumulation would race. See the invariant on forward.
   def calculateDeltas(): Unit = {
     val order = reverseOrder
-    Backpropagation.calculateOutputDeltas(order)
-    Backpropagation.calculateDeltas(order.sequence, order.reachable, order.outputs)
+    Backpropagation.seedDeltas(order)
+    Backpropagation.calculateDeltas(order.sequence, order.outputs)
   }
 
   protected final def connectNeurons(

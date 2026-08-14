@@ -83,9 +83,9 @@ final class LayeredContainer(
     if (!pooled) super.calculateDeltas()
     else {
       val order = reverseOrder
-      Backpropagation.calculateOutputDeltas(order)
+      Backpropagation.seedDeltas(order)
       val branches = containers.map { container =>
-        Future(Backpropagation.calculateDeltas(container.reverseOrder.sequence, order.reachable, Set.empty))
+        Future(Backpropagation.calculateDeltas(container.reverseOrder.sequence, Set.empty))
       }
       branches.foreach(Await.result(_, Duration.Inf))
     }

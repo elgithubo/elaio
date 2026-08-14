@@ -11,25 +11,30 @@ object Backpropagation {
   //   delta_j = f'(z_j) * sum_k (delta_k * w_jk / N_k)   <- N of the target k
   //   dw_ij   = delta_j * a_i / N_j                      <- N of the owner j
 
+  // Sets the boundary values the backward sweep reads: the outputs' deltas from the loss, and zero
+  // for every target outside this order. Zeroing those makes their contribution fall out of the sum
+  // by itself, which is what lets calculateDeltas run without a membership test per connection.
+  // Must run before any slice, and on one thread - slices may share such a target.
+  //
   // delta is -dL/dz for L = 0.5*(target - value)^2
-  def calculateOutputDeltas(order: GraphTraversal.ReverseOrder): Unit =
+  def seedDeltas(order: GraphTraversal.ReverseOrder): Unit = {
     for (output <- order.outputs) {
       val outputNeuron = output.asInstanceOf[OutputNeuron]
       outputNeuron.delta =
         (outputNeuron.target - outputNeuron.value) * outputNeuron.activationDerivative(outputNeuron.preActivation)
     }
+    for (target <- order.unreachableTargets) target.delta = 0d
+  }
 
   // Deltas for one reverse-topological slice of the graph. The neurons the slice feeds into must
-  // already carry their deltas. A slice writes only its own neurons, so disjoint slices are safe
-  // to run concurrently.
-  def calculateDeltas(sequence: Vector[Neuron], reachable: Set[Neuron], skip: Set[Neuron]): Unit =
+  // already carry their deltas, which seedDeltas guarantees for everything outside the order.
+  // A slice writes only its own neurons, so disjoint slices are safe to run concurrently.
+  def calculateDeltas(sequence: Vector[Neuron], skip: Set[Neuron]): Unit =
     for (neuron <- sequence.iterator if !skip.contains(neuron))
       neuron.delta =
         neuron.connectionsOut.foldLeft(0d) { (sum, connection) =>
           val targetNeuron = connection.neuronTarget
-          if (reachable.contains(targetNeuron))
-            sum + connection.weight * targetNeuron.delta / targetNeuron.connectionsIn.length
-          else sum
+          sum + connection.weight * targetNeuron.delta / targetNeuron.connectionsIn.length
         } * neuron.activationDerivative(neuron.preActivation) // outgoing sum * activation derivative
 
   // Turns the deltas into parameter updates - every delta must have been calculated before.
