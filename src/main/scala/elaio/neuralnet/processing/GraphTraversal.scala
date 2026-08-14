@@ -9,6 +9,7 @@ import elaio.neuralnet.units.Neuron
 final case class NeuronGroup(depth: Int, neurons: Vector[Neuron])
 
 object GraphTraversal {
+  // Snapshot of a fully wired graph; connections must not change after construction.
   final case class ReverseOrder(
       sequence: Vector[Neuron],
       reachable: Set[Neuron],

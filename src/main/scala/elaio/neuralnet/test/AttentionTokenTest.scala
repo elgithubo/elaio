@@ -24,7 +24,7 @@ class AttentionTokenTest(override protected val persistenceAction: Option[Persis
   override protected val attentionEnabled = true
 
   override protected def tokenWidth = keyTokenWidth
-  override protected val dimOuter = 2
+  override protected val dimOuter = 3
   override protected val inWidth = keyTokenCount * keyTokenWidth
   override protected val externalOutWidth = 1
   override protected val inputMinimum = -1d
