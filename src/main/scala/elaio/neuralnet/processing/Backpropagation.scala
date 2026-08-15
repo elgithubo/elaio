@@ -40,7 +40,8 @@ object Backpropagation {
   // Turns the deltas into parameter updates - every delta must have been calculated before.
   // maxUpdateNorm caps the length of the whole update vector, leaving its direction
   // alone since it is the extreme steps that blow the net.
-  // Indexed loops are intentional here because this pass visits every connection per example.
+  // Indexed loops are intentional here due to performance reasons, because this pass
+  // visits every connection per example.
   def applyUpdates(order: GraphTraversal.ReverseOrder, learningRate: Double,
                    maxUpdateNorm: Double = Double.PositiveInfinity): Unit = {
     if (order.hasSharedParameters) {
@@ -61,6 +62,7 @@ object Backpropagation {
       val sequence = order.sequence
       var neuronIndex = sequence.length - 1
       while (neuronIndex >= 0) {
+        // caching a lot of values for performance reasons
         val neuron = sequence(neuronIndex)
         val connectionsIn = neuron.connectionsIn
         val fanIn = connectionsIn.length
