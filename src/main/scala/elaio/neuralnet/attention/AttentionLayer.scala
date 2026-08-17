@@ -22,6 +22,7 @@ object AttentionLayer {
 // Single-head self-attention core without residuals, normalization, or an output projection.
 final class AttentionLayer(val groupWidth: Int, random: Random = new Random) {
   import AttentionLayer.{ForwardPass, Gradients}
+  import MatrixOps.*
 
   require(groupWidth > 0, "attention group width must be positive")
 
@@ -30,7 +31,6 @@ final class AttentionLayer(val groupWidth: Int, random: Random = new Random) {
   private val valueProjection = initializedProjection()
   private val scoreScale = 1d / math.sqrt(groupWidth.toDouble)
 
-  // Attention runs per example, so its hot matrix loops use indexed access to avoid allocations.
   def forward(inputGroups: Array[Array[Double]]): ForwardPass = {
     requireGroups(inputGroups, "input groups")
 
@@ -56,26 +56,7 @@ final class AttentionLayer(val groupWidth: Int, random: Random = new Random) {
 
     val attentionGradients = multiply(outputGradients, transpose(pass.values))
     val valueGradients = multiply(transpose(pass.attentionWeights), outputGradients)
-    val scoreGradients = Array.ofDim[Double](attentionGradients.length, attentionGradients.length)
-
-    var row = 0
-    while (row < attentionGradients.length) {
-      val attentionGradientRow = attentionGradients(row)
-      val attentionWeightRow = pass.attentionWeights(row)
-      val scoreGradientRow = scoreGradients(row)
-      var weightedGradient = 0d
-      var column = 0
-      while (column < attentionGradientRow.length) {
-        weightedGradient += attentionGradientRow(column) * attentionWeightRow(column)
-        column += 1
-      }
-      column = 0
-      while (column < attentionGradientRow.length) {
-        scoreGradientRow(column) = attentionWeightRow(column) * (attentionGradientRow(column) - weightedGradient)
-        column += 1
-      }
-      row += 1
-    }
+    val scoreGradients = calculateScoreGradients(attentionGradients, pass.attentionWeights)
 
     val queryGradients = multiply(scoreGradients, pass.keys)
     val keyGradients = multiply(transpose(scoreGradients), pass.queries)
@@ -122,6 +103,32 @@ final class AttentionLayer(val groupWidth: Int, random: Random = new Random) {
   def keyProjectionWeights: Array[Array[Double]] = copyMatrix(keyProjection)
   def valueProjectionWeights: Array[Array[Double]] = copyMatrix(valueProjection)
 
+  private def calculateScoreGradients(
+      attentionGradients: Array[Array[Double]],
+      attentionWeights: Array[Array[Double]]
+  ): Array[Array[Double]] = {
+    val scoreGradients = Array.ofDim[Double](attentionGradients.length, attentionGradients.length)
+    var row = 0
+    while (row < attentionGradients.length) {
+      val attentionGradientRow = attentionGradients(row)
+      val attentionWeightRow = attentionWeights(row)
+      val scoreGradientRow = scoreGradients(row)
+      var weightedGradient = 0d
+      var column = 0
+      while (column < attentionGradientRow.length) {
+        weightedGradient += attentionGradientRow(column) * attentionWeightRow(column)
+        column += 1
+      }
+      column = 0
+      while (column < attentionGradientRow.length) {
+        scoreGradientRow(column) = attentionWeightRow(column) * (attentionGradientRow(column) - weightedGradient)
+        column += 1
+      }
+      row += 1
+    }
+    scoreGradients
+  }
+
   private def initializedProjection(): Array[Array[Double]] = {
     val deviation = 1d / math.sqrt(groupWidth.toDouble)
     Array.fill(groupWidth, groupWidth)(random.nextGaussian() * deviation)
@@ -137,129 +144,4 @@ final class AttentionLayer(val groupWidth: Int, random: Random = new Random) {
       projection.length == groupWidth && projection.forall(_.length == groupWidth),
       s"$name must have shape ${groupWidth}x$groupWidth"
     )
-
-  private def multiply(left: Array[Array[Double]], right: Array[Array[Double]]): Array[Array[Double]] = {
-    require(left.nonEmpty && right.nonEmpty, "matrix operands must not be empty")
-    require(left.forall(_.length == right.length), "matrix dimensions do not match")
-
-    val result = Array.ofDim[Double](left.length, right(0).length)
-    var row = 0
-    while (row < left.length) {
-      val leftRow = left(row)
-      val resultRow = result(row)
-      var shared = 0
-      while (shared < right.length) {
-        val leftValue = leftRow(shared)
-        val rightRow = right(shared)
-        var column = 0
-        while (column < resultRow.length) {
-          resultRow(column) += leftValue * rightRow(column)
-          column += 1
-        }
-        shared += 1
-      }
-      row += 1
-    }
-    result
-  }
-
-  private def transpose(matrix: Array[Array[Double]]): Array[Array[Double]] = {
-    val result = Array.ofDim[Double](matrix(0).length, matrix.length)
-    var row = 0
-    while (row < matrix.length) {
-      val matrixRow = matrix(row)
-      var column = 0
-      while (column < matrixRow.length) {
-        result(column)(row) = matrixRow(column)
-        column += 1
-      }
-      row += 1
-    }
-    result
-  }
-
-  private def softmax(values: Array[Double]): Array[Double] = {
-    var maximum = values(0)
-    var index = 1
-    while (index < values.length) {
-      maximum = math.max(maximum, values(index))
-      index += 1
-    }
-
-    val exponentials = Array.ofDim[Double](values.length)
-    var total = 0d
-    index = 0
-    while (index < values.length) {
-      val exponential = math.exp(values(index) - maximum)
-      exponentials(index) = exponential
-      total += exponential
-      index += 1
-    }
-    index = 0
-    while (index < exponentials.length) {
-      exponentials(index) /= total
-      index += 1
-    }
-    exponentials
-  }
-
-  private def scaleInPlace(matrix: Array[Array[Double]], factor: Double): Unit = {
-    var row = 0
-    while (row < matrix.length) {
-      val matrixRow = matrix(row)
-      var column = 0
-      while (column < matrixRow.length) {
-        matrixRow(column) *= factor
-        column += 1
-      }
-      row += 1
-    }
-  }
-
-  private def add(matrices: Array[Array[Double]]*): Array[Array[Double]] = {
-    val result = Array.ofDim[Double](matrices.head.length, matrices.head(0).length)
-    for {
-      matrix <- matrices
-      row <- matrix.indices
-      column <- matrix(row).indices
-    } result(row)(column) += matrix(row)(column)
-    result
-  }
-
-  private def squaredSum(matrix: Array[Array[Double]]): Double = {
-    var result = 0d
-    var row = 0
-    while (row < matrix.length) {
-      val matrixRow = matrix(row)
-      var column = 0
-      while (column < matrixRow.length) {
-        val value = matrixRow(column)
-        result += value * value
-        column += 1
-      }
-      row += 1
-    }
-    result
-  }
-
-  private def update(
-      weights: Array[Array[Double]],
-      gradients: Array[Array[Double]],
-      scaledLearningRate: Double
-  ): Unit = {
-    var row = 0
-    while (row < weights.length) {
-      val weightRow = weights(row)
-      val gradientRow = gradients(row)
-      var column = 0
-      while (column < weightRow.length) {
-        weightRow(column) -= scaledLearningRate * gradientRow(column)
-        column += 1
-      }
-      row += 1
-    }
-  }
-
-  private def copyMatrix(matrix: Array[Array[Double]]): Array[Array[Double]] =
-    matrix.map(_.clone())
 }

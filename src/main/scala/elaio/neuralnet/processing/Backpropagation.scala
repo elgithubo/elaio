@@ -1,6 +1,7 @@
 package elaio.neuralnet.processing
 
-import elaio.neuralnet.units.{Neuron, OutputNeuron}
+import elaio.neuralnet.connections.Weight
+import elaio.neuralnet.units.{Bias, Neuron, OutputNeuron}
 
 object Backpropagation {
   // processing neuron graph's reverse order.
@@ -40,29 +41,120 @@ object Backpropagation {
   // Turns the deltas into parameter updates - every delta must have been calculated before.
   // maxUpdateNorm caps the length of the whole update vector, leaving its direction
   // alone since it is the extreme steps that blow the net.
-  // Indexed loops are intentional here due to performance reasons, because this pass
-  // visits every connection per example.
   def applyUpdates(order: GraphTraversal.ReverseOrder, learningRate: Double,
-                   maxUpdateNorm: Double = Double.PositiveInfinity): Unit = {
-    if (order.hasSharedParameters) {
-      // Shared cells receive one summed, clipped update.
-      val weights = order.connectionWeights
-      val biases = order.neuronBiases
-      var index = 0
-      while (index < weights.length) {
-        weights(index).accumulatedGradient = 0d
-        index += 1
-      }
-      index = 0
-      while (index < biases.length) {
-        biases(index).accumulatedGradient = 0d
-        index += 1
-      }
+                   maxUpdateNorm: Double = Double.PositiveInfinity): Unit =
+    if (order.hasSharedParameters)
+      applySharedUpdates(order, learningRate, maxUpdateNorm)
+    else
+      applyIndependentUpdates(order, learningRate, maxUpdateNorm)
 
-      val sequence = order.sequence
+  private def applySharedUpdates(
+      order: GraphTraversal.ReverseOrder,
+      learningRate: Double,
+      maxUpdateNorm: Double
+  ): Unit = {
+    val weights = order.connectionWeights
+    val biases = order.neuronBiases
+    clearAccumulatedGradients(weights, biases)
+    accumulateSharedGradients(order.sequence)
+    val scaledLearningRate = learningRate * sharedGradientScale(weights, biases, maxUpdateNorm)
+    updateSharedParameters(weights, biases, scaledLearningRate)
+  }
+
+  private def clearAccumulatedGradients(weights: Vector[Weight], biases: Vector[Bias]): Unit = {
+    var index = 0
+    while (index < weights.length) {
+      weights(index).accumulatedGradient = 0d
+      index += 1
+    }
+    index = 0
+    while (index < biases.length) {
+      biases(index).accumulatedGradient = 0d
+      index += 1
+    }
+  }
+
+  // Indexed loops avoid allocation in the passes that visit every connection per example.
+  private def accumulateSharedGradients(sequence: Vector[Neuron]): Unit = {
+    var neuronIndex = sequence.length - 1
+    while (neuronIndex >= 0) {
+      val neuron = sequence(neuronIndex)
+      val connectionsIn = neuron.connectionsIn
+      val fanIn = connectionsIn.length
+      val neuronDelta = neuron.delta
+      var connectionIndex = 0
+      while (connectionIndex < fanIn) {
+        val connection = connectionsIn(connectionIndex)
+        val weight = connection.weightCell
+        weight.accumulatedGradient += neuronDelta * connection.neuronSource.value / fanIn
+        connectionIndex += 1
+      }
+      if (fanIn > 0)
+        neuron.biasCell.accumulatedGradient += neuronDelta
+      neuronIndex -= 1
+    }
+  }
+
+  private def sharedGradientScale(
+      weights: Vector[Weight],
+      biases: Vector[Bias],
+      maxUpdateNorm: Double
+  ): Double = {
+    var weightGradientSquares = 0d
+    var index = 0
+    while (index < weights.length) {
+      val gradient = weights(index).accumulatedGradient
+      weightGradientSquares += gradient * gradient
+      index += 1
+    }
+    var biasGradientSquares = 0d
+    index = 0
+    while (index < biases.length) {
+      val gradient = biases(index).accumulatedGradient
+      biasGradientSquares += gradient * gradient
+      index += 1
+    }
+    val norm = math.sqrt(weightGradientSquares + biasGradientSquares)
+    if (norm > maxUpdateNorm) maxUpdateNorm / norm else 1d
+  }
+
+  private def updateSharedParameters(
+      weights: Vector[Weight],
+      biases: Vector[Bias],
+      scaledLearningRate: Double
+  ): Unit = {
+    var index = 0
+    while (index < weights.length) {
+      val weight = weights(index)
+      weight.value += scaledLearningRate * weight.accumulatedGradient
+      weight.accumulatedGradient = 0d
+      index += 1
+    }
+    index = 0
+    while (index < biases.length) {
+      val bias = biases(index)
+      bias.value += scaledLearningRate * bias.accumulatedGradient
+      bias.accumulatedGradient = 0d
+      index += 1
+    }
+  }
+
+  private def applyIndependentUpdates(
+      order: GraphTraversal.ReverseOrder,
+      learningRate: Double,
+      maxUpdateNorm: Double
+  ): Unit = {
+    val sequence = order.sequence
+    val scaledLearningRate = learningRate * independentGradientScale(sequence, maxUpdateNorm)
+    updateIndependentParameters(sequence, scaledLearningRate)
+  }
+
+  private def independentGradientScale(sequence: Vector[Neuron], maxUpdateNorm: Double): Double =
+    if (maxUpdateNorm.isPosInfinity) 1d
+    else {
+      var sumSquares = 0d
       var neuronIndex = sequence.length - 1
       while (neuronIndex >= 0) {
-        // caching a lot of values for performance reasons
         val neuron = sequence(neuronIndex)
         val connectionsIn = neuron.connectionsIn
         val fanIn = connectionsIn.length
@@ -70,91 +162,33 @@ object Backpropagation {
         var connectionIndex = 0
         while (connectionIndex < fanIn) {
           val connection = connectionsIn(connectionIndex)
-          val weight = connection.weightCell
-          weight.accumulatedGradient += neuronDelta * connection.neuronSource.value / fanIn
+          val gradient = neuronDelta * connection.neuronSource.value / fanIn
+          sumSquares += gradient * gradient
           connectionIndex += 1
         }
-        if (fanIn > 0)
-          neuron.biasCell.accumulatedGradient += neuronDelta
+        if (fanIn > 0) sumSquares += neuronDelta * neuronDelta
         neuronIndex -= 1
       }
+      val norm = math.sqrt(sumSquares)
+      if (norm > maxUpdateNorm) maxUpdateNorm / norm else 1d
+    }
 
-      var weightGradientSquares = 0d
-      index = 0
-      while (index < weights.length) {
-        val gradient = weights(index).accumulatedGradient
-        weightGradientSquares += gradient * gradient
-        index += 1
+  private def updateIndependentParameters(sequence: Vector[Neuron], scaledLearningRate: Double): Unit = {
+    var neuronIndex = sequence.length - 1
+    while (neuronIndex >= 0) {
+      val neuron = sequence(neuronIndex)
+      val connectionsIn = neuron.connectionsIn
+      val fanIn = connectionsIn.length
+      val neuronDelta = neuron.delta
+      var connectionIndex = 0
+      while (connectionIndex < fanIn) {
+        val connection = connectionsIn(connectionIndex)
+        connection.weight += scaledLearningRate * neuronDelta * connection.neuronSource.value / fanIn
+        connectionIndex += 1
       }
-      var biasGradientSquares = 0d
-      index = 0
-      while (index < biases.length) {
-        val gradient = biases(index).accumulatedGradient
-        biasGradientSquares += gradient * gradient
-        index += 1
-      }
-      val norm = math.sqrt(weightGradientSquares + biasGradientSquares)
-      val scale = if (norm > maxUpdateNorm) maxUpdateNorm / norm else 1d
-      val scaledLearningRate = learningRate * scale
-
-      index = 0
-      while (index < weights.length) {
-        val weight = weights(index)
-        weight.value += scaledLearningRate * weight.accumulatedGradient
-        weight.accumulatedGradient = 0d
-        index += 1
-      }
-      index = 0
-      while (index < biases.length) {
-        val bias = biases(index)
-        bias.value += scaledLearningRate * bias.accumulatedGradient
-        bias.accumulatedGradient = 0d
-        index += 1
-      }
-    } else {
-      val sequence = order.sequence
-      val scale =
-        if (maxUpdateNorm.isPosInfinity) 1d
-        else {
-          var sumSquares = 0d
-          var neuronIndex = sequence.length - 1
-          while (neuronIndex >= 0) {
-            // caching values in local variables since this is a very performance critical section
-            val neuron = sequence(neuronIndex)
-            val connectionsIn = neuron.connectionsIn
-            val fanIn = connectionsIn.length
-            val neuronDelta = neuron.delta
-            var connectionIndex = 0
-            while (connectionIndex < fanIn) {
-              val connection = connectionsIn(connectionIndex)
-              val gradient = neuronDelta * connection.neuronSource.value / fanIn
-              sumSquares += gradient * gradient
-              connectionIndex += 1
-            }
-            if (fanIn > 0) sumSquares += neuronDelta * neuronDelta
-            neuronIndex -= 1
-          }
-          val norm = math.sqrt(sumSquares)
-          if (norm > maxUpdateNorm) maxUpdateNorm / norm else 1d
-        }
-
-      val scaledLearningRate = learningRate * scale
-      var neuronIndex = sequence.length - 1
-      while (neuronIndex >= 0) {
-        val neuron = sequence(neuronIndex)
-        val connectionsIn = neuron.connectionsIn
-        val fanIn = connectionsIn.length
-        val neuronDelta = neuron.delta
-        var connectionIndex = 0
-        while (connectionIndex < fanIn) {
-          val connection = connectionsIn(connectionIndex)
-          connection.weight += scaledLearningRate * neuronDelta * connection.neuronSource.value / fanIn
-          connectionIndex += 1
-        }
-        if (fanIn > 0) // skip input neurons
-          neuron.bias += scaledLearningRate * neuronDelta
-        neuronIndex -= 1
-      }
+      if (fanIn > 0) // skip input neurons
+        neuron.bias += scaledLearningRate * neuronDelta
+      neuronIndex -= 1
     }
   }
 }
