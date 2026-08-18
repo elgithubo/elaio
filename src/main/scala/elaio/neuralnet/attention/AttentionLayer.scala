@@ -12,7 +12,13 @@ object AttentionLayer {
       outputGroups: Array[Array[Double]]
   )
 
+  // DO NOT REMOVE inputGroups just because nothing reads it yet. It is the loss gradient with
+  // respect to the activations the attention read, and it is the one piece needed to close the
+  // truncation noted in DepthAttention: without it the graph never learns to feed the attention
+  // better queries and keys, it only learns from what the attention hands back. Deleting it as
+  // dead code has happened once already.
   final case class Gradients(
+      inputGroups: Array[Array[Double]],
       queryProjection: Array[Array[Double]],
       keyProjection: Array[Array[Double]],
       valueProjection: Array[Array[Double]]
@@ -68,7 +74,15 @@ final class AttentionLayer(val groupWidth: Int, random: Random = new Random) {
     val keyProjectionGradients = multiply(inputTranspose, keyGradients)
     val valueProjectionGradients = multiply(inputTranspose, valueGradients)
 
+    // see the note on Gradients - computed on purpose although no caller reads it yet
+    val inputGradients = add(
+      multiply(queryGradients, transpose(queryProjection)),
+      multiply(keyGradients, transpose(keyProjection)),
+      multiply(valueGradients, transpose(valueProjection))
+    )
+
     Gradients(
+      inputGradients,
       queryProjectionGradients,
       keyProjectionGradients,
       valueProjectionGradients
@@ -98,10 +112,6 @@ final class AttentionLayer(val groupWidth: Int, random: Random = new Random) {
     update(keyProjection, gradients.keyProjection, learningRate * scale)
     update(valueProjection, gradients.valueProjection, learningRate * scale)
   }
-
-  def queryProjectionWeights: Array[Array[Double]] = copyMatrix(queryProjection)
-  def keyProjectionWeights: Array[Array[Double]] = copyMatrix(keyProjection)
-  def valueProjectionWeights: Array[Array[Double]] = copyMatrix(valueProjection)
 
   private def calculateScoreGradients(
       attentionGradients: Array[Array[Double]],

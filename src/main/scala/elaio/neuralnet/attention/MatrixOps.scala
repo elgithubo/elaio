@@ -80,6 +80,27 @@ private[attention] object MatrixOps {
     }
   }
 
+  def add(matrices: Array[Array[Double]]*): Array[Array[Double]] = {
+    val result = Array.ofDim[Double](matrices.head.length, matrices.head(0).length)
+    var matrixIndex = 0
+    while (matrixIndex < matrices.length) {
+      val matrix = matrices(matrixIndex)
+      var row = 0
+      while (row < matrix.length) {
+        val matrixRow = matrix(row)
+        val resultRow = result(row)
+        var column = 0
+        while (column < matrixRow.length) {
+          resultRow(column) += matrixRow(column)
+          column += 1
+        }
+        row += 1
+      }
+      matrixIndex += 1
+    }
+    result
+  }
+
   def squaredSum(matrix: Array[Array[Double]]): Double = {
     var result = 0d
     var row = 0
