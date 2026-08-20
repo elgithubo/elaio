@@ -43,6 +43,10 @@ trait NeuronNetwork(ids: IdAllocator) {
     Backpropagation.calculateDeltas(order.sequence, order.outputs)
   }
 
+  // Propagates direct deltas that were seeded on internal neurons without replacing them.
+  def propagateSeededDeltas(): Unit =
+    Backpropagation.propagateSeededDeltas(reverseOrder.sequence)
+
   protected final def connectNeurons(
       connectionNeuronSource: Neuron,
       connectionNeuronTarget: Neuron

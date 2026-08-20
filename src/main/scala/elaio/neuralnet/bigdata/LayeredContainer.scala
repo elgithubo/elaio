@@ -90,6 +90,15 @@ final class LayeredContainer(
       branches.foreach(Await.result(_, Duration.Inf))
     }
 
+  override def propagateSeededDeltas(): Unit =
+    if (!pooled) super.propagateSeededDeltas()
+    else {
+      val branches = containers.map { container =>
+        Future(Backpropagation.propagateSeededDeltas(container.reverseOrder.sequence))
+      }
+      branches.foreach(Await.result(_, Duration.Inf))
+    }
+
   // each token goes to its own container, addressed directly rather than through the joined
   // inputNodes - that keeps the token layout an enforced contract instead of a shared assumption
   def initInputs(tokens: TokenMatrix): Unit = if (!pooled) {

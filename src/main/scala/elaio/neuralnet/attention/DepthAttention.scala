@@ -1,57 +1,114 @@
 package elaio.neuralnet.attention
 
-import elaio.neuralnet.attention.AttentionLayer.ForwardPass
-import elaio.neuralnet.processing.GraphTraversal
+import elaio.neuralnet.attention.AttentionLayer.{ForwardPass, Gradients}
+import elaio.neuralnet.processing.{Backpropagation, GraphTraversal}
 import elaio.neuralnet.processing.GraphTraversal.ReverseOrder
-import elaio.neuralnet.units.InputNeuron
+import elaio.neuralnet.units.{InputNeuron, Neuron}
 
 // Attention across the depth of a graph: one depth group is one token, the neurons inside it
 // are the channels. The result is written back as an additive context on the pre-activation,
 // so a second forward pass sees the refined values. Knows nothing about how the graph was built.
 final class DepthAttention(boundOrder: ReverseOrder, contextScale: Double = 0.1d) {
+  private val normalizationEpsilon = 1e-8
   private val groups = GraphTraversal.depthGroups(boundOrder)
   require(groups.nonEmpty, "depth attention needs at least one group")
 
   private val layer = new AttentionLayer(groups.map(_.neurons.length).max)
 
-  // one plain pass to read from, then one more with the attention context in place
+  // One plain pass supplies attention, then a refined pass produces the network output.
   def refine(currentOrder: ReverseOrder, forward: () => Unit): ForwardPass = {
-    require(currentOrder eq boundOrder, "depth attention belongs to a different graph")
+    requireBoundOrder(currentOrder)
     clearContexts()
     forward()
-    val pass = layer.forward(groupValues())
-    applyContexts(pass)
-    try forward()
-    finally clearContexts()
+    val pass = layer.forward(normalizedGroupValues())
+    try {
+      applyContexts(pass)
+      forward()
+    } finally clearContexts()
     pass
   }
 
-  // The gradient into the first graph pass is intentionally truncated for now.
-  def applyGradients(pass: ForwardPass, learningRate: Double, maxGradientNorm: Double): Unit = {
-    // delta is -dL/dz and the context is added to z, so the loss gradient carries the minus
-    val outputGradients = Array.ofDim[Double](groups.length, layer.groupWidth)
+  // Reads the refined graph deltas before its state is replaced by first-pass recomputation.
+  def gradientsFromRefinedDeltas(pass: ForwardPass): Gradients =
+    layer.backward(pass, attentionOutputGradients())
+
+  // Restores the plain graph state without changing parameters or creating another attention pass.
+  def recomputeFirstPass(currentOrder: ReverseOrder, forward: () => Unit): Unit = {
+    requireBoundOrder(currentOrder)
+    clearContexts()
+    forward()
+  }
+
+  // Converts gradients through RMS normalization and seeds direct first-pass neuron deltas.
+  def resetAndSeedFirstPassDeltas(gradients: Gradients): Unit = {
+    requireInputGradientShape(gradients.inputGradients)
+    Backpropagation.clearDeltas(boundOrder)
+    for (groupIndex <- groups.indices)
+      seedGroupDeltas(groups(groupIndex).neurons, gradients.inputGradients(groupIndex))
+  }
+
+  def applyGradients(gradients: Gradients, learningRate: Double, maxGradientNorm: Double): Unit =
+    layer.applyGradients(gradients, learningRate, maxGradientNorm)
+
+  private def attentionOutputGradients(): Array[Array[Double]] = {
+    val result = Array.ofDim[Double](groups.length, layer.groupWidth)
     for {
       groupIndex <- groups.indices
       neuronIndex <- groups(groupIndex).neurons.indices
       neuron = groups(groupIndex).neurons(neuronIndex)
       if !neuron.isInstanceOf[InputNeuron]
-    } outputGradients(groupIndex)(neuronIndex) = -neuron.delta * contextScale
-
-    layer.applyGradients(layer.backward(pass, outputGradients), learningRate, maxGradientNorm)
+    } result(groupIndex)(neuronIndex) = -neuron.delta * contextScale
+    result
   }
 
-  // every group normalized to unit RMS, padded to the widest group
-  private def groupValues(): Array[Array[Double]] =
+  // Every group is normalized to unit RMS and padded to the widest group.
+  private def normalizedGroupValues(): Array[Array[Double]] =
     groups.map { group =>
-      require(group.neurons.forall(_.value.isFinite), "attention input values must be finite")
+      val rms = groupRms(group.neurons)
       val row = Array.ofDim[Double](layer.groupWidth)
-      val meanSquare =
-        group.neurons.iterator.map(neuron => neuron.value * neuron.value).sum / group.neurons.length
-      val rms = math.sqrt(meanSquare + 1e-8)
       for (neuronIndex <- group.neurons.indices)
         row(neuronIndex) = group.neurons(neuronIndex).value / rms
       row
     }.toArray
+
+  private def seedGroupDeltas(neurons: Vector[Neuron], normalizedGradients: Array[Double]): Unit = {
+    val rms = groupRms(neurons)
+    var gradientValueProduct = 0d
+    var index = 0
+    while (index < neurons.length) {
+      gradientValueProduct += normalizedGradients(index) * neurons(index).value
+      index += 1
+    }
+
+    val normalizationDivisor = neurons.length * rms * rms * rms
+    index = 0
+    while (index < neurons.length) {
+      val neuron = neurons(index)
+      if (!neuron.isInstanceOf[InputNeuron]) {
+        val valueGradient =
+          normalizedGradients(index) / rms - neuron.value * gradientValueProduct / normalizationDivisor
+        neuron.delta = -valueGradient * neuron.activationDerivative(neuron.preActivation)
+      }
+      index += 1
+    }
+  }
+
+  private def groupRms(neurons: Vector[Neuron]): Double = {
+    require(neurons.forall(_.value.isFinite), "attention input values must be finite")
+    val meanSquare = neurons.iterator.map(neuron => neuron.value * neuron.value).sum / neurons.length
+    math.sqrt(meanSquare + normalizationEpsilon)
+  }
+
+  private def requireInputGradientShape(inputGradients: Array[Array[Double]]): Unit = {
+    require(inputGradients.length == groups.length, "attention input gradients need one row per depth group")
+    require(
+      inputGradients.forall(_.length == layer.groupWidth),
+      s"attention input gradient rows must have width ${layer.groupWidth}"
+    )
+  }
+
+  private def requireBoundOrder(currentOrder: ReverseOrder): Unit =
+    require(currentOrder eq boundOrder, "depth attention belongs to a different graph")
 
   private def applyContexts(pass: ForwardPass): Unit =
     for {

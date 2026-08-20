@@ -24,7 +24,6 @@ object Backpropagation {
       outputNeuron.delta =
         (outputNeuron.target - outputNeuron.value) * outputNeuron.activationDerivative(outputNeuron.preActivation)
     }
-    for (target <- order.unreachableTargets) target.delta = 0d
   }
 
   // Deltas for one reverse-topological slice of the graph. The neurons the slice feeds into must
@@ -37,6 +36,36 @@ object Backpropagation {
           val targetNeuron = connection.neuronTarget
           sum + connection.weight * targetNeuron.delta / targetNeuron.connectionsIn.length
         } * neuron.activationDerivative(neuron.preActivation) // outgoing sum * activation derivative
+
+  def clearDeltas(order: GraphTraversal.ReverseOrder): Unit = {
+    for (neuron <- order.sequence) neuron.delta = 0d
+  }
+
+  // Adds the downstream contribution to direct deltas already seeded on the neurons.
+  def propagateSeededDeltas(sequence: Vector[Neuron]): Unit =
+    for (neuron <- sequence)
+      neuron.delta +=
+        neuron.connectionsOut.foldLeft(0d) { (sum, connection) =>
+          val targetNeuron = connection.neuronTarget
+          sum + connection.weight * targetNeuron.delta / targetNeuron.connectionsIn.length
+        } * neuron.activationDerivative(neuron.preActivation)
+
+  def beginGradientAccumulation(order: GraphTraversal.ReverseOrder): Unit =
+    clearAccumulatedGradients(order.connectionWeights, order.neuronBiases)
+
+  def accumulateCurrentGradients(order: GraphTraversal.ReverseOrder): Unit =
+    accumulateSharedGradients(order.sequence)
+
+  def applyAccumulatedUpdates(
+      order: GraphTraversal.ReverseOrder,
+      learningRate: Double,
+      maxUpdateNorm: Double
+  ): Unit = {
+    val weights = order.connectionWeights
+    val biases = order.neuronBiases
+    val scaledLearningRate = learningRate * sharedGradientScale(weights, biases, maxUpdateNorm)
+    updateSharedParameters(weights, biases, scaledLearningRate)
+  }
 
   // Turns the deltas into parameter updates - every delta must have been calculated before.
   // maxUpdateNorm caps the length of the whole update vector, leaving its direction
@@ -53,12 +82,9 @@ object Backpropagation {
       learningRate: Double,
       maxUpdateNorm: Double
   ): Unit = {
-    val weights = order.connectionWeights
-    val biases = order.neuronBiases
-    clearAccumulatedGradients(weights, biases)
-    accumulateSharedGradients(order.sequence)
-    val scaledLearningRate = learningRate * sharedGradientScale(weights, biases, maxUpdateNorm)
-    updateSharedParameters(weights, biases, scaledLearningRate)
+    beginGradientAccumulation(order)
+    accumulateCurrentGradients(order)
+    applyAccumulatedUpdates(order, learningRate, maxUpdateNorm)
   }
 
   private def clearAccumulatedGradients(weights: Vector[Weight], biases: Vector[Bias]): Unit = {

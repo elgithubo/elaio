@@ -17,7 +17,6 @@ object GraphTraversal {
       // Targets a covered neuron feeds that this order does not cover. Their delta means nothing
       // for this pass, so zeroing them once lets the delta sweep drop a membership test it would
       // otherwise run per connection and per example. Empty for every graph elaio builds today.
-      unreachableTargets: Vector[Neuron],
       connectionWeights: Vector[Weight],
       neuronBiases: Vector[Bias],
       hasSharedParameters: Boolean
@@ -57,13 +56,11 @@ object GraphTraversal {
     val connectionWeights = allWeights.distinct
     val neuronBiases = allBiases.distinct
     val reachable = sequence.toSet
-    val unreachableTargets =
-      sequence.iterator.flatMap(_.connectionsOut).map(_.neuronTarget).filterNot(reachable).distinct.toVector
+
     ReverseOrder(
       sequence,
       reachable,
       outputSet,
-      unreachableTargets,
       connectionWeights,
       neuronBiases,
       connectionWeights.length != allWeights.length || neuronBiases.length != allBiases.length

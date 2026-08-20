@@ -32,16 +32,24 @@ trait Trainable {
   // set once the network is built, when attention is wanted
   protected var attention: Option[DepthAttention] = None
 
+  private final case class AttentionRun(depthAttention: DepthAttention, pass: ForwardPass)
+
   // run the test case
   def run(): Unit
 
   protected def traceAction(): Unit =
     NetTrace.WriteMessage("no further trace action defined - adjust test class to override this message")
 
-  protected def forwardPass(container: NeuronNetwork): Option[ForwardPass] =
+  protected def forwardPass(container: NeuronNetwork): Unit = {
+    runForwardPass(container)
+    ()
+  }
+
+  private def runForwardPass(container: NeuronNetwork): Option[AttentionRun] =
     attention match {
       case Some(depthAttention) =>
-        Some(depthAttention.refine(container.reverseOrder, () => container.forward(neuronCollectionCache)))
+        val pass = depthAttention.refine(container.reverseOrder, () => container.forward(neuronCollectionCache))
+        Some(AttentionRun(depthAttention, pass))
       case None =>
         container.forward(neuronCollectionCache)
         None
@@ -124,18 +132,53 @@ trait Trainable {
       for ((tokens, targetValues) <- random.shuffle(trainingExamples)) {
         container.initInputs(tokens)
         initTargets(container, targetValues)
-        val attentionPass = forwardPass(container)
+        val attentionRun = runForwardPass(container)
         totalError = totalError + squaredError(container)
-        // deltas may run concurrently per token branch; the shared updates stay serial
-        container.calculateDeltas()
-        Backpropagation.applyUpdates(container.reverseOrder, learningRate, updateNorm)
-        for (depthAttention <- attention; pass <- attentionPass)
-          depthAttention.applyGradients(pass, learningRate, updateNorm)
+        applyExampleGradients(container, attentionRun, updateNorm)
       }
       if (epoch == 1 || epoch % 100 == 0 || epoch == epochs)
         NetTrace.WriteMessage("epoch " + epoch + ": total squared error = " + totalError, 1)
       if (epoch == clipUntilEpoch && epoch < epochs)
         NetTrace.WriteMessage("update cap released after epoch " + epoch, 1)
     }
+  }
+
+  private def applyExampleGradients(
+      container: NeuronNetwork,
+      attentionRun: Option[AttentionRun],
+      updateNorm: Double
+  ): Unit =
+    attentionRun match {
+      case None =>
+        applyGraphGradients(container, updateNorm)
+      case Some(run) =>
+        applyAttentionAndGraphGradients(container, run.depthAttention, run.pass, updateNorm)
+    }
+
+  private def applyGraphGradients(container: NeuronNetwork, updateNorm: Double): Unit = {
+    container.calculateDeltas()
+    Backpropagation.applyUpdates(container.reverseOrder, learningRate, updateNorm)
+  }
+
+  private def applyAttentionAndGraphGradients(
+      container: NeuronNetwork,
+      depthAttention: DepthAttention,
+      pass: ForwardPass,
+      updateNorm: Double
+  ): Unit = {
+    val order = container.reverseOrder
+    Backpropagation.beginGradientAccumulation(order)
+
+    container.calculateDeltas()
+    val attentionGradients = depthAttention.gradientsFromRefinedDeltas(pass)
+    Backpropagation.accumulateCurrentGradients(order)
+
+    depthAttention.recomputeFirstPass(order, () => container.forward(neuronCollectionCache))
+    depthAttention.resetAndSeedFirstPassDeltas(attentionGradients)
+    container.propagateSeededDeltas()
+    Backpropagation.accumulateCurrentGradients(order)
+
+    Backpropagation.applyAccumulatedUpdates(order, learningRate, updateNorm)
+    depthAttention.applyGradients(attentionGradients, learningRate, updateNorm)
   }
 }
