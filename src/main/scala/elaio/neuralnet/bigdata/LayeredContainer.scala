@@ -47,6 +47,8 @@ final class LayeredContainer(
   private var _inputNodes = Array.ofDim[InputNeuron](0)
   private var _outputNodes = Array.ofDim[OutputNeuron](0)
   private var _reverseOrder: GraphTraversal.ReverseOrder = null
+  // held rather than built per call - propagateSeededDeltas runs once per example
+  private var readOutSequence: Vector[Neuron] = Vector.empty
 
   // the token inputs end to end - a convenience view; initInputs addresses the containers directly
   def inputNodes: Array[InputNeuron] = _inputNodes
@@ -90,9 +92,15 @@ final class LayeredContainer(
       branches.foreach(Await.result(_, Duration.Inf))
     }
 
+  // The read-out sits ahead of every token branch in the reverse-topological order and is shared
+  // between them, so it is propagated first and on this thread - handing it to one branch would let
+  // the others read a half-written delta. Its contribution is zero while it has no outgoing
+  // connections; it is covered anyway so that the pooled path spans the same neurons as the serial
+  // one, and stays right the day something is put behind it.
   override def propagateSeededDeltas(): Unit =
     if (!pooled) super.propagateSeededDeltas()
     else {
+      Backpropagation.propagateSeededDeltas(readOutSequence)
       val branches = containers.map { container =>
         Future(Backpropagation.propagateSeededDeltas(container.reverseOrder.sequence))
       }
@@ -137,6 +145,7 @@ final class LayeredContainer(
         readOut <- _outputNodes
       } connectNeurons(tokenOutput, readOut)
     }
+    readOutSequence = if (pooled) _outputNodes.toVector else Vector.empty
     _reverseOrder = GraphTraversal.reverseTopologicalFromOutputs(_outputNodes)
   }
 

@@ -14,9 +14,6 @@ object GraphTraversal {
       sequence: Vector[Neuron],
       reachable: Set[Neuron],
       outputs: Set[Neuron],
-      // Targets a covered neuron feeds that this order does not cover. Their delta means nothing
-      // for this pass, so zeroing them once lets the delta sweep drop a membership test it would
-      // otherwise run per connection and per example. Empty for every graph elaio builds today.
       connectionWeights: Vector[Weight],
       neuronBiases: Vector[Bias],
       hasSharedParameters: Boolean
@@ -56,6 +53,7 @@ object GraphTraversal {
     val connectionWeights = allWeights.distinct
     val neuronBiases = allBiases.distinct
     val reachable = sequence.toSet
+    requireEveryTargetCovered(sequence, reachable)
 
     ReverseOrder(
       sequence,
@@ -64,6 +62,20 @@ object GraphTraversal {
       connectionWeights,
       neuronBiases,
       connectionWeights.length != allWeights.length || neuronBiases.length != allBiases.length
+    )
+  }
+
+  // The delta sweep sums over every outgoing connection without asking whether the target belongs
+  // to this order, which is only sound while every target does. That holds for every graph elaio
+  // builds - the dead end repair in TensoredContainer sees to it - so this is checked once at
+  // construction rather than per connection and per example. A topology that legitimately leaves a
+  // target uncovered has to zero those deltas before the sweep instead; the check is here so that
+  // change is a build failure and not a silently wrong gradient.
+  private def requireEveryTargetCovered(sequence: Vector[Neuron], reachable: Set[Neuron]): Unit = {
+    val uncovered = sequence.iterator.flatMap(_.connectionsOut).map(_.neuronTarget).filterNot(reachable)
+    require(
+      uncovered.isEmpty,
+      "the graph feeds neurons this traversal does not cover - see requireEveryTargetCovered"
     )
   }
 
