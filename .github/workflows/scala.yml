@@ -20,6 +20,7 @@ jobs:
         cache: 'sbt'
     - name: Set up sbt
       uses: sbt/setup-sbt@v1
-      # there is no src/test/scala yet, so "sbt test" would report that nothing ran.
     - name: Compile
       run: sbt compile
+    - name: Run Tests
+      run: sbt Test/executeTests
