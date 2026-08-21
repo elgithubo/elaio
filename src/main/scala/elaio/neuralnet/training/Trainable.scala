@@ -1,6 +1,6 @@
 package elaio.neuralnet.training
 
-import java.nio.file.Path
+import java.nio.file.{Files, Path}
 import elaio.neuralnet.attention.AttentionLayer.ForwardPass
 import elaio.neuralnet.attention.DepthAttention
 import elaio.neuralnet.TokenMatrix
@@ -61,6 +61,12 @@ trait Trainable {
       trainingData: => (Array[TokenMatrix], Array[Array[Double]])
   ): Unit = {
     require(attention.isEmpty || persistenceAction.isEmpty, "attention persistence is not supported yet")
+    // a save only happens once training is through, so an unusable target has to be rejected up
+    // front - discovering it afterwards would throw away the whole run
+    persistenceAction match {
+      case Some(PersistenceAction.Save(file)) => requireSaveTargetUsable(file)
+      case _                                  => ()
+    }
     NetTrace.WriteMessage("")
     traceAction()
     NetTrace.WriteMessage("")
@@ -70,8 +76,10 @@ trait Trainable {
 
       case _ =>
         // weight initialization has to happen after init(), when every neuron's fan-in is final
-        val weightCount = WeightInitializer.initialize(container.reverseOrder)
-        NetTrace.WriteMessage("connection weights initialized: " + weightCount)
+        val initialized = WeightInitializer.initialize(container.reverseOrder)
+        NetTrace.WriteMessage("connection weights initialized: " + initialized.weightCells)
+        if (initialized.connections != initialized.weightCells)
+          NetTrace.WriteMessage("cells are shared: " + initialized.connections + " connections draw on them", 1)
 
         val (trainTokens, trainOutputs) = trainingData
         require(trainTokens.length == trainOutputs.length, "each tokenized example needs a result")
@@ -104,6 +112,14 @@ trait Trainable {
     NetTrace.WriteMessage(
       "loaded " + stateContainer.neuronStore.size + " neurons and " + stateContainer.connectionStore.size + " connections"
     )
+  }
+
+  // What save needs of its target, asked before training rather than after it.
+  private def requireSaveTargetUsable(file: Path): Unit = {
+    val directory = file.toAbsolutePath.getParent
+    require(Files.isDirectory(directory), "save directory does not exist: " + directory)
+    require(Files.isWritable(directory), "save directory is not writable: " + directory)
+    require(!Files.isDirectory(file), "save target is a directory: " + file)
   }
 
   private def save(container: NeuronNetwork, file: Path): Unit = {

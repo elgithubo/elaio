@@ -2,8 +2,19 @@
 - make persistence support attention & consider shared parameters
 - add potential to calculator
 - evaluate if a gradient check (cosine?) makes sense (maybe not required if bias is in place)
-- check save directory exists before training
 - add check that loading a persistet state is for the correct network operation, e.g. addition
 - add check during loading a persisted state that NeuronType fits
-- add a test suite for 'sbt test'
+- add a test suite for 'sbt test' (tmp/Test1-5.scala are five ready invariant probes)
 - add a facility for reproducible tests with seeded values
+- revisit clipUntilEpoch - releasing the update cap is what diverges a run to NaN (addition at 600 epochs: cap held 0/6 NaN, released at half 6/6)
+- AttentionToken sets clipUntilEpoch to 0, which makes its maxUpdateNorm dead - decide whether attention runs should clip
+- delete the stray build output in the repo root (Main.class, Main.tasty, Main$*.class and the elaio/ class tree from a scalac run without -d)
+- delete the file named '0' (an env dump from a >0 typo) and drop its .gitignore entry
+- stop gitignoring .scalafmt.conf so formatting can be shared
+- add the generator for the doc/ topology svgs, or stop tracking 5.1MB of unreproducible artifacts
+- harden the model format: NeuronData and ConnectionData carry no SerialVersionUID and the format embeds scala.collection.mutable.HashMap, so a scala upgrade can invalidate models/
+- PersistenceHandler.load calls readObject() before its type check, so the StateContainer guard buys no safety
+- move Main into the elaio package
+- fix the CalculatorTest trainCount comment (it means operations, not questions) and add the divisibility require to its checkTokens
+- InputNeuron declares a leaky relu activation its collectInConnections never applies, and never sets _preActivation
+- remove the commented-out config in PotentialTest (lines 9-11 and 16)
