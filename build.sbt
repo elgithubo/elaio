@@ -4,5 +4,5 @@ scalaVersion := "3.8.4"
 
 scalacOptions += "-Wunused:imports"
 
-// munit supplies the framework "sbt test" discovers; suites live under src/test/scala
+// test with 'sbt Test/executeTests'
 libraryDependencies += "org.scalameta" %% "munit" % "1.3.5" % Test
